@@ -60,8 +60,8 @@ src/
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (kerangka)
     layout.tsx          # root layout, metadata, viewport
-    manifest.ts         # manifest PWA → /manifest.webmanifest
     globals.css         # design token
+    favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
     layout/             # sidebar, bottom nav, header, brand
     ui/                 # komponen dasar (Card, ...)
@@ -72,7 +72,10 @@ src/
       proxy.ts          # refresh sesi, dipanggil dari src/proxy.ts
       env.ts            # baca NEXT_PUBLIC_SUPABASE_*
   proxy.ts              # Next.js proxy (dulu middleware)
-public/icons/           # logo & ikon PWA (masih placeholder)
+public/
+  brand/                # logo resmi (horizontal & mark, terang/gelap), og-image
+  icons/                # ikon PWA (dirujuk manifest)
+  manifest.webmanifest  # manifest PWA
 docs/                   # dokumen desain (usulan skema, dsb.)
 supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 ```
@@ -101,7 +104,10 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 - Rute URL: Bahasa Indonesia, huruf kecil (`/warga`, `/kegiatan`, `/absensi`).
 - Import memakai alias `@/` (mis. `@/lib/supabase/server`).
 - Warna, radius, dan spacing memakai token (`bg-surface`, `rounded-card`,
-  `px-gutter`), bukan nilai hex/px langsung.
+  `px-gutter`), bukan nilai hex/px langsung. `brand` = biru logo; `primary` =
+  turunannya untuk teks/tombol (kontras AA).
+- Logo: pakai `BrandMark` (`public/brand/`). Jangan ubah warna atau memutar
+  logo, dan beri jarak bebas ≥ ½ tinggi huruf K.
 
 **Database**
 - Tabel & kolom: `snake_case`, nama tabel tunggal (`warga`, `kelompok`).
@@ -126,4 +132,3 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 4. **Kategori usia**: batas umur tiap kategori (mis. caberawit, pra-remaja,
    remaja, pra-nikah, dewasa, lansia) dan apakah dihitung otomatis dari tanggal
    lahir.
-5. **Logo desa**: belum ada di repo; `public/icons/` masih placeholder "KK".

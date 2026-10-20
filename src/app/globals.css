@@ -14,9 +14,12 @@
   --kk-border: #e2e4eb;
   --kk-fg: #14161c;
   --kk-muted: #6b7080;
-  --kk-primary: #2f6fed;
+  /* Biru brand (README aset). Untuk teks/tombol pakai primary: turunan
+     lebih gelap agar kontras ≥ 4.5:1 (WCAG AA) di atas putih. */
+  --kk-brand: #0290c8;
+  --kk-primary: #026e9a;
   --kk-primary-fg: #ffffff;
-  --kk-primary-soft: #e3ecfd;
+  --kk-primary-soft: #e1f3fa;
   --kk-success: #1f9d55;
   --kk-warning: #d98a00;
   --kk-danger: #d93a3a;
@@ -30,9 +33,10 @@
     --kk-border: #2a2c34;
     --kk-fg: #f2f3f6;
     --kk-muted: #9a9fad;
-    --kk-primary: #5b8ff5;
-    --kk-primary-fg: #ffffff;
-    --kk-primary-soft: #1c2a47;
+    --kk-brand: #2bb3ea;
+    --kk-primary: #2bb3ea;
+    --kk-primary-fg: #06202b;
+    --kk-primary-soft: #0f2c3a;
     --kk-success: #3cc47c;
     --kk-warning: #f0a92b;
     --kk-danger: #f06363;
@@ -46,6 +50,7 @@
   --color-border: var(--kk-border);
   --color-fg: var(--kk-fg);
   --color-muted: var(--kk-muted);
+  --color-brand: var(--kk-brand);
   --color-primary: var(--kk-primary);
   --color-primary-fg: var(--kk-primary-fg);
   --color-primary-soft: var(--kk-primary-soft);

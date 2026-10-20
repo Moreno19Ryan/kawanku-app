@@ -14,8 +14,8 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-gutter py-10">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex justify-center">
-          <BrandMark />
+        <div className="mb-6 flex justify-center">
+          <BrandMark height={36} />
         </div>
 
         <Card className="p-6 sm:p-8">

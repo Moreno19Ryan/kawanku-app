@@ -20,14 +20,20 @@ export const metadata: Metadata = {
   description:
     "Aplikasi manajemen Desa Kartika Wanasari: database warga, absensi, dan monitoring kegiatan.",
   applicationName: "KawanKu",
+  // Ikon tab & iPhone diambil otomatis dari src/app/{favicon.ico,icon.svg,apple-icon.png}.
+  manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: "KawanKu",
+    description:
+      "Database warga, absensi, dan monitoring kegiatan Desa Kartika Wanasari.",
+    images: ["/brand/og-image.png"],
+    locale: "id_ID",
+    type: "website",
+  },
   appleWebApp: {
     capable: true,
     title: "KawanKu",
     statusBarStyle: "default",
-  },
-  icons: {
-    icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
 };
 
