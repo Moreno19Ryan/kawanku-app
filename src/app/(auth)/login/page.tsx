@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { Card } from "@/components/ui/card";
 
@@ -12,8 +13,8 @@ export const metadata: Metadata = {
  */
 export default function AdminLoginPage() {
   return (
-    <div className="flex min-h-dvh items-center justify-center px-gutter py-10">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-dvh flex-col px-gutter py-10">
+      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
         <div className="mb-6 flex justify-center">
           <BrandMark height={36} />
         </div>
@@ -61,6 +62,9 @@ export default function AdminLoginPage() {
           </p>
         </Card>
       </div>
+
+      {/* Identitas desa cukup di footer. */}
+      <AppFooter className="mx-auto mt-10 w-full max-w-3xl" />
     </div>
   );
 }

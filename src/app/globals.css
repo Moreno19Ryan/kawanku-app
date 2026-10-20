@@ -58,6 +58,11 @@
   --color-warning: var(--kk-warning);
   --color-danger: var(--kk-danger);
 
+  /* Kertas: dokumen cetak & kartu QR selalu berlatar putih, tidak ikut tema. */
+  --color-paper: #ffffff;
+  --color-paper-fg: #1b2733;
+  --color-paper-muted: #5b6772;
+
   /* Radius: sudut membulat besar khas One UI */
   --radius-control: 0.875rem; /* input, tombol */
   --radius-card: 1.625rem; /* kartu */
