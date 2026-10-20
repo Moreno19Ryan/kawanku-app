@@ -12,7 +12,7 @@
 | Istilah | `warga` | **`jamaah`** (tabel, view, kolom, izin, rute `/jamaah`) |
 | Cakupan peran | enum `cakupan_peran` (desa/kelompok/generus) | Dua sumbu: `peran.wilayah` (desa/kelompok/fleksibel) + `peran.hanya_generus` |
 | Admin generus | Hanya tingkat desa | Tingkat desa **dan** tingkat kelompok |
-| Status pernikahan | Tidak ada | Enum `status_pernikahan` (lajang/menikah/janda_duda), boleh kosong |
+| Status pernikahan | Tidak ada | Enum `status_pernikahan` (lajang/menikah/janda_duda), boleh kosong; keterangan `jenis_janda_duda` (cerai_hidup/cerai_mati) |
 | Status sekolah | Tidak ada | Enum `status_sekolah` + `status_sekolah_diperbarui` (otomatis) |
 | Kategori | `kategori_usia`, hanya umur, tidak boleh tumpang tindih | **`kategori_jamaah`** berbasis aturan data (usia, status sekolah, status pernikahan); tumpang tindih boleh, `urutan` terkecil menang; view `jamaah_tanpa_kategori` |
 | Data lahir | `tanggal_lahir` saja | + `tahun_lahir` sebagai cadangan; satu fungsi pusat `private.usia` |
@@ -60,7 +60,7 @@ erDiagram
 | ----- | --- | ------- |
 | `kelompok` | 4 kelompok desa (`nomor`, `nama`, `aktif`) | Nama resmi menyusul; seed memakai "Kelompok 1..4". |
 | `keluarga` | Unit keluarga (`nama`, `kelompok_id`) | Satu keluarga berada di satu kelompok. |
-| `jamaah` | `kode`, `nama_lengkap`, `nama_panggilan`, `tanggal_lahir`, `tahun_lahir`, `jenis_kelamin` (`L`/`P`), `status_pernikahan`, `status_sekolah`, `status_sekolah_diperbarui`, `kelompok_id`, `keluarga_id`, `hubungan_keluarga`, `aktif` | Lahir dan status boleh kosong (kosong = belum diisi). `status_sekolah_diperbarui` diisi trigger. FK komposit menjamin keluarga jamaah ada di kelompok yang sama. |
+| `jamaah` | `kode`, `nama_lengkap`, `nama_panggilan`, `tanggal_lahir`, `tahun_lahir`, `jenis_kelamin` (`L`/`P`), `status_pernikahan`, `jenis_janda_duda`, `status_sekolah`, `status_sekolah_diperbarui`, `kelompok_id`, `keluarga_id`, `hubungan_keluarga`, `aktif` | Lahir dan status boleh kosong (kosong = belum diisi). `status_sekolah_diperbarui` diisi trigger. FK komposit menjamin keluarga jamaah ada di kelompok yang sama. |
 | `jamaah_keringanan` | Penanda jalur keringanan (`jenis = 'tanpa_hp'`, `aktif`) | Tabel terpisah, lihat §4.8. |
 | `kategori_jamaah` | `urutan`, `kode`, `nama`, `usia_min`, `usia_max`, `status_sekolah_berlaku[]`, `status_pernikahan_berlaku[]`, `termasuk_generus` | Kategori sebagai aturan data, lihat §4.4. Seed masih DRAF. |
 | `peran` | `kode`, `nama`, `wilayah` (desa/kelompok/fleksibel), `hanya_generus` | Peran baru cukup ditambah sebagai baris. |
@@ -106,8 +106,17 @@ wilayah (diuji di §6.1).
 ### 4.3 Status pernikahan dan status sekolah
 
 - `status_pernikahan` (enum, boleh kosong; kosong = belum diisi): `lajang`,
-  `menikah`, `janda_duda`. **Tidak ada** kolom alasan perceraian atau
-  wafatnya pasangan.
+  `menikah`, `janda_duda`.
+- `jenis_janda_duda` (enum, boleh kosong): `cerai_hidup` atau `cerai_mati`,
+  sebagai keterangan bagaimana seseorang menjadi janda/duda (keputusan Reno).
+  - Hanya boleh diisi bila `status_pernikahan = 'janda_duda'` (check
+    `jamaah_jenis_janda_duda_sesuai`).
+  - Boleh kosong bila belum diketahui.
+  - Saat janda/duda menikah lagi, aplikasi harus mengosongkan kolom ini
+    bersamaan dengan mengubah status. Kalau tidak, database menolak.
+  - **Tidak ada** kolom alasan perceraian, tanggal, atau detail lain.
+  - Kolom ini tidak memengaruhi kategori: semua janda/duda tetap
+    `berkeluarga`, jadi tidak terlihat oleh admin generus.
 - `status_sekolah` (enum, boleh kosong): `belum_sekolah`, `paud_tk`, `sd`,
   `smp`, `sma_smk`, `kuliah`, `bekerja`, `lainnya`.
 - `status_sekolah_diperbarui` (date) diisi trigger setiap `status_sekolah`
@@ -171,8 +180,9 @@ Akibat seed ini:
 - Menikah atau janda/duda di bawah 60 menjadi `berkeluarga`, walau masih
   kuliah (urutan 2 menang atas `remaja_dewasa`).
 - Lajang atau status pernikahan kosong, di bawah 60, dengan status sekolah
-  kuliah/bekerja/lainnya menjadi `remaja_dewasa` **tanpa batas atas umur**
-  (lihat pertanyaan §8).
+  kuliah/bekerja/lainnya menjadi `remaja_dewasa` **tanpa batas atas umur**.
+  Ini keputusan Reno: remaja dewasa tidak dibatasi umur, dan baru berganti
+  kategori saat menikah atau mencapai 60 (lansia).
 - Jamaah dengan status sekolah kosong, tidak menikah, dan di bawah 60 (atau
   umurnya tidak diketahui) tidak punya kategori, sehingga muncul di
   `jamaah_tanpa_kategori`.
@@ -364,8 +374,10 @@ $$;
 -- 1. Tipe enum (nilai bisa ditambah nanti dengan ALTER TYPE ... ADD VALUE)
 -- ---------------------------------------------------------------------
 create type public.jenis_kelamin as enum ('L', 'P');
--- Tanpa alasan perceraian/wafatnya pasangan; janda_duda saja.
 create type public.status_pernikahan as enum ('lajang', 'menikah', 'janda_duda');
+-- Keterangan janda/duda: hanya jenisnya (cerai hidup / cerai mati), tanpa
+-- alasan atau detail lain.
+create type public.jenis_janda_duda as enum ('cerai_hidup', 'cerai_mati');
 create type public.status_sekolah as enum
   ('belum_sekolah', 'paud_tk', 'sd', 'smp', 'sma_smk', 'kuliah', 'bekerja', 'lainnya');
 create type public.wilayah_peran as enum ('desa', 'kelompok', 'fleksibel');
@@ -436,6 +448,8 @@ create table public.jamaah (
   jenis_kelamin      public.jenis_kelamin not null,
   -- kosong = belum diisi
   status_pernikahan  public.status_pernikahan,
+  -- Hanya untuk janda_duda; boleh kosong bila belum diketahui.
+  jenis_janda_duda   public.jenis_janda_duda,
   status_sekolah     public.status_sekolah,
   -- Diisi trigger setiap status_sekolah berubah (untuk pengingat tahun ajaran).
   status_sekolah_diperbarui  date,
@@ -448,6 +462,9 @@ create table public.jamaah (
     tanggal_lahir is null
     or tahun_lahir is null
     or tahun_lahir = extract(year from tanggal_lahir)::int
+  ),
+  constraint jamaah_jenis_janda_duda_sesuai check (
+    jenis_janda_duda is null or status_pernikahan = 'janda_duda'
   ),
   constraint jamaah_keluarga_satu_kelompok
     foreign key (keluarga_id, kelompok_id)
@@ -1072,13 +1089,14 @@ meniru Supabase (semua tabel baru di `public` dapat GRANT ALL untuk `anon` dan
 `authenticated`), supaya terbukti migrasi mencabutnya sendiri.
 
 Data contoh: 12 jamaah di 4 kelompok, 6 di antaranya generus. Data ini
-mencakup jamaah tanpa tanggal lahir, jamaah dengan tahun lahir saja, janda,
+mencakup jamaah tanpa tanggal lahir, jamaah dengan tahun lahir saja, janda
+(cerai mati),
 lansia yang masih bekerja, dan satu jamaah tanpa kategori. Pengguna ujinya: 5
 admin (desa, kelompok 1, generus desa, generus kelompok 1, tanpa penugasan)
 dan 1 pengguna login non-admin sebagai calon akun generus. Skrip tes lengkap
 ada di Lampiran A.
 
-**Hasil: 64 dari 64 lulus.**
+**Hasil: 70 dari 70 lulus.**
 
 | # | Skenario | Hasil |
 | -: | -------- | :---: |
@@ -1087,75 +1105,82 @@ ada di Lampiran A.
 | 3 | Kode: update kode ditolak trigger | ✅ |
 | 4 | Tahun lahir: tahun beda dengan tanggal lahir ditolak (check) | ✅ |
 | 5 | Tahun lahir: tahun sama dengan tanggal lahir diterima | ✅ |
-| 6 | Kategori: `usia_max` < `usia_min` ditolak (check) | ✅ |
-| 7 | Penugasan: `admin_kelompok` tanpa `kelompok_id` ditolak | ✅ |
-| 8 | Penugasan: `admin_desa` dengan `kelompok_id` ditolak | ✅ |
-| 9 | Penugasan: `admin_generus` tanpa `kelompok_id` diterima | ✅ |
-| 10 | Penugasan: `admin_generus` dengan `kelompok_id` diterima | ✅ |
-| 11 | Policy: tidak ada policy FOR ALL | ✅ |
-| 12 | Policy: maksimal satu policy per tabel per perintah | ✅ |
-| 13 | RLS: aktif di semua tabel public | ✅ |
-| 14 | GRANT: anon tidak punya hak apa pun di tabel/view public | ✅ |
-| 15 | GRANT: authenticated hanya SELECT pada kedua view | ✅ |
-| 16 | Kategori: lajang SMP → `pra_remaja` | ✅ |
-| 17 | Kategori: SMP tanpa tanggal & tahun lahir tetap `pra_remaja` (umur tidak dipakai) | ✅ |
-| 18 | Kategori: lajang bekerja (25) → `remaja_dewasa` (generus) | ✅ |
-| 19 | Kategori: umur 65 bekerja → `lansia` (urutan 1 menang atas `remaja_dewasa` urutan 6) | ✅ |
-| 20 | Kategori: menikah + bekerja → `berkeluarga` (urutan 2 menang atas `remaja_dewasa` urutan 6) | ✅ |
-| 21 | Kategori: `janda_duda`, status sekolah kosong → `berkeluarga` | ✅ |
-| 22 | Kategori: SD → `caberawit` | ✅ |
-| 23 | Tahun lahir: dipakai bila `tanggal_lahir` kosong (usia 16 dari tahun lahir) | ✅ |
-| 24 | Tahun lahir: umur 70 dari tahun lahir saja → `lansia` | ✅ |
-| 25 | Tanpa kategori: sekolah kosong, lajang, umur 30 → tidak punya kategori | ✅ |
-| 26 | `jamaah_tanpa_kategori`: berisi tepat jamaah aktif yang tak cocok kategori mana pun | ✅ |
-| 27 | `status_sekolah_diperbarui`: diisi hari ini saat insert dengan status sekolah | ✅ |
-| 28 | `status_sekolah_diperbarui`: kosong saat insert tanpa status sekolah | ✅ |
-| 29 | `status_sekolah_diperbarui`: tidak berubah bila `status_sekolah` tidak berubah | ✅ |
-| 30 | `status_sekolah_diperbarui`: nilai manual dari klien diabaikan | ✅ |
-| 31 | Admin desa: melihat 12/12 jamaah dan 1 penanda keringanan | ✅ |
-| 32 | Admin desa: `jamaah_tanpa_kategori` berisi 1 baris | ✅ |
-| 33 | Admin kelompok 1: hanya melihat 7 jamaah Kelompok 1 | ✅ |
-| 34 | Admin kelompok 1: menambah jamaah ke Kelompok 2 ditolak | ✅ |
-| 35 | Admin kelompok 1: memindahkan jamaah ke Kelompok 2 ditolak | ✅ |
-| 36 | Admin kelompok 1: memberi dirinya peran `admin_desa` ditolak | ✅ |
-| 37 | Admin kelompok 1: tetap bisa membaca peran/izin (admin aktif) | ✅ |
-| 38 | Admin generus desa: melihat 6 jamaah generus di 4 kelompok | ✅ |
-| 39 | Admin generus desa: tidak melihat jamaah non-generus | ✅ |
-| 40 | Admin generus desa: jamaah tanpa kategori tidak terlihat (juga di `jamaah_tanpa_kategori`) | ✅ |
-| 41 | Admin generus desa: melihat penanda keringanan jamaah generus | ✅ |
-| 42 | Admin generus desa: tidak melihat keluarga (tanpa izin keluarga) | ✅ |
-| 43 | Admin generus: mengubah `status_sekolah` hingga keluar cakupan ditolak (WITH CHECK) | ✅ |
-| 44 | Admin generus: mengosongkan `status_sekolah` hingga keluar cakupan ditolak (WITH CHECK) | ✅ |
-| 45 | Admin generus: mengubah `status_pernikahan` menjadi menikah ditolak (WITH CHECK) | ✅ |
-| 46 | Admin generus: mengubah `status_sekolah` yang tetap generus (`sma_smk` → kuliah) diterima | ✅ |
-| 47 | Admin generus Kelompok 1: hanya melihat 3 generus Kelompok 1 | ✅ |
-| 48 | Admin generus Kelompok 1: tidak melihat generus kelompok lain | ✅ |
-| 49 | Admin generus desa + izin global `kelompok.kelola` tetap tidak bisa menambah kelompok | ✅ |
-| 50 | Status sekolah SMP → SMA/SMK: kategori `pra_remaja` → `remaja_muda` (umur tidak berubah) | ✅ |
-| 51 | `status_sekolah_diperbarui`: menjadi hari ini saat `status_sekolah` berubah | ✅ |
-| 52 | Lajang bekerja → menikah: kategori `remaja_dewasa` → `berkeluarga` | ✅ |
-| 53 | `updated_by` terisi otomatis dengan admin yang mengubah | ✅ |
-| 54 | ... dan jamaah itu hilang dari cakupan admin generus desa (6 → 5) | ✅ |
-| 55 | Login tanpa penugasan: tidak bisa membaca peran/izin/peran_izin | ✅ |
-| 56 | Login tanpa penugasan: bisa membaca 4 kelompok dan 6 kategori jamaah | ✅ |
-| 57 | Login tanpa penugasan: 0 jamaah, 0 keringanan, 0 baris `jamaah_tanpa_kategori` | ✅ |
-| 58 | Pengguna login non-admin: tidak bisa membaca peran/izin, 0 jamaah | ✅ |
-| 59 | Pengguna login non-admin: bisa membaca kelompok & kategori jamaah | ✅ |
-| 60 | Anon: membaca jamaah ditolak | ✅ |
-| 61 | Anon: membaca view `jamaah_dengan_kategori` ditolak | ✅ |
-| 62 | Anon: membaca view `jamaah_tanpa_kategori` ditolak | ✅ |
-| 63 | Anon: membaca kelompok ditolak | ✅ |
-| 64 | Anon: memanggil fungsi private ditolak | ✅ |
+| 6 | Janda/duda: jenis `cerai_mati` tersimpan untuk status `janda_duda` | ✅ |
+| 7 | Janda/duda: status `janda_duda` dengan jenis kosong (belum diketahui) diterima | ✅ |
+| 8 | Janda/duda: status `janda_duda` dengan jenis `cerai_hidup` diterima | ✅ |
+| 9 | Janda/duda: jenis diisi untuk status selain `janda_duda` ditolak (check) | ✅ |
+| 10 | Janda/duda: menikah lagi tanpa mengosongkan jenis ditolak (check) | ✅ |
+| 11 | Janda/duda: menikah lagi sambil mengosongkan jenis diterima | ✅ |
+| 12 | Kategori: `usia_max` < `usia_min` ditolak (check) | ✅ |
+| 13 | Penugasan: `admin_kelompok` tanpa `kelompok_id` ditolak | ✅ |
+| 14 | Penugasan: `admin_desa` dengan `kelompok_id` ditolak | ✅ |
+| 15 | Penugasan: `admin_generus` tanpa `kelompok_id` diterima | ✅ |
+| 16 | Penugasan: `admin_generus` dengan `kelompok_id` diterima | ✅ |
+| 17 | Policy: tidak ada policy FOR ALL | ✅ |
+| 18 | Policy: maksimal satu policy per tabel per perintah | ✅ |
+| 19 | RLS: aktif di semua tabel public | ✅ |
+| 20 | GRANT: anon tidak punya hak apa pun di tabel/view public | ✅ |
+| 21 | GRANT: authenticated hanya SELECT pada kedua view | ✅ |
+| 22 | Kategori: lajang SMP → `pra_remaja` | ✅ |
+| 23 | Kategori: SMP tanpa tanggal & tahun lahir tetap `pra_remaja` (umur tidak dipakai) | ✅ |
+| 24 | Kategori: lajang bekerja (25) → `remaja_dewasa` (generus) | ✅ |
+| 25 | Kategori: umur 65 bekerja → `lansia` (urutan 1 menang atas `remaja_dewasa` urutan 6) | ✅ |
+| 26 | Kategori: menikah + bekerja → `berkeluarga` (urutan 2 menang atas `remaja_dewasa` urutan 6) | ✅ |
+| 27 | Kategori: `janda_duda` (cerai mati), status sekolah kosong → `berkeluarga` | ✅ |
+| 28 | Kategori: SD → `caberawit` | ✅ |
+| 29 | Tahun lahir: dipakai bila `tanggal_lahir` kosong (usia 16 dari tahun lahir) | ✅ |
+| 30 | Tahun lahir: umur 70 dari tahun lahir saja → `lansia` | ✅ |
+| 31 | Tanpa kategori: sekolah kosong, lajang, umur 30 → tidak punya kategori | ✅ |
+| 32 | `jamaah_tanpa_kategori`: berisi tepat jamaah aktif yang tak cocok kategori mana pun | ✅ |
+| 33 | `status_sekolah_diperbarui`: diisi hari ini saat insert dengan status sekolah | ✅ |
+| 34 | `status_sekolah_diperbarui`: kosong saat insert tanpa status sekolah | ✅ |
+| 35 | `status_sekolah_diperbarui`: tidak berubah bila `status_sekolah` tidak berubah | ✅ |
+| 36 | `status_sekolah_diperbarui`: nilai manual dari klien diabaikan | ✅ |
+| 37 | Admin desa: melihat 12/12 jamaah dan 1 penanda keringanan | ✅ |
+| 38 | Admin desa: `jamaah_tanpa_kategori` berisi 1 baris | ✅ |
+| 39 | Admin kelompok 1: hanya melihat 7 jamaah Kelompok 1 | ✅ |
+| 40 | Admin kelompok 1: menambah jamaah ke Kelompok 2 ditolak | ✅ |
+| 41 | Admin kelompok 1: memindahkan jamaah ke Kelompok 2 ditolak | ✅ |
+| 42 | Admin kelompok 1: memberi dirinya peran `admin_desa` ditolak | ✅ |
+| 43 | Admin kelompok 1: tetap bisa membaca peran/izin (admin aktif) | ✅ |
+| 44 | Admin generus desa: melihat 6 jamaah generus di 4 kelompok | ✅ |
+| 45 | Admin generus desa: tidak melihat jamaah non-generus | ✅ |
+| 46 | Admin generus desa: jamaah tanpa kategori tidak terlihat (juga di `jamaah_tanpa_kategori`) | ✅ |
+| 47 | Admin generus desa: melihat penanda keringanan jamaah generus | ✅ |
+| 48 | Admin generus desa: tidak melihat keluarga (tanpa izin keluarga) | ✅ |
+| 49 | Admin generus: mengubah `status_sekolah` hingga keluar cakupan ditolak (WITH CHECK) | ✅ |
+| 50 | Admin generus: mengosongkan `status_sekolah` hingga keluar cakupan ditolak (WITH CHECK) | ✅ |
+| 51 | Admin generus: mengubah `status_pernikahan` menjadi menikah ditolak (WITH CHECK) | ✅ |
+| 52 | Admin generus: mengubah `status_sekolah` yang tetap generus (`sma_smk` → kuliah) diterima | ✅ |
+| 53 | Admin generus Kelompok 1: hanya melihat 3 generus Kelompok 1 | ✅ |
+| 54 | Admin generus Kelompok 1: tidak melihat generus kelompok lain | ✅ |
+| 55 | Admin generus desa + izin global `kelompok.kelola` tetap tidak bisa menambah kelompok | ✅ |
+| 56 | Status sekolah SMP → SMA/SMK: kategori `pra_remaja` → `remaja_muda` (umur tidak berubah) | ✅ |
+| 57 | `status_sekolah_diperbarui`: menjadi hari ini saat `status_sekolah` berubah | ✅ |
+| 58 | Lajang bekerja → menikah: kategori `remaja_dewasa` → `berkeluarga` | ✅ |
+| 59 | `updated_by` terisi otomatis dengan admin yang mengubah | ✅ |
+| 60 | ... dan jamaah itu hilang dari cakupan admin generus desa (6 → 5) | ✅ |
+| 61 | Login tanpa penugasan: tidak bisa membaca peran/izin/peran_izin | ✅ |
+| 62 | Login tanpa penugasan: bisa membaca 4 kelompok dan 6 kategori jamaah | ✅ |
+| 63 | Login tanpa penugasan: 0 jamaah, 0 keringanan, 0 baris `jamaah_tanpa_kategori` | ✅ |
+| 64 | Pengguna login non-admin: tidak bisa membaca peran/izin, 0 jamaah | ✅ |
+| 65 | Pengguna login non-admin: bisa membaca kelompok & kategori jamaah | ✅ |
+| 66 | Anon: membaca jamaah ditolak | ✅ |
+| 67 | Anon: membaca view `jamaah_dengan_kategori` ditolak | ✅ |
+| 68 | Anon: membaca view `jamaah_tanpa_kategori` ditolak | ✅ |
+| 69 | Anon: membaca kelompok ditolak | ✅ |
+| 70 | Anon: memanggil fungsi private ditolak | ✅ |
 
-**Uji mutasi.** Untuk memastikan tes ini memang bisa gagal, tiga aturan
+**Uji mutasi.** Untuk memastikan tes ini memang bisa gagal, empat aturan
 sengaja dirusak satu per satu di salinan terpisah (masing-masing perubahan
 satu baris):
 
 | Aturan yang dirusak | Tes yang berubah menjadi GAGAL |
 | ------------------- | ------------------------------ |
-| Syarat `hanya_generus` di `private.boleh` dihapus | 9 tes (#38–40, #43–45, #47, #49, #54) |
-| Status sekolah kosong dianggap cocok dengan kategori bersyarat sekolah | 3 tes (#25, #26, #32) |
-| `urutan` terbesar yang menang (bukan terkecil) | 7 tes (#19, #20, #38, #45, #47, #52, #54) |
+| Syarat `hanya_generus` di `private.boleh` dihapus | 9 tes (#44–46, #49–51, #53, #55, #60) |
+| Status sekolah kosong dianggap cocok dengan kategori bersyarat sekolah | 3 tes (#31, #32, #38) |
+| `urutan` terbesar yang menang (bukan terkecil) | 7 tes (#25, #26, #44, #51, #53, #58, #60) |
+| Check `jenis_janda_duda` hanya untuk `janda_duda` dihapus | 2 tes (#9, #10) |
 
 **SQL bootstrap (§6.2)** juga diuji: menghasilkan dua admin desa, dan admin
 pertama langsung lolos `private.boleh('akses.kelola', null)`.
@@ -1213,23 +1238,23 @@ menunggu persetujuan; belum ada file workflow yang ditambahkan.
 1. **Migrasi sebagai file di PR.** SQL final ditaruh di
    `supabase/migrations/` (dibuat dengan `supabase init` di PR migrasi
    nanti), dan skenario §6.1 dijadikan tes pgTAP di `supabase/tests/`.
-2. **CI menjalankan stack Supabase sungguhan** di runner GitHub: Postgres 17,
+1. **CI menjalankan stack Supabase sungguhan** di runner GitHub: Postgres 17,
    Auth, dan PostgREST yang sama dengan produksi. Langkahnya `supabase start`,
    lalu `supabase db reset` (menerapkan semua migrasi dari nol beserta seed),
    lalu `supabase test db` (pgTAP). PR migrasi tidak boleh di-merge kalau job
    ini merah. Job ini bisa ditambahkan ke ruleset `main` sebagai required
    check.
-3. **Staging project hanya opsional.** Slot paket Free kemungkinan sudah penuh
+2. **Staging project hanya opsional.** Slot paket Free kemungkinan sudah penuh
    (GENSITI). Kalau ada slot, project `kawanku-staging` berguna untuk menguji
    alur login sungguhan dari preview Vercel.
-4. **Cadangan sebelum produksi.** Paket Free tidak menyediakan PITR. Sebelum
+3. **Cadangan sebelum produksi.** Paket Free tidak menyediakan PITR. Sebelum
    migrasi produksi yang menyentuh data, ambil dump (`supabase db dump` untuk
    skema dan `--data-only` untuk data). Migrasi pertama berjalan di database
    kosong, jadi risikonya rendah.
-5. **Terapkan ke produksi** hanya setelah "OK, jalankan", dengan file yang
+4. **Terapkan ke produksi** hanya setelah "OK, jalankan", dengan file yang
    sama persis dengan yang lolos CI, lalu cek Supabase advisor (security &
    performance).
-6. **Migrasi selalu maju.** Perbaikan dibuat sebagai migrasi baru, bukan
+5. **Migrasi selalu maju.** Perbaikan dibuat sebagai migrasi baru, bukan
    dengan mengedit migrasi yang sudah diterapkan.
 
 Draf workflow (**hanya teks**, belum ditambahkan ke `.github/`):
@@ -1270,34 +1295,37 @@ lokal pada runner, bukan di project Supabase produksi.
 
 ## 8. Pertanyaan terbuka untuk Reno/pengurus
 
-Sudah diputuskan: janda/duda dicatat sebagai nilai `janda_duda` (§4.3).
+Sudah diputuskan oleh Reno:
+- Janda/duda dicatat sebagai nilai `janda_duda`, dengan keterangan
+  `jenis_janda_duda` (`cerai_hidup` / `cerai_mati`) (§4.3).
+- Remaja dewasa **tidak** diberi batas atas umur (§4.4).
 
-1. **Batas atas umur remaja dewasa.** Saat ini `remaja_dewasa` tidak punya
-   batas atas umur. Lajang usia 45 yang bekerja tetap generus sampai 60
-   (lalu `lansia`). Perlu batas, misalnya 35? Bisa ditambah lewat data
-   (`usia_max`) tanpa migrasi.
-2. **Angka dan aturan kategori lain.** Seed §4.4 masih DRAF. Contohnya:
+Masih terbuka:
+
+1. **Angka dan aturan kategori lain.** Seed §4.4 masih DRAF. Contohnya:
    apakah lansia dimulai di 60, dan apakah `lainnya` masuk remaja dewasa.
-3. **Pembaruan status sekolah tiap tahun ajaran (sekitar Juli).** Siapa yang
+2. **Pembaruan status sekolah tiap tahun ajaran (sekitar Juli).** Siapa yang
    bertanggung jawab memperbaruinya per kelompok? Apakah perlu kolom `kelas`
    untuk menaikkan jenjang otomatis (ditunda sampai alat kenaikan jenjang
    dibuat, §4.3)?
-4. **Pencatatan pernikahan generus.** Dengan aturan sekarang, admin generus
+3. **Pencatatan pernikahan generus.** Dengan aturan sekarang, admin generus
    tidak bisa mengubah status jamaahnya menjadi `menikah`, karena jamaah itu
    akan keluar dari cakupannya. Apakah memang cukup dicatat oleh admin
    kelompok atau admin desa?
-5. **Pengurus generus per kelompok.** Apakah setiap kelompok punya pengurus
+4. **Pengurus generus per kelompok.** Apakah setiap kelompok punya pengurus
    generus sendiri, atau hanya sebagian? Skema sudah mendukung keduanya.
-6. **Detail hak akses.** Konfirmasi atau ubah tabel §5. Contohnya: apakah
+5. **Detail hak akses.** Konfirmasi atau ubah tabel §5. Contohnya: apakah
    admin generus boleh menambah jamaah, apakah admin kelompok boleh hapus
-   permanen, dan apakah admin generus perlu melihat data keluarga.
-7. **Hubungan keluarga.** Opsi A cukup, atau perlu silsilah (Opsi B, §4.7)?
-8. **Nama resmi kelompok 1–4.**
-9. **Data awal jamaah.** Sumber dan format. Apakah status sekolah dan status
+   permanen, apakah admin generus perlu melihat data keluarga, dan siapa saja
+   yang boleh melihat keterangan cerai hidup/mati (saat ini: siapa pun yang
+   boleh melihat baris jamaah tersebut).
+6. **Hubungan keluarga.** Opsi A cukup, atau perlu silsilah (Opsi B, §4.7)?
+7. **Nama resmi kelompok 1–4.**
+8. **Data awal jamaah.** Sumber dan format. Apakah status sekolah dan status
    pernikahan tersedia? Jamaah yang kosong akan muncul di
    `jamaah_tanpa_kategori` untuk dilengkapi.
-10. **Data sensitif** (NIK, alamat, no. HP, foto): tetap tidak ada di skema
-    sampai ada aturannya.
+9. **Data sensitif** (NIK, alamat, no. HP, foto): tetap tidak ada di skema
+   sampai ada aturannya.
 
 ## 9. Catatan Fase 2 (tanpa SQL)
 
@@ -1465,6 +1493,8 @@ join (values
   (4, 'K4 Kuliah',              (current_date - interval '22 years')::date, null, 'L', 'lajang',  'kuliah')
 ) as v(nomor, nama, tgl, thn, jk, nikah, sekolah) on v.nomor = k.nomor;
 
+update public.jamaah set jenis_janda_duda = 'cerai_mati' where nama_lengkap = 'K2 Janda 50';
+
 insert into public.jamaah_keringanan (jamaah_id)
   select id from public.jamaah where nama_lengkap = 'K1 SMP';
 
@@ -1483,6 +1513,22 @@ select uji.harus_gagal('Tahun lahir: tahun beda dengan tanggal lahir ditolak (ch
 select uji.harus_berhasil('Tahun lahir: tahun sama dengan tanggal lahir diterima',
   $q$ insert into public.jamaah (kelompok_id, nama_lengkap, tanggal_lahir, tahun_lahir, jenis_kelamin)
       select id, 'Tes', '2010-05-01', 2010, 'L' from public.kelompok where nomor = 1 $q$);
+select uji.cek('Janda/duda: jenis cerai_mati tersimpan untuk status janda_duda',
+  (select jenis_janda_duda = 'cerai_mati' from public.jamaah where nama_lengkap = 'K2 Janda 50'));
+select uji.harus_berhasil('Janda/duda: status janda_duda dengan jenis kosong (belum diketahui) diterima',
+  $q$ insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin, status_pernikahan)
+      select id, 'Tes', 'P', 'janda_duda' from public.kelompok where nomor = 2 $q$);
+select uji.harus_berhasil('Janda/duda: status janda_duda dengan jenis cerai_hidup diterima',
+  $q$ insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin, status_pernikahan, jenis_janda_duda)
+      select id, 'Tes', 'L', 'janda_duda', 'cerai_hidup' from public.kelompok where nomor = 2 $q$);
+select uji.harus_gagal('Janda/duda: jenis diisi untuk status selain janda_duda ditolak (check)',
+  $q$ insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin, status_pernikahan, jenis_janda_duda)
+      select id, 'Tes', 'L', 'lajang', 'cerai_hidup' from public.kelompok where nomor = 2 $q$, 'jamaah_jenis_janda_duda_sesuai');
+select uji.harus_gagal('Janda/duda: menikah lagi tanpa mengosongkan jenis ditolak (check)',
+  $q$ update public.jamaah set status_pernikahan = 'menikah' where nama_lengkap = 'K2 Janda 50' $q$, 'jamaah_jenis_janda_duda_sesuai');
+select uji.harus_berhasil('Janda/duda: menikah lagi sambil mengosongkan jenis diterima',
+  $q$ update public.jamaah set status_pernikahan = 'menikah', jenis_janda_duda = null
+      where nama_lengkap = 'K2 Janda 50' $q$);
 select uji.harus_gagal('Kategori: usia_max < usia_min ditolak (check)',
   $q$ insert into public.kategori_jamaah (kode, nama, usia_min, usia_max, urutan)
       values ('x', 'X', 30, 20, 99) $q$, 'kategori_jamaah_rentang_usia');
@@ -1529,7 +1575,7 @@ select uji.cek('Kategori: umur 65 bekerja → lansia (urutan 1 menang atas remaj
   uji.kategori('K1 Lansia 65 Bekerja') = 'lansia');
 select uji.cek('Kategori: menikah + bekerja → berkeluarga (urutan 2 menang atas remaja_dewasa urutan 6)',
   uji.kategori('K1 Menikah Bekerja 40') = 'berkeluarga');
-select uji.cek('Kategori: janda_duda, status sekolah kosong → berkeluarga',
+select uji.cek('Kategori: janda_duda (cerai mati), status sekolah kosong → berkeluarga',
   uji.kategori('K2 Janda 50') = 'berkeluarga');
 select uji.cek('Kategori: SD → caberawit',
   uji.kategori('K1 SD') = 'caberawit');

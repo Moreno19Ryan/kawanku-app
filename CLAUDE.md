@@ -31,8 +31,8 @@ cakupannya satu desa.
 - **UI**: gaya One UI (halus, interaktif, intuitif). Laptop sebagai tampilan
   utama, tapi tetap nyaman di HP. PWA.
 - **Tidak ada NIK atau data sensitif lain** sampai pengurus memutuskan aturannya.
-  Status pernikahan hanya `lajang`/`menikah`/`janda_duda`, tanpa alasan
-  perceraian atau wafatnya pasangan.
+  Status pernikahan hanya `lajang`/`menikah`/`janda_duda`; untuk janda/duda
+  hanya keterangan `cerai_hidup`/`cerai_mati`, tanpa alasan atau detail lain.
 
 ### Fase
 
@@ -146,8 +146,8 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 4. **Kategori jamaah**: aturan dan angka seed (DRAF di
    `docs/schema-proposal.md` §4.4). Kategori dihitung otomatis dari aturan
    data (status sekolah, status pernikahan, dan usia untuk lansia); bisa diubah
-   lewat data tanpa migrasi. Termasuk: apakah remaja dewasa diberi batas atas
-   umur (saat ini tidak ada).
+   lewat data tanpa migrasi. Sudah diputuskan: remaja dewasa tanpa batas atas
+   umur.
 5. **Pembaruan status sekolah tahunan**: status sekolah diperbarui manual
    tiap tahun ajaran baru (sekitar Juli); siapa penanggung jawabnya, dan
    apakah nanti perlu kolom `kelas` untuk kenaikan jenjang otomatis.
