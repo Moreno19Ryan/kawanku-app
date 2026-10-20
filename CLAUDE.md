@@ -6,7 +6,7 @@ Panduan untuk siapa pun (manusia atau AI) yang bekerja di repo ini. Baca juga
 ## Ringkasan produk
 
 KawanKu adalah aplikasi web manajemen **Desa Kartika Wanasari (LDII)**: database
-warga, absensi mandiri, dan monitoring kegiatan. Konsepnya mirip GENSITI, tapi
+jamaah, absensi mandiri, dan monitoring kegiatan. Konsepnya mirip GENSITI, tapi
 cakupannya satu desa.
 
 - Desa terdiri dari 4 kelompok, ±500 jiwa semua usia. Trial pertama di
@@ -15,7 +15,7 @@ cakupannya satu desa.
   generus (semua generus SMP sampai pra-nikah). Peran dan hak akses disimpan
   sebagai **data** di database, bukan di-hardcode.
 - **Dua jenis entitas**:
-  - Profil warga: semua orang, tanpa akun.
+  - Profil jamaah: semua orang, tanpa akun.
   - Akun login: hanya generus (username + PIN yang dibuat admin). Admin login
     terpisah.
 - **Absensi (Fase 2)**: hanya online, tidak ada absen offline.
@@ -34,7 +34,7 @@ cakupannya satu desa.
 | Fase | Isi | Status |
 | ---- | --- | ------ |
 | 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, dokumen | Berjalan |
-| 1 | Database warga: kelompok, keluarga, warga, peran sebagai data, RLS | Usulan skema di `docs/schema-proposal.md` |
+| 1 | Database jamaah: kelompok, keluarga, jamaah, peran sebagai data, RLS | Usulan skema di `docs/schema-proposal.md` |
 | 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | Belum |
 | 3 | Monitoring kegiatan | Belum |
 
@@ -96,7 +96,7 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 
 **Bahasa**
 - UI, teks, dan dokumen dalam Bahasa Indonesia.
-- Istilah domain memakai Bahasa Indonesia di kode dan database (`warga`,
+- Istilah domain memakai Bahasa Indonesia di kode dan database (`jamaah`,
   `kelompok`, `keluarga`, `kegiatan`, `absensi`), supaya sama dengan bahasa
   pengurus. Istilah teknis tetap Inggris (`created_at`, `id`, `role`).
 
@@ -105,7 +105,7 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 - Komponen React: `PascalCase` (`BottomNav`), named export kecuali file
   konvensi Next.js (`page.tsx`, `layout.tsx`) yang wajib default export.
 - Fungsi & variabel: `camelCase`. Konstanta modul: `UPPER_SNAKE_CASE`.
-- Rute URL: Bahasa Indonesia, huruf kecil (`/warga`, `/kegiatan`, `/absensi`).
+- Rute URL: Bahasa Indonesia, huruf kecil (`/jamaah`, `/kegiatan`, `/absensi`).
 - Import memakai alias `@/` (mis. `@/lib/supabase/server`).
 - Warna, radius, dan spacing memakai token (`bg-surface`, `rounded-card`,
   `px-gutter`), bukan nilai hex/px langsung. `brand` = biru logo; `primary` =
@@ -119,7 +119,7 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
   ubah warnanya di luar varian yang ada.
 
 **Database**
-- Tabel & kolom: `snake_case`, nama tabel tunggal (`warga`, `kelompok`).
+- Tabel & kolom: `snake_case`, nama tabel tunggal (`jamaah`, `kelompok`).
 - Primary key `id uuid default gen_random_uuid()`.
 - Foreign key `<tabel>_id` (mis. `kelompok_id`).
 - Setiap tabel punya `created_at` dan `updated_at` (`timestamptz`).
@@ -132,7 +132,7 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 
 ## Keputusan yang masih menunggu pengurus
 
-1. **Data awal warga**: sumber, format, dan siapa yang mengimpor.
+1. **Data awal jamaah**: sumber, format, dan siapa yang mengimpor.
 2. **Data sensitif**: apakah NIK/alamat/no. HP disimpan, siapa yang boleh
    melihat, dan berapa lama disimpan. Sampai diputuskan, **jangan buat kolom
    data sensitif apa pun**.

@@ -10,7 +10,7 @@ type KopDokumenProps = {
 
 /**
  * Header (kop) untuk setiap dokumen di aplikasi: laporan, rekap absensi,
- * daftar warga, dan dokumen lain yang dicetak/diekspor. Logo desa horizontal
+ * daftar jamaah, dan dokumen lain yang dicetak/diekspor. Logo desa horizontal
  * di kiri atas (tinggi 40–48 px). Dirancang untuk latar kertas putih.
  */
 export function KopDokumen({ judul, keterangan, hitamPutih }: KopDokumenProps) {

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const PLACEHOLDER_STATS = [
-  { label: "Warga terdata", hint: "Fase 1" },
+  { label: "Jamaah terdata", hint: "Fase 1" },
   { label: "Kelompok", hint: "Fase 1" },
   { label: "Kehadiran minggu ini", hint: "Fase 2" },
   { label: "Kegiatan aktif", hint: "Fase 3" },
@@ -37,7 +37,7 @@ export default function DashboardPage() {
       <Card className="mt-4 sm:mt-6">
         <h2 className="text-lg font-semibold">Fondasi siap</h2>
         <p className="mt-1 text-sm text-muted">
-          Ini kerangka Fase 0. Data warga, absensi, dan kegiatan belum
+          Ini kerangka Fase 0. Data jamaah, absensi, dan kegiatan belum
           tersambung.
         </p>
       </Card>

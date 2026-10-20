@@ -21,7 +21,7 @@ export type NavItem = {
  */
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Beranda", icon: LayoutGrid },
-  { href: "/warga", label: "Warga", icon: Users, soon: true },
+  { href: "/jamaah", label: "Jamaah", icon: Users, soon: true },
   { href: "/kegiatan", label: "Kegiatan", icon: CalendarCheck, soon: true },
   { href: "/absensi", label: "Absensi", icon: QrCode, soon: true },
   { href: "/pengaturan", label: "Pengaturan", icon: Settings, soon: true },

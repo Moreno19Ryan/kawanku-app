@@ -1,6 +1,6 @@
 # KawanKu
 
-Aplikasi web manajemen Desa Kartika Wanasari: database warga, absensi mandiri,
+Aplikasi web manajemen Desa Kartika Wanasari: database jamaah, absensi mandiri,
 dan monitoring kegiatan. Panduan lengkap untuk kontributor ada di
 [`CLAUDE.md`](./CLAUDE.md).
 
