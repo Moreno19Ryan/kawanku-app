@@ -11,9 +11,12 @@ cakupannya satu desa.
 
 - Desa terdiri dari 4 kelompok, ±500 jiwa semua usia. Trial pertama di
   Kelompok 1 (±100 orang).
+- **Istilah baku: Jamaah** (bukan "warga") di UI, kode, dan database.
 - **Peran**: admin desa (seluruh desa), admin kelompok (kelompoknya saja), admin
-  generus (semua generus SMP sampai pra-nikah). Peran dan hak akses disimpan
-  sebagai **data** di database, bukan di-hardcode.
+  generus (jamaah generus, di tingkat desa atau tingkat kelompok). Peran dan
+  hak akses disimpan sebagai **data** di database, bukan di-hardcode: wilayah
+  (`penugasan_peran.kelompok_id`, kosong = seluruh desa) dan sasaran
+  (`peran.hanya_generus`) adalah dua sumbu terpisah.
 - **Dua jenis entitas**:
   - Profil jamaah: semua orang, tanpa akun.
   - Akun login: hanya generus (username + PIN yang dibuat admin). Admin login
@@ -33,8 +36,8 @@ cakupannya satu desa.
 
 | Fase | Isi | Status |
 | ---- | --- | ------ |
-| 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, dokumen | Berjalan |
-| 1 | Database jamaah: kelompok, keluarga, jamaah, peran sebagai data, RLS | Usulan skema di `docs/schema-proposal.md` |
+| 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, logo, dokumen | Selesai |
+| 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan, kategori usia, kode jamaah, peran sebagai data, RLS | Usulan skema v2 di `docs/schema-proposal.md` (menunggu review, belum ada migrasi) |
 | 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | Belum |
 | 3 | Monitoring kegiatan | Belum |
 
@@ -138,6 +141,10 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
    data sensitif apa pun**.
 3. **Detail hak akses**: apa saja yang boleh dilihat/diubah tiap peran (admin
    desa, admin kelompok, admin generus).
-4. **Kategori usia**: batas umur tiap kategori (mis. caberawit, pra-remaja,
-   remaja, pra-nikah, dewasa, lansia) dan apakah dihitung otomatis dari tanggal
-   lahir.
+4. **Kategori usia**: angka batas umur dan syarat status (seed DRAF di
+   `docs/schema-proposal.md` §4.3). Kategori dihitung otomatis dari usia +
+   status pernikahan; angkanya bisa diubah lewat data tanpa migrasi.
+5. **Janda/duda**: perlu nilai status pernikahan tersendiri atau tidak, dan
+   masuk kategori usia apa.
+6. **Pengurus generus per kelompok**: apakah setiap kelompok punya admin
+   generus sendiri, atau hanya tingkat desa (skema mendukung keduanya).
