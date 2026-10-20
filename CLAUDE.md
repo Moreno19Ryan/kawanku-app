@@ -73,6 +73,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   halamannya `wajibIzin(...)`. Izin dibaca dari data (`peran_izin`); yang
   dihitung hanya izin global (penugasan tanpa kelompok, peran bukan
   `hanya_generus`), sama dengan `private.boleh(izin, null)`.
+- Akun admin baru & atur ulang kata sandi dibuat dari Pengaturan → Admin
+  lewat `createAdminClient()` (env server `SUPABASE_SECRET_KEY`). Secret key
+  hanya untuk Supabase Auth Admin API dan hanya setelah izin `akses.kelola`
+  dicek; profil `admin` & `penugasan_peran` tetap ditulis dengan sesi
+  pengguna (RLS). Kata sandi sementara ditampilkan sekali, tidak disimpan.
 - Pengaman "jangan sampai tidak ada admin pengelola akses" (tidak bisa
   menonaktifkan diri sendiri / mencabut peran pengelola terakhir) saat ini
   dicek di Server Action, belum di database.
@@ -114,6 +119,7 @@ src/
       client.ts         # client untuk browser (Client Components)
       server.ts         # client untuk server (Server Components/Actions)
       proxy.ts          # refresh sesi + proteksi rute, dipanggil dari src/proxy.ts
+      admin.ts          # client secret key (melewati RLS) KHUSUS Auth Admin API, server-only
       env.ts            # baca NEXT_PUBLIC_SUPABASE_*
   proxy.ts              # Next.js proxy (dulu middleware)
 public/

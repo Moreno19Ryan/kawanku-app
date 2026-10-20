@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
-import { FormTambahPenugasan, type OpsiPeran } from "@/components/pengaturan/form-tambah-penugasan";
+import { FormBuatAdmin } from "@/components/pengaturan/form-buat-admin";
+import { FormTambahPenugasan } from "@/components/pengaturan/form-tambah-penugasan";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
+import type { OpsiPeran } from "@/components/pengaturan/pilih-peran-wilayah";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
+import { TombolAturUlangSandi } from "@/components/pengaturan/tombol-atur-ulang-sandi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
-import { hapusPenugasan, tambahPenugasan, ubahStatusAdmin } from "@/lib/pengaturan/actions";
+import {
+  aturUlangKataSandi,
+  hapusPenugasan,
+  tambahPenugasan,
+  ubahStatusAdmin,
+} from "@/lib/pengaturan/actions";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -32,7 +41,7 @@ export default function AdminPage() {
       <KembaliKePengaturan />
       <PageHeader
         title="Admin & akses"
-        description="Aktifkan atau nonaktifkan admin, dan atur peran serta wilayahnya."
+        description="Buat akun admin, aktifkan atau nonaktifkan, dan atur peran serta wilayahnya."
       />
       <Suspense fallback={<Skeleton className="h-96" />}>
         <DaftarAdmin />
@@ -60,12 +69,31 @@ async function DaftarAdmin() {
     return <Card className="text-sm text-danger">Gagal memuat daftar admin. Muat ulang halaman.</Card>;
   }
 
+  // Secret key hanya dipakai di sini SETELAH wajibIzin("akses.kelola") di atas.
+  const adminAuth = createAdminClient();
+  const email = new Map<string, string>();
+  if (adminAuth) {
+    const { data } = await adminAuth.auth.admin.listUsers({ perPage: 1000 });
+    data?.users.forEach((u) => u.email && email.set(u.id, u.email));
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <Card className="bg-primary-soft text-sm text-primary shadow-none">
-        Akun admin baru untuk sementara dibuat lewat Supabase (Authentication → Users), lalu
-        dihubungkan dengan SQL. Setelah itu, aktif/nonaktif dan perannya diatur di sini.
-      </Card>
+      {adminAuth ? (
+        <Card>
+          <h2 className="text-lg font-semibold">Tambah admin</h2>
+          <p className="mt-1 mb-5 text-sm text-muted">
+            Aplikasi membuat kata sandi sementara. Sampaikan ke pemiliknya, lalu ia menggantinya
+            sendiri setelah login.
+          </p>
+          <FormBuatAdmin peran={peran} kelompok={kelompok} />
+        </Card>
+      ) : (
+        <Card className="bg-primary-soft text-sm text-primary shadow-none">
+          Pembuatan akun dari aplikasi belum aktif (SUPABASE_SECRET_KEY belum dipasang di
+          server). Sementara, akun baru dibuat lewat Supabase lalu dihubungkan dengan SQL.
+        </Card>
+      )}
 
       <ul className="flex flex-col gap-3">
         {admin.map((a) => {
@@ -78,13 +106,16 @@ async function DaftarAdmin() {
                     {a.nama.trim().charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-2 font-semibold">
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold">
                       {a.nama}
                       {diriSendiri && <span className="text-sm font-normal text-muted">(kamu)</span>}
                       <Badge nada={a.aktif ? "sukses" : "bahaya"}>
                         {a.aktif ? "Aktif" : "Nonaktif"}
                       </Badge>
                     </p>
+                    {email.has(a.user_id) && (
+                      <p className="mt-0.5 truncate text-sm text-muted">{email.get(a.user_id)}</p>
+                    )}
                   </div>
                   {!diriSendiri && (
                     <TombolAksi
@@ -137,6 +168,15 @@ async function DaftarAdmin() {
                     />
                   </div>
                 </div>
+
+                {adminAuth && !diriSendiri && (
+                  <div className="mt-4 border-t border-border pt-4">
+                    <TombolAturUlangSandi
+                      aksi={aturUlangKataSandi.bind(null, a.user_id)}
+                      nama={a.nama}
+                    />
+                  </div>
+                )}
               </Card>
             </li>
           );

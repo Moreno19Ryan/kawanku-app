@@ -28,10 +28,12 @@ Perintah lain:
 | ---- | ---------- |
 | `NEXT_PUBLIC_SUPABASE_URL` | URL project Supabase (Project Settings → API) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon/publishable key (Project Settings → API) |
+| `SUPABASE_SECRET_KEY` | **Secret** key `sb_secret_...` (Project Settings → API Keys). Khusus server, untuk membuat akun admin dan mengatur ulang kata sandi dari aplikasi. Opsional: tanpa ini fitur tersebut nonaktif. |
 
-Hanya variabel `NEXT_PUBLIC_*` yang dipakai aplikasi saat ini. **Jangan pernah**
-mengomit `.env.local`, service role key, atau token apa pun. Di Vercel, isi
-variabel ini lewat Project Settings → Environment Variables.
+**Jangan pernah** mengomit `.env.local`, secret/service role key, atau token
+apa pun. Di Vercel, isi variabel lewat Project Settings → Environment
+Variables; `SUPABASE_SECRET_KEY` ditandai **Sensitive** dan tidak boleh
+diberi awalan `NEXT_PUBLIC_`.
 
 Tanpa env var, `npm run build` tetap lolos, tapi login dan area admin tidak
 bisa dipakai.
