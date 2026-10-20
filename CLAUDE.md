@@ -42,7 +42,7 @@ cakupannya satu desa.
 | Fase | Isi | Status |
 | ---- | --- | ------ |
 | 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, logo, dokumen | Selesai |
-| 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Skema v2 disetujui; migrasi `supabase/migrations/20261020170513_*` diterapkan ke produksi + tes pgTAP |
+| 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Skema v2 disetujui; migrasi `supabase/migrations/20261020170513_*` diterapkan ke produksi + tes pgTAP. Login admin (email + kata sandi) aktif |
 | 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | Belum |
 | 3 | Monitoring kegiatan | Belum |
 
@@ -57,6 +57,22 @@ cakupannya satu desa.
 Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 `proxy.ts`. Dokumentasi versi yang terpasang ada di `node_modules/next/dist/docs/`.
 
+### Alur login admin
+
+- Akun dibuat admin (tidak ada daftar mandiri): user Supabase Auth + baris
+  `public.admin` + minimal satu `penugasan_peran`. Admin pertama lewat SQL
+  bootstrap di `docs/schema-proposal.md` §6.2.
+- `src/proxy.ts` hanya mengecek ada/tidaknya sesi: tanpa sesi → `/login?next=...`;
+  sudah login membuka `/login` → `/dashboard`.
+- "Admin aktif" dicek di `wajibAdmin()` (dipanggil `AkunAdmin` di layout area
+  admin, di dalam `<Suspense>`). Bukan admin aktif → `/keluar` → `/login`.
+- Halaman/komponen yang mengambil data memanggil `getAdminSaatIni()` /
+  `wajibAdmin()` sendiri (jangan mengandalkan layout). Batas akses data yang
+  sebenarnya tetap RLS.
+- Dengan `cacheComponents`, apa pun yang membaca sesi (`createClient()` dari
+  `@/lib/supabase/server`) harus di dalam `<Suspense>`; jangan `await` sesi di
+  level atas layout.
+
 ## Struktur folder
 
 ```
@@ -66,21 +82,27 @@ src/
       layout.tsx
       dashboard/page.tsx
     (auth)/             # halaman tanpa navigasi (login)
-      login/page.tsx    # login admin (kerangka)
+      login/page.tsx    # login admin (email + kata sandi)
+      keluar/route.ts   # hapus sesi non-admin lalu ke /login (bukan untuk <Link>)
     layout.tsx          # root layout, metadata, viewport
     globals.css         # design token
     favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
+    auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
     brand/              # LogoDesa (logo Desa Kartika Wanasari)
     dokumen/            # KopDokumen: header wajib setiap dokumen cetak/ekspor
     kartu/              # KartuQr: kartu absensi jalur 1 (ukuran KTP)
     layout/             # sidebar, bottom nav, header, footer, BrandMark
     ui/                 # komponen dasar (Card, ...)
   lib/
+    auth/
+      admin.ts          # DAL: getAdminSaatIni / wajibAdmin (server-only)
+      actions.ts        # Server Action masuk & keluar
+      tujuan.ts         # validasi ?next= (cegah open redirect)
     supabase/
       client.ts         # client untuk browser (Client Components)
       server.ts         # client untuk server (Server Components/Actions)
-      proxy.ts          # refresh sesi, dipanggil dari src/proxy.ts
+      proxy.ts          # refresh sesi + proteksi rute, dipanggil dari src/proxy.ts
       env.ts            # baca NEXT_PUBLIC_SUPABASE_*
   proxy.ts              # Next.js proxy (dulu middleware)
 public/

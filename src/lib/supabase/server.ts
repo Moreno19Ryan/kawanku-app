@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { requireSupabaseEnv } from "./env";
 
@@ -11,8 +12,11 @@ import { requireSupabaseEnv } from "./env";
  * jadi harus berada di dalam <Suspense>.
  */
 export async function createClient() {
-  const { url, anonKey } = requireSupabaseEnv();
+  // Selalu saat request, tidak pernah saat prerender: build mungkin tanpa env
+  // Supabase, dan supabase-js memakai Date.now() untuk cek kedaluwarsa sesi.
+  await connection();
   const cookieStore = await cookies();
+  const { url, anonKey } = requireSupabaseEnv();
 
   return createServerClient(url, anonKey, {
     cookies: {

@@ -33,8 +33,16 @@ Hanya variabel `NEXT_PUBLIC_*` yang dipakai aplikasi saat ini. **Jangan pernah**
 mengomit `.env.local`, service role key, atau token apa pun. Di Vercel, isi
 variabel ini lewat Project Settings → Environment Variables.
 
-Tanpa env var, aplikasi tetap bisa dibuka (kerangka UI), tapi fitur Supabase
-belum aktif.
+Tanpa env var, `npm run build` tetap lolos, tapi login dan area admin tidak
+bisa dipakai.
+
+## Login admin
+
+Admin masuk di `/login` dengan email + kata sandi (Supabase Auth). Tidak ada
+pendaftaran mandiri: matikan **Allow new users to sign up** di Supabase, lalu
+buat akun admin desa pertama dengan SQL bootstrap di
+`docs/schema-proposal.md` §6.2. Akun yang login tapi bukan admin aktif
+langsung dikeluarkan lagi.
 
 ## Alur kerja (pull request)
 
