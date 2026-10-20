@@ -11,7 +11,7 @@ export function Sidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-sidebar flex-col gap-6 px-4 py-6 lg:flex">
-      <div className="px-3">
+      <div>
         <BrandMark />
       </div>
 

@@ -1,21 +1,38 @@
 import Image from "next/image";
 
-/** Logo + nama aplikasi. Logo masih placeholder sampai logo desa tersedia. */
-export function BrandMark() {
+type BrandMarkProps = {
+  /** Tinggi logo dalam px; lebar mengikuti rasio file (458.4 × 68). */
+  height?: number;
+};
+
+const LOGO_RATIO = 458.4 / 68;
+
+/**
+ * Logo horizontal KawanKu. Varian terang/gelap dipilih otomatis mengikuti
+ * tema sistem. Jangan ubah warna atau memutar logo (lihat public/brand).
+ */
+export function BrandMark({ height = 28 }: BrandMarkProps) {
+  const width = Math.round(height * LOGO_RATIO);
+
   return (
-    <div className="flex items-center gap-3">
+    // Jarak bebas ≥ ½ tinggi huruf K di sekeliling logo.
+    <span className="inline-flex p-[0.5em]" style={{ fontSize: height }}>
       <Image
-        src="/icons/icon.svg"
-        alt=""
-        width={36}
-        height={36}
-        className="rounded-[0.6rem]"
+        src="/brand/logo-horizontal.svg"
+        alt="KawanKu"
+        width={width}
+        height={height}
+        className="dark:hidden"
         priority
       />
-      <div className="leading-tight">
-        <p className="text-base font-semibold">KawanKu</p>
-        <p className="text-xs text-muted">Desa Kartika Wanasari</p>
-      </div>
-    </div>
+      <Image
+        src="/brand/logo-horizontal-dark.svg"
+        alt="KawanKu"
+        width={width}
+        height={height}
+        className="hidden dark:block"
+        priority
+      />
+    </span>
   );
 }
