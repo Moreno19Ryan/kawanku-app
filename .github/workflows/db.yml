@@ -1,0 +1,28 @@
+# Migrasi & tes RLS di stack Supabase lokal (lihat docs/schema-proposal.md §7).
+name: Migrasi DB
+
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+
+permissions:
+  contents: read
+
+jobs:
+  db-test:
+    name: Migrasi & Tes RLS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      # Stack lokal: Postgres 17 + Auth + PostgREST (Docker tersedia di runner).
+      - run: supabase start
+      # Terapkan semua migrasi dari nol + seed.
+      - run: supabase db reset
+      # Jalankan tes pgTAP di supabase/tests/*.sql.
+      - run: supabase test db
+      - if: always()
+        run: supabase stop --no-backup
