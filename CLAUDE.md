@@ -32,7 +32,10 @@ cakupannya satu desa.
   utama, tapi tetap nyaman di HP. PWA.
 - **Tidak ada NIK atau data sensitif lain** sampai pengurus memutuskan aturannya.
   Status pernikahan hanya `lajang`/`menikah`/`janda_duda`; untuk janda/duda
-  hanya keterangan `cerai_hidup`/`cerai_mati`, tanpa alasan atau detail lain.
+  hanya keterangan `cerai_hidup`/`cerai_mati` di tabel terbatas
+  (`jamaah_janda_duda`, default hanya admin desa), tanpa alasan atau detail
+  lain. Data yang lebih sensitif dari profil biasa disimpan di tabel terpisah
+  dengan izin sendiri, bukan sebagai kolom di `jamaah`.
 
 ### Fase
 
