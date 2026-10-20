@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LogoDesa } from "@/components/brand/logo-desa";
+import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { Card } from "@/components/ui/card";
 
@@ -13,12 +13,10 @@ export const metadata: Metadata = {
  */
 export default function AdminLoginPage() {
   return (
-    <div className="flex min-h-dvh items-center justify-center px-gutter py-10">
-      <div className="w-full max-w-sm">
-        {/* Logo desa di atas formulir; logo KawanKu sebagai identitas aplikasi. */}
-        <div className="mb-6 flex flex-col items-center gap-2">
-          <LogoDesa height={80} />
-          <BrandMark height={28} />
+    <div className="flex min-h-dvh flex-col px-gutter py-10">
+      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
+        <div className="mb-6 flex justify-center">
+          <BrandMark height={36} />
         </div>
 
         <Card className="p-6 sm:p-8">
@@ -64,6 +62,9 @@ export default function AdminLoginPage() {
           </p>
         </Card>
       </div>
+
+      {/* Identitas desa cukup di footer. */}
+      <AppFooter className="mx-auto mt-10 w-full max-w-3xl" />
     </div>
   );
 }

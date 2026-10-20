@@ -113,8 +113,8 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 - Logo aplikasi: pakai `BrandMark` (`public/brand/`). Jangan ubah warna atau
   memutar logo, dan beri jarak bebas ≥ ½ tinggi huruf K.
 - Logo desa: pakai `LogoDesa` (`public/brand/desa/`, lihat README aset desa).
-  Footer = horizontal 28–36 px; login = lambang 72–96 px di atas formulir;
-  setiap dokumen cetak/ekspor wajib memakai `KopDokumen` (hitam putih →
+  Footer (termasuk halaman login) = horizontal 28–36 px; jangan pasang
+  lambang desa besar di atas formulir login; setiap dokumen cetak/ekspor wajib memakai `KopDokumen` (hitam putih →
   `hitamPutih`); kartu QR memakai `KartuQr`. Jangan regangkan, putar, atau
   ubah warnanya di luar varian yang ada.
 
