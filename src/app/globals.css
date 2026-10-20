@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/*
+ * Design token KawanKu (gaya One UI).
+ * Nilai mentah di :root, lalu dipetakan ke utilitas Tailwind lewat @theme.
+ * Pakai utilitas token (bg-surface, text-muted, rounded-card, dst.), jangan
+ * hardcode warna hex di komponen.
+ */
+:root {
+  /* Warna */
+  --kk-bg: #f4f5f9;
+  --kk-surface: #ffffff;
+  --kk-surface-muted: #eceef4;
+  --kk-border: #e2e4eb;
+  --kk-fg: #14161c;
+  --kk-muted: #6b7080;
+  --kk-primary: #2f6fed;
+  --kk-primary-fg: #ffffff;
+  --kk-primary-soft: #e3ecfd;
+  --kk-success: #1f9d55;
+  --kk-warning: #d98a00;
+  --kk-danger: #d93a3a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --kk-bg: #0b0c10;
+    --kk-surface: #17181d;
+    --kk-surface-muted: #202229;
+    --kk-border: #2a2c34;
+    --kk-fg: #f2f3f6;
+    --kk-muted: #9a9fad;
+    --kk-primary: #5b8ff5;
+    --kk-primary-fg: #ffffff;
+    --kk-primary-soft: #1c2a47;
+    --kk-success: #3cc47c;
+    --kk-warning: #f0a92b;
+    --kk-danger: #f06363;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--kk-bg);
+  --color-surface: var(--kk-surface);
+  --color-surface-muted: var(--kk-surface-muted);
+  --color-border: var(--kk-border);
+  --color-fg: var(--kk-fg);
+  --color-muted: var(--kk-muted);
+  --color-primary: var(--kk-primary);
+  --color-primary-fg: var(--kk-primary-fg);
+  --color-primary-soft: var(--kk-primary-soft);
+  --color-success: var(--kk-success);
+  --color-warning: var(--kk-warning);
+  --color-danger: var(--kk-danger);
+
+  /* Radius: sudut membulat besar khas One UI */
+  --radius-control: 0.875rem; /* input, tombol */
+  --radius-card: 1.625rem; /* kartu */
+  --radius-pill: 9999px;
+
+  /* Spacing tambahan (selain skala bawaan Tailwind) */
+  --spacing-gutter: 1rem; /* jarak tepi di HP */
+  --spacing-sidebar: 17rem; /* lebar sidebar desktop */
+  --spacing-bottomnav: 4.5rem; /* tinggi bottom nav HP */
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --ease-oneui: cubic-bezier(0.22, 0.25, 0, 1);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--kk-bg);
+  color: var(--kk-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

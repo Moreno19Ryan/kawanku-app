@@ -1,0 +1,129 @@
+# CLAUDE.md: KawanKu
+
+Panduan untuk siapa pun (manusia atau AI) yang bekerja di repo ini. Baca juga
+`AGENTS.md` (aturan bawaan Next.js 16).
+
+## Ringkasan produk
+
+KawanKu adalah aplikasi web manajemen **Desa Kartika Wanasari (LDII)**: database
+warga, absensi mandiri, dan monitoring kegiatan. Konsepnya mirip GENSITI, tapi
+cakupannya satu desa.
+
+- Desa terdiri dari 4 kelompok, ±500 jiwa semua usia. Trial pertama di
+  Kelompok 1 (±100 orang).
+- **Peran**: admin desa (seluruh desa), admin kelompok (kelompoknya saja), admin
+  generus (semua generus SMP sampai pra-nikah). Peran dan hak akses disimpan
+  sebagai **data** di database, bukan di-hardcode.
+- **Dua jenis entitas**:
+  - Profil warga: semua orang, tanpa akun.
+  - Akun login: hanya generus (username + PIN yang dibuat admin). Admin login
+    terpisah.
+- **Absensi (Fase 2)**: hanya online, tidak ada absen offline.
+  - Jalur 1: kartu QR tetap per orang, discan admin dengan scanner barcode USB
+    di laptop.
+  - Jalur 2: generus login, lalu scan QR di layar laptop admin yang berganti
+    tiap 1 menit (berlaku ±90 detik).
+  - Jalur keringanan: generus tanpa HP memakai kartu fisik (jalur 1), ditandai
+    khusus yang hanya terlihat admin.
+- **UI**: gaya One UI (halus, interaktif, intuitif). Laptop sebagai tampilan
+  utama, tapi tetap nyaman di HP. PWA.
+- **Tidak ada NIK atau data sensitif lain** sampai pengurus memutuskan aturannya.
+
+### Fase
+
+| Fase | Isi | Status |
+| ---- | --- | ------ |
+| 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, dokumen | Berjalan |
+| 1 | Database warga: kelompok, keluarga, warga, peran sebagai data, RLS | Usulan skema di `docs/schema-proposal.md` |
+| 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | Belum |
+| 3 | Monitoring kegiatan | Belum |
+
+## Stack
+
+- Next.js 16 (App Router, Turbopack, `cacheComponents` aktif) + TypeScript
+- Tailwind CSS v4 (token di `src/app/globals.css`)
+- Supabase (PostgreSQL, RLS, Auth) lewat `@supabase/ssr`
+- Deploy di Vercel, fungsi di region `sin1` (dekat database `ap-southeast-1`)
+- Ikon: `lucide-react`
+
+Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
+`proxy.ts`. Dokumentasi versi yang terpasang ada di `node_modules/next/dist/docs/`.
+
+## Struktur folder
+
+```
+src/
+  app/
+    (app)/              # area admin, memakai layout sidebar + bottom nav
+      layout.tsx
+      dashboard/page.tsx
+    (auth)/             # halaman tanpa navigasi (login)
+      login/page.tsx    # login admin (kerangka)
+    layout.tsx          # root layout, metadata, viewport
+    manifest.ts         # manifest PWA → /manifest.webmanifest
+    globals.css         # design token
+  components/
+    layout/             # sidebar, bottom nav, header, brand
+    ui/                 # komponen dasar (Card, ...)
+  lib/
+    supabase/
+      client.ts         # client untuk browser (Client Components)
+      server.ts         # client untuk server (Server Components/Actions)
+      proxy.ts          # refresh sesi, dipanggil dari src/proxy.ts
+      env.ts            # baca NEXT_PUBLIC_SUPABASE_*
+  proxy.ts              # Next.js proxy (dulu middleware)
+public/icons/           # logo & ikon PWA (masih placeholder)
+docs/                   # dokumen desain (usulan skema, dsb.)
+supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
+```
+
+## Aturan kerja (WAJIB, sama dengan GENSITI)
+
+- Semua perubahan lewat branch + pull request. Jangan push langsung ke main.
+- Dilarang menjalankan migrasi, execute_sql, atau apply_migration ke Supabase, dan dilarang push/merge ke main, sebelum aku menjawab "OK, jalankan" secara eksplisit di chat.
+- Jangan ubah setting GitHub, Vercel, atau Supabase sendiri. Kalau ada yang perlu diubah, beri tahu aku langkahnya.
+- Jangan pernah mencetak atau mengomit secret (service role key, token). Hanya NEXT_PUBLIC_* dan .env.example yang boleh masuk repo.
+- Supabase Free tidak mendukung branching, jadi usulkan strategi aman untuk menguji migrasi sebelum produksi, dan tunggu persetujuanku.
+
+## Konvensi penamaan
+
+**Bahasa**
+- UI, teks, dan dokumen dalam Bahasa Indonesia.
+- Istilah domain memakai Bahasa Indonesia di kode dan database (`warga`,
+  `kelompok`, `keluarga`, `kegiatan`, `absensi`), supaya sama dengan bahasa
+  pengurus. Istilah teknis tetap Inggris (`created_at`, `id`, `role`).
+
+**Kode**
+- File & folder: `kebab-case` (`bottom-nav.tsx`, `page-header.tsx`).
+- Komponen React: `PascalCase` (`BottomNav`), named export kecuali file
+  konvensi Next.js (`page.tsx`, `layout.tsx`) yang wajib default export.
+- Fungsi & variabel: `camelCase`. Konstanta modul: `UPPER_SNAKE_CASE`.
+- Rute URL: Bahasa Indonesia, huruf kecil (`/warga`, `/kegiatan`, `/absensi`).
+- Import memakai alias `@/` (mis. `@/lib/supabase/server`).
+- Warna, radius, dan spacing memakai token (`bg-surface`, `rounded-card`,
+  `px-gutter`), bukan nilai hex/px langsung.
+
+**Database**
+- Tabel & kolom: `snake_case`, nama tabel tunggal (`warga`, `kelompok`).
+- Primary key `id uuid default gen_random_uuid()`.
+- Foreign key `<tabel>_id` (mis. `kelompok_id`).
+- Setiap tabel punya `created_at` dan `updated_at` (`timestamptz`).
+- RLS **wajib aktif** di setiap tabel `public`.
+- File migrasi: `supabase/migrations/YYYYMMDDHHMMSS_deskripsi_singkat.sql`.
+
+**Git**
+- Branch: `feat/...`, `fix/...`, `chore/...`, `docs/...`.
+- Commit: Conventional Commits (`feat: ...`, `fix: ...`, `docs: ...`).
+
+## Keputusan yang masih menunggu pengurus
+
+1. **Data awal warga**: sumber, format, dan siapa yang mengimpor.
+2. **Data sensitif**: apakah NIK/alamat/no. HP disimpan, siapa yang boleh
+   melihat, dan berapa lama disimpan. Sampai diputuskan, **jangan buat kolom
+   data sensitif apa pun**.
+3. **Detail hak akses**: apa saja yang boleh dilihat/diubah tiap peran (admin
+   desa, admin kelompok, admin generus).
+4. **Kategori usia**: batas umur tiap kategori (mis. caberawit, pra-remaja,
+   remaja, pra-nikah, dewasa, lansia) dan apakah dihitung otomatis dari tanggal
+   lahir.
+5. **Logo desa**: belum ada di repo; `public/icons/` masih placeholder "KK".
