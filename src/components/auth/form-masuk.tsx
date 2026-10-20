@@ -4,13 +4,11 @@ import { Suspense, useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { masuk, type StateMasuk } from "@/lib/auth/actions";
 import { tujuanAman } from "@/lib/auth/tujuan";
+import { INPUT_CLASS } from "@/components/ui/input";
 
 const PESAN_PARAM: Record<string, string> = {
   "bukan-admin": "Akun ini bukan admin aktif. Hubungi admin desa.",
 };
-
-const KELAS_INPUT =
-  "h-12 rounded-control border border-border bg-surface-muted px-4 text-base outline-none transition-colors placeholder:text-muted/70 focus:border-primary disabled:opacity-60";
 
 /**
  * Form login admin. Form-nya sendiri statis (ikut prerender), jadi isian
@@ -33,7 +31,7 @@ export function FormMasuk() {
           defaultValue={state.email}
           // Ganti key supaya defaultValue dipakai ulang setelah galat.
           key={state.email}
-          className={KELAS_INPUT}
+          className={INPUT_CLASS}
         />
       </label>
 
@@ -44,7 +42,7 @@ export function FormMasuk() {
           name="password"
           required
           autoComplete="current-password"
-          className={KELAS_INPUT}
+          className={INPUT_CLASS}
         />
       </label>
 

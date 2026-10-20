@@ -24,7 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/jamaah", label: "Jamaah", icon: Users, soon: true },
   { href: "/kegiatan", label: "Kegiatan", icon: CalendarCheck, soon: true },
   { href: "/absensi", label: "Absensi", icon: QrCode, soon: true },
-  { href: "/pengaturan", label: "Pengaturan", icon: Settings, soon: true },
+  { href: "/pengaturan", label: "Pengaturan", icon: Settings },
 ];
 
 export function isActive(pathname: string, href: string) {
