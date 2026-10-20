@@ -1,16 +1,33 @@
+import { Suspense } from "react";
+import { AkunAdmin } from "@/components/auth/akun-admin";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { Sidebar } from "@/components/layout/sidebar";
 
-/** Kerangka area admin: sidebar di desktop, bottom nav di HP. */
+/**
+ * Kerangka area admin: sidebar di desktop, bottom nav di HP.
+ *
+ * Proxy sudah menolak pengunjung tanpa sesi. Pemeriksaan "admin aktif"
+ * ada di <AkunAdmin> (di dalam Suspense, karena membaca cookie); layout
+ * sendiri tidak boleh await sesi di level atas (cacheComponents).
+ */
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <Sidebar />
+      <Sidebar
+        akun={
+          <Suspense fallback={<div className="h-16 rounded-card bg-surface" />}>
+            <AkunAdmin />
+          </Suspense>
+        }
+      />
 
-      <div className="sticky top-0 z-10 flex items-center bg-bg/85 px-2 backdrop-blur-lg lg:hidden">
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg lg:hidden">
         <BrandMark height={24} />
+        <Suspense fallback={<div className="size-8" />}>
+          <AkunAdmin ringkas />
+        </Suspense>
       </div>
 
       {/* Konten flex-1 mendorong footer ke paling bawah walau isi halaman pendek. */}

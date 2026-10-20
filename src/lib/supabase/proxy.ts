@@ -7,8 +7,9 @@ import { getSupabaseEnv } from "./env";
  * sesi ke response. Dipanggil dari src/proxy.ts (pengganti middleware di
  * Next.js 16).
  *
- * Fase 0: hanya refresh sesi. Proteksi rute (redirect ke /login) ditambahkan
- * bersama alur login admin di fase berikutnya.
+ * Juga proteksi rute optimistis: tanpa sesi → /login?next=...; sudah login
+ * tapi membuka /login → /dashboard. Pemeriksaan "admin aktif" ada di
+ * layout (wajibAdmin), dan batas akses data tetap RLS.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -41,7 +42,35 @@ export async function updateSession(request: NextRequest) {
 
   // Jangan taruh kode apa pun di antara createServerClient dan getClaims():
   // panggilan ini yang memvalidasi dan me-refresh token.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const masuk = Boolean(data?.claims.sub);
+  const { pathname, search } = request.nextUrl;
+  const publik = RUTE_PUBLIK.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+
+  if (!masuk && !publik) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("next", `${pathname}${search}`);
+    return alihkan(url, response);
+  }
+
+  if (masuk && pathname === "/login") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return alihkan(url, response);
+  }
 
   return response;
+}
+
+/** Rute yang boleh dibuka tanpa sesi. */
+const RUTE_PUBLIK = ["/login", "/keluar"];
+
+/** Redirect yang tetap membawa cookie sesi hasil refresh. */
+function alihkan(url: URL, dari: NextResponse) {
+  const redirect = NextResponse.redirect(url);
+  dari.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+  return redirect;
 }

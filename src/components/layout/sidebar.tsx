@@ -1,12 +1,16 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandMark } from "./brand-mark";
 import { NAV_ITEMS, isActive } from "./nav-items";
 
-/** Navigasi samping, tampil di layar ≥ lg (laptop). */
-export function Sidebar() {
+/**
+ * Navigasi samping, tampil di layar ≥ lg (laptop). `akun` = slot info admin
+ * (Server Component dari layout).
+ */
+export function Sidebar({ akun }: { akun?: ReactNode }) {
   const pathname = usePathname();
 
   return (
@@ -53,6 +57,8 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {akun && <div className="mt-auto">{akun}</div>}
     </aside>
   );
 }
