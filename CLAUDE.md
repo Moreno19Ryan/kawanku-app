@@ -69,6 +69,13 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Halaman/komponen yang mengambil data memanggil `getAdminSaatIni()` /
   `wajibAdmin()` sendiri (jangan mengandalkan layout). Batas akses data yang
   sebenarnya tetap RLS.
+- Menu/bagian yang butuh izin memakai `punyaIzin(admin, "akses.kelola")` dan
+  halamannya `wajibIzin(...)`. Izin dibaca dari data (`peran_izin`); yang
+  dihitung hanya izin global (penugasan tanpa kelompok, peran bukan
+  `hanya_generus`), sama dengan `private.boleh(izin, null)`.
+- Pengaman "jangan sampai tidak ada admin pengelola akses" (tidak bisa
+  menonaktifkan diri sendiri / mencabut peran pengelola terakhir) saat ini
+  dicek di Server Action, belum di database.
 - Dengan `cacheComponents`, apa pun yang membaca sesi (`createClient()` dari
   `@/lib/supabase/server`) harus di dalam `<Suspense>`; jangan `await` sesi di
   level atas layout.
@@ -81,6 +88,7 @@ src/
     (app)/              # area admin, memakai layout sidebar + bottom nav
       layout.tsx
       dashboard/page.tsx
+      pengaturan/       # akun, admin & akses, kelompok, peran & izin (difilter izin)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
       keluar/route.ts   # hapus sesi non-admin lalu ke /login (bukan untuk <Link>)
@@ -89,16 +97,19 @@ src/
     favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
+    pengaturan/         # form & tombol aksi halaman Pengaturan, daftar bagian
     brand/              # LogoDesa (logo Desa Kartika Wanasari)
     dokumen/            # KopDokumen: header wajib setiap dokumen cetak/ekspor
     kartu/              # KartuQr: kartu absensi jalur 1 (ukuran KTP)
     layout/             # sidebar, bottom nav, header, footer, BrandMark
-    ui/                 # komponen dasar (Card, ...)
+    ui/                 # komponen dasar (Card, Badge, Skeleton, buttonClass, INPUT_CLASS)
   lib/
     auth/
       admin.ts          # DAL: getAdminSaatIni / wajibAdmin (server-only)
       actions.ts        # Server Action masuk & keluar
       tujuan.ts         # validasi ?next= (cegah open redirect)
+    pengaturan/
+      actions.ts        # Server Action Pengaturan (kata sandi, admin, peran, kelompok)
     supabase/
       client.ts         # client untuk browser (Client Components)
       server.ts         # client untuk server (Server Components/Actions)
