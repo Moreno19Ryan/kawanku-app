@@ -12,8 +12,9 @@
 | Istilah | `warga` | **`jamaah`** (tabel, view, kolom, izin, rute `/jamaah`) |
 | Cakupan peran | enum `cakupan_peran` (desa/kelompok/generus) | Dua sumbu: `peran.wilayah` (desa/kelompok/fleksibel) + `peran.hanya_generus` |
 | Admin generus | Hanya tingkat desa | Tingkat desa **dan** tingkat kelompok |
-| Status pernikahan | Tidak ada | Enum `status_pernikahan` (lajang/menikah), boleh kosong |
-| Kategori usia | Rentang tidak boleh tumpang tindih | Usia **dan** status; tumpang tindih boleh, `urutan` terkecil menang |
+| Status pernikahan | Tidak ada | Enum `status_pernikahan` (lajang/menikah/janda_duda), boleh kosong |
+| Status sekolah | Tidak ada | Enum `status_sekolah` + `status_sekolah_diperbarui` (otomatis) |
+| Kategori | `kategori_usia`, hanya umur, tidak boleh tumpang tindih | **`kategori_jamaah`** berbasis aturan data (usia, status sekolah, status pernikahan); tumpang tindih boleh, `urutan` terkecil menang; view `jamaah_tanpa_kategori` |
 | Data lahir | `tanggal_lahir` saja | + `tahun_lahir` sebagai cadangan; satu fungsi pusat `private.usia` |
 | Identitas | UUID saja | + `jamaah.kode` (KW-XXXXXX), otomatis, unik, tidak bisa diubah |
 | Hubungan keluarga | Tidak ada | `jamaah.hubungan_keluarga` (Opsi A); Opsi B dijelaskan sebagai alternatif |
@@ -44,7 +45,7 @@ erDiagram
   kelompok ||--o{ jamaah : memiliki
   keluarga |o--o{ jamaah : "anggota (opsional)"
   jamaah ||--o| jamaah_keringanan : "penanda (khusus admin)"
-  kategori_usia ||..o{ jamaah : "dihitung dari usia + status"
+  kategori_jamaah ||..o{ jamaah : "dihitung dari aturan (sekolah, pernikahan, usia)"
   peran ||--o{ peran_izin : ""
   izin ||--o{ peran_izin : ""
   admin ||--o{ penugasan_peran : ""
@@ -59,15 +60,16 @@ erDiagram
 | ----- | --- | ------- |
 | `kelompok` | 4 kelompok desa (`nomor`, `nama`, `aktif`) | Nama resmi menyusul; seed memakai "Kelompok 1..4". |
 | `keluarga` | Unit keluarga (`nama`, `kelompok_id`) | Satu keluarga berada di satu kelompok. |
-| `jamaah` | `kode`, `nama_lengkap`, `nama_panggilan`, `tanggal_lahir`, `tahun_lahir`, `jenis_kelamin` (`L`/`P`), `status_pernikahan`, `kelompok_id`, `keluarga_id`, `hubungan_keluarga`, `aktif` | Lahir dan status boleh kosong (data awal mungkin belum lengkap). FK komposit menjamin keluarga jamaah ada di kelompok yang sama. |
-| `jamaah_keringanan` | Penanda jalur keringanan (`jenis = 'tanpa_hp'`, `aktif`) | Tabel terpisah, lihat §4.7. |
-| `kategori_usia` | `urutan`, `kode`, `nama`, `usia_min`, `usia_max`, `status_pernikahan`, `termasuk_generus` | Kategori sebagai data. Rentang boleh tumpang tindih, lihat §4.3. Seed masih DRAF. |
+| `jamaah` | `kode`, `nama_lengkap`, `nama_panggilan`, `tanggal_lahir`, `tahun_lahir`, `jenis_kelamin` (`L`/`P`), `status_pernikahan`, `status_sekolah`, `status_sekolah_diperbarui`, `kelompok_id`, `keluarga_id`, `hubungan_keluarga`, `aktif` | Lahir dan status boleh kosong (kosong = belum diisi). `status_sekolah_diperbarui` diisi trigger. FK komposit menjamin keluarga jamaah ada di kelompok yang sama. |
+| `jamaah_keringanan` | Penanda jalur keringanan (`jenis = 'tanpa_hp'`, `aktif`) | Tabel terpisah, lihat §4.8. |
+| `kategori_jamaah` | `urutan`, `kode`, `nama`, `usia_min`, `usia_max`, `status_sekolah_berlaku[]`, `status_pernikahan_berlaku[]`, `termasuk_generus` | Kategori sebagai aturan data, lihat §4.4. Seed masih DRAF. |
 | `peran` | `kode`, `nama`, `wilayah` (desa/kelompok/fleksibel), `hanya_generus` | Peran baru cukup ditambah sebagai baris. |
 | `izin` | Daftar kemampuan (`jamaah.lihat`, `jamaah.ubah`, `keringanan.lihat`, ...) | |
 | `peran_izin` | Peran → izin | Pemetaan default masih DRAF (§5). |
 | `admin` | Profil admin, 1:1 dengan `auth.users` | Akun generus **tidak** di sini (Fase 2). |
 | `penugasan_peran` | Admin → peran (+ `kelompok_id`; kosong = seluruh desa) | Satu admin bisa punya beberapa penugasan. Trigger memvalidasi `kelompok_id` terhadap `peran.wilayah`. |
 | view `jamaah_dengan_kategori` | `jamaah` + `usia`, kategori, `termasuk_generus` | `security_invoker`, tetap tunduk pada RLS `jamaah`. Hanya bisa dibaca. |
+| view `jamaah_tanpa_kategori` | Jamaah **aktif** yang tidak cocok dengan kategori mana pun | Untuk membersihkan data awal (mis. status sekolah belum diisi). `security_invoker`, tunduk RLS. |
 
 Kolom audit: semua tabel punya `created_at`/`updated_at`. Tabel yang diisi
 admin (`keluarga`, `jamaah`, `jamaah_keringanan`, `penugasan_peran`) juga punya
@@ -101,44 +103,81 @@ dan sasaran dipisah:
 Trigger `private.cek_penugasan_peran` menolak penugasan yang melanggar aturan
 wilayah (diuji di §6.1).
 
-### 4.3 Kategori usia: usia + status, `urutan` menentukan
+### 4.3 Status pernikahan dan status sekolah
 
-Kategori bergantung pada usia **dan** status pernikahan. Aturan pemilihan
-(fungsi `private.kategori_usia_id`):
+- `status_pernikahan` (enum, boleh kosong; kosong = belum diisi): `lajang`,
+  `menikah`, `janda_duda`. **Tidak ada** kolom alasan perceraian atau
+  wafatnya pasangan.
+- `status_sekolah` (enum, boleh kosong): `belum_sekolah`, `paud_tk`, `sd`,
+  `smp`, `sma_smk`, `kuliah`, `bekerja`, `lainnya`.
+- `status_sekolah_diperbarui` (date) diisi trigger setiap `status_sekolah`
+  diisi atau berubah. Nilai yang dikirim klien diabaikan, jadi tanggalnya
+  selalu bisa dipercaya untuk menandai data yang belum diperbarui di tahun
+  ajaran baru.
+- Keduanya enum, jadi nilai bisa ditambah nanti (`ALTER TYPE ... ADD VALUE`)
+  tanpa mengubah data lama.
 
-1. Ambil semua kategori yang cocok: usia jamaah dalam `[usia_min, usia_max]`
-   (`usia_max` kosong = tanpa batas atas) **dan** `status_pernikahan` kategori
-   kosong atau sama dengan status jamaah.
-2. Bila lebih dari satu cocok, pakai yang `urutan`-nya **terkecil**. `urutan`
-   unik, jadi hasilnya selalu pasti.
-3. Jamaah dengan status kosong hanya cocok dengan kategori **tanpa** syarat
-   status.
-4. Jamaah tanpa tanggal lahir **dan** tanpa tahun lahir tidak punya kategori.
+**Pembaruan tahunan.** Status sekolah **harus diperbarui manual setiap tahun
+ajaran baru (sekitar Juli)**. `status_sekolah_diperbarui` dipakai untuk
+menampilkan jamaah yang belum diperbarui sejak Juli tahun ini. Opsi kolom
+`kelas` (supaya jenjang naik otomatis, mis. kelas 6 SD menjadi SMP) **ditunda**
+sampai alat kenaikan jenjang dibuat. Kolom itu bisa ditambahkan belakangan
+sebagai kolom nullable, tanpa merusak data.
 
-Karena tumpang tindih kini disengaja (misalnya umur 65 cocok dengan `lansia`,
-`berkeluarga`, dan `dewasa`), exclusion constraint v1 dihapus. Urutan seed
-dirancang supaya kategori yang lebih spesifik menang. Kategori dihitung, bukan
-disimpan, sehingga perubahan umur atau status langsung tercermin tanpa job
-berkala.
+### 4.4 Kategori jamaah: aturan data, tidak hanya umur
 
-Seed sementara (**DRAF**; semua angka bisa diubah Reno/pengurus lewat data
-tanpa migrasi):
+Tabel `kategori_jamaah` (pengganti `kategori_usia`) berisi aturan. Setiap
+syarat bersifat opsional:
 
-| urutan | kode | nama | usia | status | generus |
-| -----: | ---- | ---- | ---- | ------ | :-----: |
-| 1 | `lansia` | Lansia | 60+ | semua | tidak |
-| 2 | `caberawit` | Caberawit | 0–11 | semua | tidak |
-| 3 | `pra_remaja` | Pra-Remaja | 12–14 | semua | ya |
-| 4 | `remaja` | Remaja | 15–18 | semua | ya |
-| 5 | `usia_mandiri` | Usia Mandiri / Pra-Nikah | 19–35 | lajang | ya |
-| 6 | `berkeluarga` | Berkeluarga | 19+ | menikah | tidak |
-| 7 | `dewasa` | Dewasa | 19+ | semua | tidak (penampung sisanya) |
+| Kolom syarat | Arti | Kosong berarti |
+| ------------ | ---- | -------------- |
+| `usia_min`, `usia_max` | Usia jamaah dalam rentang (check `usia_max >= usia_min` bila keduanya ada) | Tidak dipakai |
+| `status_sekolah_berlaku status_sekolah[]` | Status sekolah jamaah ada di daftar | Semua status sekolah |
+| `status_pernikahan_berlaku status_pernikahan[]` | Status pernikahan jamaah ada di daftar | Semua status pernikahan |
+
+Aturan pencocokan (fungsi `private.kategori_jamaah_id`):
+
+1. Kategori **cocok** bila **semua** syarat yang terisi terpenuhi.
+2. Syarat yang terisi tetapi nilai jamaahnya kosong dianggap **tidak cocok**.
+   Contohnya: kategori dengan daftar status sekolah tidak cocok untuk jamaah
+   yang status sekolahnya belum diisi.
+3. Bila lebih dari satu kategori cocok, yang dipakai adalah `urutan`
+   **terkecil**. `urutan` unik, jadi hasilnya selalu pasti.
+4. Bila tidak ada yang cocok, jamaah tidak punya kategori. Ia muncul di view
+   `jamaah_tanpa_kategori` dan tidak terlihat oleh admin generus.
+
+Exclusion constraint lama (larangan tumpang tindih) dihapus. Tumpang tindih
+kini disengaja dan diselesaikan oleh `urutan`. Kategori dihitung, bukan
+disimpan, sehingga perubahan status atau umur langsung tercermin.
+
+**Usia hanya dipakai untuk kondisi usia (lansia).** Caberawit sampai remaja
+dewasa ditentukan oleh **status sekolah**, sama sekali tidak memakai umur.
+Jadi jamaah SMP tetap pra-remaja walau tanggal lahirnya belum diketahui.
+
+Seed sementara (**DRAF**; akan diubah lewat data tanpa migrasi):
+
+| urutan | kode | nama tampil | usia | status sekolah | status pernikahan | generus |
+| -----: | ---- | ----------- | ---- | -------------- | ----------------- | :-----: |
+| 1 | `lansia` | Lansia | 60+ | semua | semua | tidak |
+| 2 | `berkeluarga` | Berkeluarga | – | semua | menikah, janda_duda | tidak |
+| 3 | `caberawit` | Caberawit | – | belum_sekolah, paud_tk, sd | semua | tidak |
+| 4 | `pra_remaja` | Pra-Remaja | – | smp | semua | ya |
+| 5 | `remaja_muda` | Remaja Muda | – | sma_smk | semua | ya |
+| 6 | `remaja_dewasa` | Remaja Dewasa / Usia Mandiri / Pra-Nikah | – | kuliah, bekerja, lainnya | semua | ya |
 
 Akibat seed ini:
-- Jamaah lajang berusia 36+ masuk `dewasa`.
-- Jamaah usia 19+ dengan status kosong juga masuk `dewasa`.
+- Umur 60+ selalu `lansia`, apa pun status sekolah dan pernikahannya
+  (urutan 1).
+- Menikah atau janda/duda di bawah 60 menjadi `berkeluarga`, walau masih
+  kuliah (urutan 2 menang atas `remaja_dewasa`).
+- Lajang atau status pernikahan kosong, di bawah 60, dengan status sekolah
+  kuliah/bekerja/lainnya menjadi `remaja_dewasa` **tanpa batas atas umur**
+  (lihat pertanyaan §8).
+- Jamaah dengan status sekolah kosong, tidak menikah, dan di bawah 60 (atau
+  umurnya tidak diketahui) tidak punya kategori, sehingga muncul di
+  `jamaah_tanpa_kategori`.
 
-### 4.4 Usia: tanggal lahir, cadangan tahun lahir
+### 4.5 Usia: tanggal lahir, cadangan tahun lahir
 
 - `tanggal_lahir` dan `tahun_lahir` sama-sama boleh kosong.
 - Check `jamaah_tahun_sesuai_tanggal`: bila keduanya terisi, tahun harus sama
@@ -148,10 +187,11 @@ Akibat seed ini:
   - dari `tanggal_lahir` bila ada (usia tepat);
   - bila tidak, `tahun ini - tahun_lahir`. Ini bisa lebih tua 1 tahun dari usia
     sebenarnya sebelum hari ulang tahun.
-- Jamaah tanpa keduanya tidak punya kategori, sehingga **tidak terlihat admin
-  generus**. Admin desa dan admin kelompok tetap melihatnya.
+- Dengan seed sekarang, usia hanya menentukan `lansia`. Jamaah tanpa tanggal
+  dan tahun lahir tetap bisa berkategori lewat status sekolah atau status
+  pernikahan.
 
-### 4.5 Kode jamaah (`jamaah.kode`)
+### 4.6 Kode jamaah (`jamaah.kode`)
 
 - Format `KW-` + 6 karakter dari alfabet tanpa karakter ambigu (tanpa `0 O 1 I
   L`), 31 karakter, sekitar 887 juta kombinasi. Contoh: `KW-7HQ2MX`.
@@ -170,7 +210,7 @@ Akibat seed ini:
   tabel `kartu_qr`, supaya kartu yang hilang bisa dicabut tanpa mengubah
   identitas jamaah.
 
-### 4.6 Hubungan keluarga
+### 4.7 Hubungan keluarga
 
 **Opsi A, dipakai di draf ini.** `keluarga` tetap menjadi kelompok keluarga,
 dan setiap jamaah punya `hubungan_keluarga` (nullable): `kepala_keluarga`,
@@ -193,7 +233,7 @@ Rekomendasi: mulai dengan **Opsi A**. Opsi B bisa ditambahkan belakangan
 sebagai kolom nullable baru (migrasi aditif, tidak merusak data). Jadi
 keputusan ini bisa ditunda sampai kebutuhan silsilah jelas.
 
-### 4.7 Penanda keringanan di tabel terpisah
+### 4.8 Penanda keringanan di tabel terpisah
 
 RLS bekerja per baris, bukan per kolom. Kalau penanda keringanan menjadi kolom
 di `jamaah`, siapa pun yang boleh membaca baris jamaah akan ikut melihatnya.
@@ -203,10 +243,10 @@ Karena itu penanda disimpan di tabel `jamaah_keringanan` dengan izin
 `keringanan.lihat`, sehingga hanya terlihat oleh admin. Tidak ada kolom alasan
 bebas (free text), supaya tabel ini tidak menjadi tempat data sensitif.
 
-### 4.8 Hak akses sebagai data: `private.boleh`
+### 4.9 Hak akses sebagai data: `private.boleh`
 
 Semua policy jamaah memanggil
-`private.boleh(izin, kelompok_id, tanggal_lahir, tahun_lahir, status)`. Fungsi
+`private.boleh(izin, kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan, status_sekolah)`. Fungsi
 ini lolos bila pengguna punya penugasan yang memenuhi ketiga syarat berikut:
 
 1. **Admin aktif dan izin:** baris `admin`-nya aktif, dan perannya memiliki
@@ -217,25 +257,28 @@ ini lolos bila pengguna punya penugasan yang memenuhi ketiga syarat berikut:
    - izin global (`kelompok_id` null, mis. `akses.kelola`) hanya lolos untuk
      penugasan tanpa `kelompok_id`.
 3. **Sasaran:** bila perannya `hanya_generus`, hanya lolos untuk jamaah yang
-   termasuk generus. Izin global otomatis tidak lolos untuk peran ini.
+   kategorinya `termasuk_generus`. Izin global otomatis tidak lolos untuk peran
+   ini.
 
 Helper lain:
 - `private.boleh_jamaah(izin, jamaah_id)`: untuk tabel yang hanya punya
   `jamaah_id`.
 - `private.adalah_admin()`: punya baris `admin` aktif **dan** minimal satu
   penugasan.
-- `private.usia`, `private.kategori_usia_id`, `private.termasuk_generus`.
+- `private.usia`, `private.kategori_jamaah_id`, `private.termasuk_generus`.
 
 Semua helper ada di skema `private` (tidak terekspos lewat Data API/RPC),
 memakai `security definer` + `search_path = ''`, dan `auth.uid()` dibungkus
 `(select ...)` supaya dievaluasi sekali per query.
 
-Konsekuensi yang perlu disadari: admin generus yang mengubah status jamaah
-menjadi `menikah`, atau mengubah tanggal lahir sehingga keluar dari kategori
-generus, akan **ditolak** (WITH CHECK). Pencatatan pernikahan generus harus
-dilakukan admin kelompok atau admin desa (lihat pertanyaan §8).
+Konsekuensi yang perlu disadari: admin generus yang mengubah
+`status_pernikahan` menjadi `menikah`/`janda_duda`, atau mengubah/mengosongkan
+`status_sekolah` sehingga jamaah keluar dari kategori generus, akan
+**ditolak** (WITH CHECK). Perubahan di dalam cakupan, misalnya `sma_smk`
+menjadi `kuliah`, tetap boleh. Pencatatan pernikahan generus harus dilakukan
+admin kelompok atau admin desa (lihat pertanyaan §8).
 
-### 4.9 GRANT eksplisit dan policy per perintah
+### 4.10 GRANT eksplisit dan policy per perintah
 
 - Migrasi mencabut semua hak `anon` dan `authenticated` dari tabel dan view
   Fase 1, lalu memberi `select, insert, update, delete` ke `authenticated`
@@ -243,13 +286,13 @@ dilakukan admin kelompok atau admin desa (lihat pertanyaan §8).
   pada default grant Supabase.
 - `peran`, `izin`, dan `peran_izin` hanya bisa dibaca admin aktif. Mulai Fase
   2, akun generus juga berperan `authenticated`, dan mereka tidak perlu tahu
-  struktur hak akses. `kelompok` dan `kategori_usia` tetap boleh dibaca semua
+  struktur hak akses. `kelompok` dan `kategori_jamaah` tetap boleh dibaca semua
   pengguna login.
 - Tidak ada policy `for all`: setiap tabel punya tepat satu policy per
   perintah (select/insert/update/delete). Dengan begitu tidak ada peringatan
   "multiple permissive policies" dari Supabase advisor.
 
-### 4.10 Lain-lain
+### 4.11 Lain-lain
 
 - **Hapus**: default memakai `aktif = false` (soft delete). Hapus permanen
   dipisah ke izin `jamaah.hapus` (default hanya admin desa).
@@ -262,7 +305,7 @@ dilakukan admin kelompok atau admin desa (lihat pertanyaan §8).
 | Izin | Admin desa | Admin kelompok | Admin generus |
 | ---- | :-: | :-: | :-: |
 | `kelompok.kelola` | ✅ | | |
-| `pengaturan.kelola` (kategori usia) | ✅ | | |
+| `pengaturan.kelola` (kategori jamaah) | ✅ | | |
 | `akses.kelola` (admin & peran) | ✅ | | |
 | `keluarga.lihat` / `keluarga.kelola` | ✅ | ✅ (kelompoknya) | |
 | `jamaah.lihat` | ✅ | ✅ (kelompoknya) | ✅ (generus di wilayahnya) |
@@ -321,7 +364,10 @@ $$;
 -- 1. Tipe enum (nilai bisa ditambah nanti dengan ALTER TYPE ... ADD VALUE)
 -- ---------------------------------------------------------------------
 create type public.jenis_kelamin as enum ('L', 'P');
-create type public.status_pernikahan as enum ('lajang', 'menikah');
+-- Tanpa alasan perceraian/wafatnya pasangan; janda_duda saja.
+create type public.status_pernikahan as enum ('lajang', 'menikah', 'janda_duda');
+create type public.status_sekolah as enum
+  ('belum_sekolah', 'paud_tk', 'sd', 'smp', 'sma_smk', 'kuliah', 'bekerja', 'lainnya');
 create type public.wilayah_peran as enum ('desa', 'kelompok', 'fleksibel');
 create type public.hubungan_keluarga as enum
   ('kepala_keluarga', 'pasangan', 'anak', 'orang_tua', 'lainnya');
@@ -338,21 +384,25 @@ create table public.kelompok (
   updated_at  timestamptz not null default now()
 );
 
--- Kategori usia sebagai DATA. Rentang boleh tumpang tindih: kategori yang
--- dipakai adalah yang cocok (usia dalam rentang DAN status kosong/sama)
--- dengan `urutan` terkecil. Lihat private.kategori_usia_id.
-create table public.kategori_usia (
-  id                 uuid primary key default gen_random_uuid(),
-  kode               text not null unique,
-  nama               text not null,
-  usia_min           smallint not null check (usia_min >= 0),
-  usia_max           smallint check (usia_max is null or usia_max >= usia_min),
-  -- kosong = berlaku untuk semua status pernikahan
-  status_pernikahan  public.status_pernikahan,
-  termasuk_generus   boolean not null default false,
-  urutan             smallint not null unique,
-  created_at         timestamptz not null default now(),
-  updated_at         timestamptz not null default now()
+-- Kategori jamaah sebagai DATA, berbasis aturan (usia, status sekolah, status
+-- pernikahan). Kategori cocok bila SEMUA syarat yang terisi terpenuhi; bila
+-- beberapa cocok, `urutan` terkecil menang. Lihat private.kategori_jamaah_id.
+-- Syarat kosong (null atau array kosong) = tidak dipakai.
+create table public.kategori_jamaah (
+  id                         uuid primary key default gen_random_uuid(),
+  kode                       text not null unique,
+  nama                       text not null,
+  usia_min                   smallint check (usia_min >= 0),
+  usia_max                   smallint check (usia_max >= 0),
+  status_sekolah_berlaku     public.status_sekolah[],
+  status_pernikahan_berlaku  public.status_pernikahan[],
+  termasuk_generus           boolean not null default false,
+  urutan                     smallint not null unique,
+  created_at                 timestamptz not null default now(),
+  updated_at                 timestamptz not null default now(),
+  constraint kategori_jamaah_rentang_usia check (
+    usia_min is null or usia_max is null or usia_max >= usia_min
+  )
 );
 
 -- ---------------------------------------------------------------------
@@ -384,7 +434,11 @@ create table public.jamaah (
   -- Cadangan bila tanggal lahir lengkap tidak diketahui.
   tahun_lahir        smallint check (tahun_lahir between 1900 and 2100),
   jenis_kelamin      public.jenis_kelamin not null,
+  -- kosong = belum diisi
   status_pernikahan  public.status_pernikahan,
+  status_sekolah     public.status_sekolah,
+  -- Diisi trigger setiap status_sekolah berubah (untuk pengingat tahun ajaran).
+  status_sekolah_diperbarui  date,
   aktif              boolean not null default true,
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now(),
@@ -551,12 +605,36 @@ create trigger jamaah_kode
   before insert or update on public.jamaah
   for each row execute function private.atur_kode_jamaah();
 
+-- status_sekolah_diperbarui: diisi tanggal hari ini saat status_sekolah diisi
+-- atau berubah; selain itu dipertahankan (nilai dari klien diabaikan).
+create or replace function private.atur_status_sekolah_diperbarui()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.status_sekolah_diperbarui :=
+      case when new.status_sekolah is not null then current_date end;
+  elsif new.status_sekolah is distinct from old.status_sekolah then
+    new.status_sekolah_diperbarui := current_date;
+  else
+    new.status_sekolah_diperbarui := old.status_sekolah_diperbarui;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger jamaah_status_sekolah_diperbarui
+  before insert or update on public.jamaah
+  for each row execute function private.atur_status_sekolah_diperbarui();
+
 -- ---------------------------------------------------------------------
 -- 6. Trigger updated_at & updated_by
 -- ---------------------------------------------------------------------
 create trigger set_updated_at before update on public.kelompok
   for each row execute function private.set_updated_at();
-create trigger set_updated_at before update on public.kategori_usia
+create trigger set_updated_at before update on public.kategori_jamaah
   for each row execute function private.set_updated_at();
 create trigger set_updated_at before update on public.keluarga
   for each row execute function private.set_updated_at();
@@ -608,13 +686,16 @@ as $$
   );
 $$;
 
--- Kategori: usia dalam rentang DAN (status kategori kosong ATAU sama dengan
--- status jamaah); bila beberapa cocok, `urutan` terkecil menang.
--- Jamaah dengan status kosong hanya cocok dengan kategori tanpa syarat status.
-create or replace function private.kategori_usia_id(
+-- Kategori jamaah. Cocok bila SEMUA syarat yang terisi terpenuhi:
+--   usia_min/usia_max  : usia (private.usia) dalam rentang;
+--   status_*_berlaku   : nilai jamaah ada di dalam array.
+-- Syarat yang terisi tetapi nilai jamaahnya kosong = TIDAK cocok.
+-- Bila beberapa cocok, `urutan` terkecil menang. Bila tidak ada, null.
+create or replace function private.kategori_jamaah_id(
   p_tanggal_lahir date,
   p_tahun_lahir smallint,
-  p_status public.status_pernikahan
+  p_status_pernikahan public.status_pernikahan,
+  p_status_sekolah public.status_sekolah
 )
 returns uuid
 language sql
@@ -623,10 +704,14 @@ security definer
 set search_path = ''
 as $$
   select k.id
-  from public.kategori_usia k
-  where private.usia(p_tanggal_lahir, p_tahun_lahir)
-          between k.usia_min and coalesce(k.usia_max, 32767)
-    and (k.status_pernikahan is null or k.status_pernikahan = p_status)
+  from public.kategori_jamaah k
+  cross join lateral (select private.usia(p_tanggal_lahir, p_tahun_lahir) as usia) u
+  where (k.usia_min is null or u.usia >= k.usia_min)
+    and (k.usia_max is null or u.usia <= k.usia_max)
+    and (coalesce(cardinality(k.status_sekolah_berlaku), 0) = 0
+         or p_status_sekolah = any (k.status_sekolah_berlaku))
+    and (coalesce(cardinality(k.status_pernikahan_berlaku), 0) = 0
+         or p_status_pernikahan = any (k.status_pernikahan_berlaku))
   order by k.urutan
   limit 1;
 $$;
@@ -634,7 +719,8 @@ $$;
 create or replace function private.termasuk_generus(
   p_tanggal_lahir date,
   p_tahun_lahir smallint,
-  p_status public.status_pernikahan
+  p_status_pernikahan public.status_pernikahan,
+  p_status_sekolah public.status_sekolah
 )
 returns boolean
 language sql
@@ -644,8 +730,9 @@ set search_path = ''
 as $$
   select coalesce(
     (select k.termasuk_generus
-     from public.kategori_usia k
-     where k.id = private.kategori_usia_id(p_tanggal_lahir, p_tahun_lahir, p_status)),
+     from public.kategori_jamaah k
+     where k.id = private.kategori_jamaah_id(
+       p_tanggal_lahir, p_tahun_lahir, p_status_pernikahan, p_status_sekolah)),
     false
   );
 $$;
@@ -656,13 +743,15 @@ $$;
 --       kelompok; dengan kelompok_id hanya untuk kelompok itu. Izin global
 --       (p_kelompok_id null) hanya lolos untuk penugasan tanpa kelompok_id;
 --   (c) bila perannya hanya_generus: hanya untuk jamaah generus, dan izin
---       global otomatis tidak lolos.
+--       global otomatis tidak lolos. Sasaran generus ditentukan kategori
+--       jamaah (status sekolah/pernikahan/usia), bukan umur semata.
 create or replace function private.boleh(
   p_izin text,
   p_kelompok_id uuid,
   p_tanggal_lahir date default null,
   p_tahun_lahir smallint default null,
-  p_status public.status_pernikahan default null
+  p_status_pernikahan public.status_pernikahan default null,
+  p_status_sekolah public.status_sekolah default null
 )
 returns boolean
 language sql
@@ -682,7 +771,8 @@ as $$
         not p.hanya_generus
         or (
           p_kelompok_id is not null
-          and private.termasuk_generus(p_tanggal_lahir, p_tahun_lahir, p_status)
+          and private.termasuk_generus(
+            p_tanggal_lahir, p_tahun_lahir, p_status_pernikahan, p_status_sekolah)
         )
       )
   );
@@ -699,7 +789,8 @@ as $$
   select exists (
     select 1 from public.jamaah j
     where j.id = p_jamaah_id
-      and private.boleh(p_izin, j.kelompok_id, j.tanggal_lahir, j.tahun_lahir, j.status_pernikahan)
+      and private.boleh(p_izin, j.kelompok_id, j.tanggal_lahir, j.tahun_lahir,
+                       j.status_pernikahan, j.status_sekolah)
   );
 $$;
 
@@ -723,9 +814,9 @@ $$;
 revoke all on all functions in schema private from public;
 grant execute on function
   private.usia(date, smallint),
-  private.kategori_usia_id(date, smallint, public.status_pernikahan),
-  private.termasuk_generus(date, smallint, public.status_pernikahan),
-  private.boleh(text, uuid, date, smallint, public.status_pernikahan),
+  private.kategori_jamaah_id(date, smallint, public.status_pernikahan, public.status_sekolah),
+  private.termasuk_generus(date, smallint, public.status_pernikahan, public.status_sekolah),
+  private.boleh(text, uuid, date, smallint, public.status_pernikahan, public.status_sekolah),
   private.boleh_jamaah(text, uuid),
   private.adalah_admin()
 to authenticated;
@@ -738,36 +829,46 @@ with (security_invoker = true) as
 select
   j.*,
   private.usia(j.tanggal_lahir, j.tahun_lahir) as usia,
-  k.id               as kategori_usia_id,
-  k.kode             as kategori_usia_kode,
-  k.nama             as kategori_usia_nama,
+  k.id               as kategori_jamaah_id,
+  k.kode             as kategori_jamaah_kode,
+  k.nama             as kategori_jamaah_nama,
   coalesce(k.termasuk_generus, false) as termasuk_generus
 from public.jamaah j
-left join public.kategori_usia k
-  on k.id = private.kategori_usia_id(j.tanggal_lahir, j.tahun_lahir, j.status_pernikahan);
+left join public.kategori_jamaah k
+  on k.id = private.kategori_jamaah_id(
+       j.tanggal_lahir, j.tahun_lahir, j.status_pernikahan, j.status_sekolah);
+
+-- Untuk membersihkan data awal: jamaah aktif yang tidak cocok dengan kategori
+-- mana pun (mis. status sekolah belum diisi). Tetap tunduk RLS jamaah.
+create view public.jamaah_tanpa_kategori
+with (security_invoker = true) as
+select *
+from public.jamaah_dengan_kategori
+where aktif and kategori_jamaah_id is null;
 
 -- ---------------------------------------------------------------------
 -- 10. GRANT eksplisit (tidak bergantung pada default grant Supabase)
 -- ---------------------------------------------------------------------
 revoke all on
-  public.kelompok, public.kategori_usia, public.keluarga, public.jamaah,
+  public.kelompok, public.kategori_jamaah, public.keluarga, public.jamaah,
   public.jamaah_keringanan, public.peran, public.izin, public.peran_izin,
-  public.admin, public.penugasan_peran, public.jamaah_dengan_kategori
+  public.admin, public.penugasan_peran, public.jamaah_dengan_kategori,
+  public.jamaah_tanpa_kategori
 from anon, authenticated;
 
 grant select, insert, update, delete on
-  public.kelompok, public.kategori_usia, public.keluarga, public.jamaah,
+  public.kelompok, public.kategori_jamaah, public.keluarga, public.jamaah,
   public.jamaah_keringanan, public.peran, public.izin, public.peran_izin,
   public.admin, public.penugasan_peran
 to authenticated;
 
-grant select on public.jamaah_dengan_kategori to authenticated;
+grant select on public.jamaah_dengan_kategori, public.jamaah_tanpa_kategori to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 11. Row Level Security (satu policy per tabel per perintah)
 -- ---------------------------------------------------------------------
 alter table public.kelompok           enable row level security;
-alter table public.kategori_usia      enable row level security;
+alter table public.kategori_jamaah    enable row level security;
 alter table public.keluarga           enable row level security;
 alter table public.jamaah             enable row level security;
 alter table public.jamaah_keringanan  enable row level security;
@@ -789,20 +890,20 @@ create policy kelompok_update on public.kelompok
 create policy kelompok_delete on public.kelompok
   for delete to authenticated using (private.boleh('kelompok.kelola', null));
 
--- kategori_usia: dibaca semua pengguna login; kelola = izin global.
-create policy kategori_usia_select on public.kategori_usia
+-- kategori_jamaah: dibaca semua pengguna login; kelola = izin global.
+create policy kategori_jamaah_select on public.kategori_jamaah
   for select to authenticated using (true);
-create policy kategori_usia_insert on public.kategori_usia
+create policy kategori_jamaah_insert on public.kategori_jamaah
   for insert to authenticated with check (private.boleh('pengaturan.kelola', null));
-create policy kategori_usia_update on public.kategori_usia
+create policy kategori_jamaah_update on public.kategori_jamaah
   for update to authenticated
   using (private.boleh('pengaturan.kelola', null))
   with check (private.boleh('pengaturan.kelola', null));
-create policy kategori_usia_delete on public.kategori_usia
+create policy kategori_jamaah_delete on public.kategori_jamaah
   for delete to authenticated using (private.boleh('pengaturan.kelola', null));
 
 -- keluarga: per kelompok (peran hanya_generus tidak lolos karena keluarga
--- tidak punya usia).
+-- tidak punya kategori).
 create policy keluarga_select on public.keluarga
   for select to authenticated using (private.boleh('keluarga.lihat', kelompok_id));
 create policy keluarga_insert on public.keluarga
@@ -814,20 +915,20 @@ create policy keluarga_update on public.keluarga
 create policy keluarga_delete on public.keluarga
   for delete to authenticated using (private.boleh('keluarga.kelola', kelompok_id));
 
--- jamaah: wilayah + sasaran generus (usia & status).
+-- jamaah: wilayah + sasaran generus (kategori jamaah).
 create policy jamaah_select on public.jamaah
   for select to authenticated
-  using (private.boleh('jamaah.lihat', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan));
+  using (private.boleh('jamaah.lihat', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan, status_sekolah));
 create policy jamaah_insert on public.jamaah
   for insert to authenticated
-  with check (private.boleh('jamaah.tambah', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan));
+  with check (private.boleh('jamaah.tambah', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan, status_sekolah));
 create policy jamaah_update on public.jamaah
   for update to authenticated
-  using (private.boleh('jamaah.ubah', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan))
-  with check (private.boleh('jamaah.ubah', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan));
+  using (private.boleh('jamaah.ubah', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan, status_sekolah))
+  with check (private.boleh('jamaah.ubah', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan, status_sekolah));
 create policy jamaah_delete on public.jamaah
   for delete to authenticated
-  using (private.boleh('jamaah.hapus', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan));
+  using (private.boleh('jamaah.hapus', kelompok_id, tanggal_lahir, tahun_lahir, status_pernikahan, status_sekolah));
 
 -- jamaah_keringanan: hanya admin dengan izin keringanan.*.
 create policy jamaah_keringanan_select on public.jamaah_keringanan
@@ -917,7 +1018,7 @@ insert into public.peran (kode, nama, wilayah, hanya_generus, deskripsi) values
 
 insert into public.izin (kode, deskripsi) values
   ('kelompok.kelola',   'Menambah/mengubah/menghapus kelompok'),
-  ('pengaturan.kelola', 'Mengubah pengaturan desa (mis. kategori usia)'),
+  ('pengaturan.kelola', 'Mengubah pengaturan desa (mis. kategori jamaah)'),
   ('akses.kelola',      'Mengelola admin, peran, dan izin'),
   ('keluarga.lihat',    'Melihat data keluarga'),
   ('keluarga.kelola',   'Menambah/mengubah/menghapus keluarga'),
@@ -942,17 +1043,24 @@ join public.izin i on
         'jamaah.lihat', 'jamaah.ubah',
         'keringanan.lihat', 'keringanan.kelola'));
 
--- Kategori usia — DRAF, semua angka akan diubah Reno/pengurus lewat data.
-insert into public.kategori_usia
-  (urutan, kode, nama, usia_min, usia_max, status_pernikahan, termasuk_generus)
+-- Kategori jamaah — DRAF, akan diubah Reno/pengurus lewat data tanpa migrasi.
+-- Caberawit s.d. remaja dewasa TIDAK memakai umur; hanya lansia yang memakai usia.
+insert into public.kategori_jamaah
+  (urutan, kode, nama, usia_min, usia_max,
+   status_sekolah_berlaku, status_pernikahan_berlaku, termasuk_generus)
 values
-  (1, 'lansia',       'Lansia',                     60, null, null,      false),
-  (2, 'caberawit',    'Caberawit',                   0,   11, null,      false),
-  (3, 'pra_remaja',   'Pra-Remaja',                 12,   14, null,      true),
-  (4, 'remaja',       'Remaja',                     15,   18, null,      true),
-  (5, 'usia_mandiri', 'Usia Mandiri / Pra-Nikah',   19,   35, 'lajang',  true),
-  (6, 'berkeluarga',  'Berkeluarga',                19, null, 'menikah', false),
-  (7, 'dewasa',       'Dewasa',                     19, null, null,      false);
+  (1, 'lansia',        'Lansia',
+      60, null, null, null, false),
+  (2, 'berkeluarga',   'Berkeluarga',
+      null, null, null, '{menikah,janda_duda}', false),
+  (3, 'caberawit',     'Caberawit',
+      null, null, '{belum_sekolah,paud_tk,sd}', null, false),
+  (4, 'pra_remaja',    'Pra-Remaja',
+      null, null, '{smp}', null, true),
+  (5, 'remaja_muda',   'Remaja Muda',
+      null, null, '{sma_smk}', null, true),
+  (6, 'remaja_dewasa', 'Remaja Dewasa / Usia Mandiri / Pra-Nikah',
+      null, null, '{kuliah,bekerja,lainnya}', null, true);
 ```
 
 ### 6.1 Hasil uji lokal (bukan di Supabase)
@@ -963,69 +1071,91 @@ Supabase sama sekali tidak disentuh. Lingkungan ujinya berisi stub minimal
 meniru Supabase (semua tabel baru di `public` dapat GRANT ALL untuk `anon` dan
 `authenticated`), supaya terbukti migrasi mencabutnya sendiri.
 
-Data contoh: 11 jamaah di 4 kelompok, 6 di antaranya generus; 5 admin
-(desa, kelompok 1, generus desa, generus kelompok 1, tanpa penugasan); dan 1
-pengguna login non-admin sebagai calon akun generus. Skrip tes lengkap ada di
-Lampiran A.
+Data contoh: 12 jamaah di 4 kelompok, 6 di antaranya generus. Data ini
+mencakup jamaah tanpa tanggal lahir, jamaah dengan tahun lahir saja, janda,
+lansia yang masih bekerja, dan satu jamaah tanpa kategori. Pengguna ujinya: 5
+admin (desa, kelompok 1, generus desa, generus kelompok 1, tanpa penugasan)
+dan 1 pengguna login non-admin sebagai calon akun generus. Skrip tes lengkap
+ada di Lampiran A.
 
-**Hasil: 49 dari 49 lulus.**
+**Hasil: 64 dari 64 lulus.**
 
 | # | Skenario | Hasil |
 | -: | -------- | :---: |
-| 1 | Kode: semua jamaah punya kode `KW-` + 6 karakter tanpa 0/O/1/I/L | ✅ |
-| 2 | Kode: unik untuk 11 jamaah (nilai dari klien diabaikan) | ✅ |
+| 1 | Kode: semua jamaah punya kode KW- + 6 karakter tanpa 0/O/1/I/L | ✅ |
+| 2 | Kode: unik untuk 12 jamaah (nilai dari klien "KW-ABCDEF" diabaikan) | ✅ |
 | 3 | Kode: update kode ditolak trigger | ✅ |
-| 4 | Tahun lahir: tahun yang beda dengan tanggal lahir ditolak (check) | ✅ |
-| 5 | Tahun lahir: tahun yang sama dengan tanggal lahir diterima | ✅ |
-| 6 | Penugasan: `admin_kelompok` tanpa `kelompok_id` ditolak | ✅ |
-| 7 | Penugasan: `admin_desa` dengan `kelompok_id` ditolak | ✅ |
-| 8 | Penugasan: `admin_generus` tanpa `kelompok_id` diterima | ✅ |
-| 9 | Penugasan: `admin_generus` dengan `kelompok_id` diterima | ✅ |
-| 10 | Policy: tidak ada policy `FOR ALL` | ✅ |
-| 11 | Policy: maksimal satu policy per tabel per perintah | ✅ |
-| 12 | RLS aktif di semua tabel `public` | ✅ |
-| 13 | GRANT: `anon` tidak punya hak apa pun di tabel/view `public` | ✅ |
-| 14 | GRANT: `authenticated` hanya `SELECT` pada view | ✅ |
-| 15 | Kategori: umur 65 menikah → `lansia` (urutan terkecil saat tumpang tindih) | ✅ |
-| 16 | Kategori: umur 40 menikah → `berkeluarga` | ✅ |
-| 17 | Kategori: umur 50 status kosong → `dewasa` (hanya kategori tanpa syarat status) | ✅ |
-| 18 | Kategori: umur 25 lajang → `usia_mandiri` | ✅ |
-| 19 | Kategori: umur 8 → `caberawit` | ✅ |
-| 20 | Tahun lahir dipakai bila `tanggal_lahir` kosong (umur 16 → `remaja`) | ✅ |
-| 21 | Tanpa tanggal & tahun lahir: tidak punya kategori | ✅ |
-| 22 | Admin desa melihat 11/11 jamaah dan 1 penanda keringanan | ✅ |
-| 23 | Admin kelompok 1 hanya melihat 7 jamaah Kelompok 1 | ✅ |
-| 24 | Admin kelompok 1 menambah jamaah ke Kelompok 2: ditolak RLS | ✅ |
-| 25 | Admin kelompok 1 memindahkan jamaah ke Kelompok 2: ditolak RLS | ✅ |
-| 26 | Admin kelompok 1 memberi dirinya peran `admin_desa`: ditolak RLS | ✅ |
-| 27 | Admin kelompok 1 tetap bisa membaca peran/izin (admin aktif) | ✅ |
-| 28 | Admin generus desa melihat 6 jamaah generus di 4 kelompok | ✅ |
-| 29 | Admin generus desa tidak melihat jamaah non-generus | ✅ |
-| 30 | Admin generus desa melihat penanda keringanan jamaah generus | ✅ |
-| 31 | Admin generus desa tidak melihat keluarga (tanpa izin keluarga) | ✅ |
-| 32 | Admin generus mengubah tanggal lahir hingga keluar cakupan: ditolak (WITH CHECK) | ✅ |
-| 33 | Admin generus mengubah status menjadi menikah hingga keluar cakupan: ditolak (WITH CHECK) | ✅ |
-| 34 | Admin generus mengubah data yang tetap dalam cakupan: diterima | ✅ |
-| 35 | Admin generus Kelompok 1 hanya melihat 3 generus Kelompok 1 | ✅ |
-| 36 | Admin generus Kelompok 1 tidak melihat generus kelompok lain | ✅ |
-| 37 | Admin generus desa yang diberi izin global `kelompok.kelola` tetap tidak bisa menambah kelompok | ✅ |
-| 38 | Status lajang → menikah (umur 25): kategori `usia_mandiri` → `berkeluarga` | ✅ |
-| 39 | `updated_by` terisi otomatis dengan admin yang mengubah | ✅ |
-| 40 | ... dan jamaah itu hilang dari cakupan admin generus desa (6 → 5) | ✅ |
-| 41 | Login tanpa penugasan: tidak bisa membaca `peran`/`izin`/`peran_izin` | ✅ |
-| 42 | Login tanpa penugasan: bisa membaca 4 kelompok dan 7 kategori usia | ✅ |
-| 43 | Login tanpa penugasan: 0 jamaah dan 0 keringanan | ✅ |
-| 44 | Pengguna login non-admin (calon akun generus): tidak bisa membaca peran/izin, 0 jamaah | ✅ |
-| 45 | Pengguna login non-admin: bisa membaca kelompok & kategori usia | ✅ |
-| 46 | `anon` membaca `jamaah`: permission denied | ✅ |
-| 47 | `anon` membaca view `jamaah_dengan_kategori`: permission denied | ✅ |
-| 48 | `anon` membaca `kelompok`: permission denied | ✅ |
-| 49 | `anon` memanggil fungsi `private`: permission denied | ✅ |
+| 4 | Tahun lahir: tahun beda dengan tanggal lahir ditolak (check) | ✅ |
+| 5 | Tahun lahir: tahun sama dengan tanggal lahir diterima | ✅ |
+| 6 | Kategori: `usia_max` < `usia_min` ditolak (check) | ✅ |
+| 7 | Penugasan: `admin_kelompok` tanpa `kelompok_id` ditolak | ✅ |
+| 8 | Penugasan: `admin_desa` dengan `kelompok_id` ditolak | ✅ |
+| 9 | Penugasan: `admin_generus` tanpa `kelompok_id` diterima | ✅ |
+| 10 | Penugasan: `admin_generus` dengan `kelompok_id` diterima | ✅ |
+| 11 | Policy: tidak ada policy FOR ALL | ✅ |
+| 12 | Policy: maksimal satu policy per tabel per perintah | ✅ |
+| 13 | RLS: aktif di semua tabel public | ✅ |
+| 14 | GRANT: anon tidak punya hak apa pun di tabel/view public | ✅ |
+| 15 | GRANT: authenticated hanya SELECT pada kedua view | ✅ |
+| 16 | Kategori: lajang SMP → `pra_remaja` | ✅ |
+| 17 | Kategori: SMP tanpa tanggal & tahun lahir tetap `pra_remaja` (umur tidak dipakai) | ✅ |
+| 18 | Kategori: lajang bekerja (25) → `remaja_dewasa` (generus) | ✅ |
+| 19 | Kategori: umur 65 bekerja → `lansia` (urutan 1 menang atas `remaja_dewasa` urutan 6) | ✅ |
+| 20 | Kategori: menikah + bekerja → `berkeluarga` (urutan 2 menang atas `remaja_dewasa` urutan 6) | ✅ |
+| 21 | Kategori: `janda_duda`, status sekolah kosong → `berkeluarga` | ✅ |
+| 22 | Kategori: SD → `caberawit` | ✅ |
+| 23 | Tahun lahir: dipakai bila `tanggal_lahir` kosong (usia 16 dari tahun lahir) | ✅ |
+| 24 | Tahun lahir: umur 70 dari tahun lahir saja → `lansia` | ✅ |
+| 25 | Tanpa kategori: sekolah kosong, lajang, umur 30 → tidak punya kategori | ✅ |
+| 26 | `jamaah_tanpa_kategori`: berisi tepat jamaah aktif yang tak cocok kategori mana pun | ✅ |
+| 27 | `status_sekolah_diperbarui`: diisi hari ini saat insert dengan status sekolah | ✅ |
+| 28 | `status_sekolah_diperbarui`: kosong saat insert tanpa status sekolah | ✅ |
+| 29 | `status_sekolah_diperbarui`: tidak berubah bila `status_sekolah` tidak berubah | ✅ |
+| 30 | `status_sekolah_diperbarui`: nilai manual dari klien diabaikan | ✅ |
+| 31 | Admin desa: melihat 12/12 jamaah dan 1 penanda keringanan | ✅ |
+| 32 | Admin desa: `jamaah_tanpa_kategori` berisi 1 baris | ✅ |
+| 33 | Admin kelompok 1: hanya melihat 7 jamaah Kelompok 1 | ✅ |
+| 34 | Admin kelompok 1: menambah jamaah ke Kelompok 2 ditolak | ✅ |
+| 35 | Admin kelompok 1: memindahkan jamaah ke Kelompok 2 ditolak | ✅ |
+| 36 | Admin kelompok 1: memberi dirinya peran `admin_desa` ditolak | ✅ |
+| 37 | Admin kelompok 1: tetap bisa membaca peran/izin (admin aktif) | ✅ |
+| 38 | Admin generus desa: melihat 6 jamaah generus di 4 kelompok | ✅ |
+| 39 | Admin generus desa: tidak melihat jamaah non-generus | ✅ |
+| 40 | Admin generus desa: jamaah tanpa kategori tidak terlihat (juga di `jamaah_tanpa_kategori`) | ✅ |
+| 41 | Admin generus desa: melihat penanda keringanan jamaah generus | ✅ |
+| 42 | Admin generus desa: tidak melihat keluarga (tanpa izin keluarga) | ✅ |
+| 43 | Admin generus: mengubah `status_sekolah` hingga keluar cakupan ditolak (WITH CHECK) | ✅ |
+| 44 | Admin generus: mengosongkan `status_sekolah` hingga keluar cakupan ditolak (WITH CHECK) | ✅ |
+| 45 | Admin generus: mengubah `status_pernikahan` menjadi menikah ditolak (WITH CHECK) | ✅ |
+| 46 | Admin generus: mengubah `status_sekolah` yang tetap generus (`sma_smk` → kuliah) diterima | ✅ |
+| 47 | Admin generus Kelompok 1: hanya melihat 3 generus Kelompok 1 | ✅ |
+| 48 | Admin generus Kelompok 1: tidak melihat generus kelompok lain | ✅ |
+| 49 | Admin generus desa + izin global `kelompok.kelola` tetap tidak bisa menambah kelompok | ✅ |
+| 50 | Status sekolah SMP → SMA/SMK: kategori `pra_remaja` → `remaja_muda` (umur tidak berubah) | ✅ |
+| 51 | `status_sekolah_diperbarui`: menjadi hari ini saat `status_sekolah` berubah | ✅ |
+| 52 | Lajang bekerja → menikah: kategori `remaja_dewasa` → `berkeluarga` | ✅ |
+| 53 | `updated_by` terisi otomatis dengan admin yang mengubah | ✅ |
+| 54 | ... dan jamaah itu hilang dari cakupan admin generus desa (6 → 5) | ✅ |
+| 55 | Login tanpa penugasan: tidak bisa membaca peran/izin/peran_izin | ✅ |
+| 56 | Login tanpa penugasan: bisa membaca 4 kelompok dan 6 kategori jamaah | ✅ |
+| 57 | Login tanpa penugasan: 0 jamaah, 0 keringanan, 0 baris `jamaah_tanpa_kategori` | ✅ |
+| 58 | Pengguna login non-admin: tidak bisa membaca peran/izin, 0 jamaah | ✅ |
+| 59 | Pengguna login non-admin: bisa membaca kelompok & kategori jamaah | ✅ |
+| 60 | Anon: membaca jamaah ditolak | ✅ |
+| 61 | Anon: membaca view `jamaah_dengan_kategori` ditolak | ✅ |
+| 62 | Anon: membaca view `jamaah_tanpa_kategori` ditolak | ✅ |
+| 63 | Anon: membaca kelompok ditolak | ✅ |
+| 64 | Anon: memanggil fungsi private ditolak | ✅ |
 
-**Uji mutasi:** untuk memastikan tes ini memang bisa gagal, syarat
-`hanya_generus` di `private.boleh` sengaja dirusak di salinan terpisah. Hasilnya
-7 tes yang relevan berubah menjadi GAGAL (#28, #29, #32, #33, #35, #37, #40),
-dan 42/49 lulus.
+**Uji mutasi.** Untuk memastikan tes ini memang bisa gagal, tiga aturan
+sengaja dirusak satu per satu di salinan terpisah (masing-masing perubahan
+satu baris):
+
+| Aturan yang dirusak | Tes yang berubah menjadi GAGAL |
+| ------------------- | ------------------------------ |
+| Syarat `hanya_generus` di `private.boleh` dihapus | 9 tes (#38–40, #43–45, #47, #49, #54) |
+| Status sekolah kosong dianggap cocok dengan kategori bersyarat sekolah | 3 tes (#25, #26, #32) |
+| `urutan` terbesar yang menang (bukan terkecil) | 7 tes (#19, #20, #38, #45, #47, #52, #54) |
 
 **SQL bootstrap (§6.2)** juga diuji: menghasilkan dua admin desa, dan admin
 pertama langsung lolos `private.boleh('akses.kelola', null)`.
@@ -1140,26 +1270,34 @@ lokal pada runner, bukan di project Supabase produksi.
 
 ## 8. Pertanyaan terbuka untuk Reno/pengurus
 
-1. **Janda/duda.** Apakah perlu nilai status tersendiri (mis. `cerai_hidup`,
-   `cerai_mati`), dan masuk kategori usia apa? Saat ini hanya ada `lajang` dan
-   `menikah`. Enum bisa ditambah nilainya kapan saja.
-2. **Batas kategori usia.** Angka seed §4.3 masih DRAF. Contohnya: apakah
-   usia mandiri berhenti di 35, dan apakah lansia dimulai di 60?
-3. **Pencatatan pernikahan generus.** Dengan aturan sekarang, admin generus
+Sudah diputuskan: janda/duda dicatat sebagai nilai `janda_duda` (§4.3).
+
+1. **Batas atas umur remaja dewasa.** Saat ini `remaja_dewasa` tidak punya
+   batas atas umur. Lajang usia 45 yang bekerja tetap generus sampai 60
+   (lalu `lansia`). Perlu batas, misalnya 35? Bisa ditambah lewat data
+   (`usia_max`) tanpa migrasi.
+2. **Angka dan aturan kategori lain.** Seed §4.4 masih DRAF. Contohnya:
+   apakah lansia dimulai di 60, dan apakah `lainnya` masuk remaja dewasa.
+3. **Pembaruan status sekolah tiap tahun ajaran (sekitar Juli).** Siapa yang
+   bertanggung jawab memperbaruinya per kelompok? Apakah perlu kolom `kelas`
+   untuk menaikkan jenjang otomatis (ditunda sampai alat kenaikan jenjang
+   dibuat, §4.3)?
+4. **Pencatatan pernikahan generus.** Dengan aturan sekarang, admin generus
    tidak bisa mengubah status jamaahnya menjadi `menikah`, karena jamaah itu
    akan keluar dari cakupannya. Apakah memang cukup dicatat oleh admin
    kelompok atau admin desa?
-4. **Pengurus generus per kelompok.** Apakah setiap kelompok punya pengurus
+5. **Pengurus generus per kelompok.** Apakah setiap kelompok punya pengurus
    generus sendiri, atau hanya sebagian? Skema sudah mendukung keduanya.
-5. **Detail hak akses.** Konfirmasi atau ubah tabel §5. Contohnya: apakah
+6. **Detail hak akses.** Konfirmasi atau ubah tabel §5. Contohnya: apakah
    admin generus boleh menambah jamaah, apakah admin kelompok boleh hapus
    permanen, dan apakah admin generus perlu melihat data keluarga.
-6. **Hubungan keluarga.** Opsi A cukup, atau perlu silsilah (Opsi B, §4.6)?
-7. **Nama resmi kelompok 1–4.**
-8. **Data awal jamaah.** Sumber dan format; apakah tanggal lahir lengkap
-   tersedia atau sebagian hanya tahun.
-9. **Data sensitif** (NIK, alamat, no. HP, foto): tetap tidak ada di skema
-   sampai ada aturannya.
+7. **Hubungan keluarga.** Opsi A cukup, atau perlu silsilah (Opsi B, §4.7)?
+8. **Nama resmi kelompok 1–4.**
+9. **Data awal jamaah.** Sumber dan format. Apakah status sekolah dan status
+   pernikahan tersedia? Jamaah yang kosong akan muncul di
+   `jamaah_tanpa_kategori` untuk dilengkapi.
+10. **Data sensitif** (NIK, alamat, no. HP, foto): tetap tidak ada di skema
+    sampai ada aturannya.
 
 ## 9. Catatan Fase 2 (tanpa SQL)
 
@@ -1272,6 +1410,12 @@ create function uji.sebagai(p_uid text) returns void language sql as $$
 $$;
 grant execute on all functions in schema uji to anon, authenticated;
 
+-- Kategori jamaah menurut view (dipakai banyak tes).
+create function uji.kategori(p_nama text) returns text language sql as $$
+  select kategori_jamaah_kode from public.jamaah_dengan_kategori where nama_lengkap = p_nama;
+$$;
+grant execute on function uji.kategori(text) to authenticated;
+
 -- ---------------------------------------------------------------------
 -- Data contoh (sebagai pemilik DB, seperti SQL Editor)
 -- ---------------------------------------------------------------------
@@ -1299,43 +1443,49 @@ insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
   select '00000000-0000-0000-0000-00000000000e', p.id, k.id from public.peran p, public.kelompok k
   where p.kode = 'admin_generus' and k.nomor = 1;
 
--- 11 jamaah; 6 di antaranya generus (K1: 3, K2: 1, K3: 1, K4: 1).
+-- 12 jamaah; 6 di antaranya generus (K1: 3, K2: 1, K3: 1, K4: 1).
 insert into public.jamaah
-  (kelompok_id, nama_lengkap, tanggal_lahir, tahun_lahir, jenis_kelamin, status_pernikahan, kode)
-select k.id, v.nama, v.tgl, v.thn, v.jk::public.jenis_kelamin, v.st::public.status_pernikahan, 'KW-ABCDEF'
+  (kelompok_id, nama_lengkap, tanggal_lahir, tahun_lahir, jenis_kelamin,
+   status_pernikahan, status_sekolah, kode)
+select k.id, v.nama, v.tgl, v.thn, v.jk::public.jenis_kelamin,
+       v.nikah::public.status_pernikahan, v.sekolah::public.status_sekolah, 'KW-ABCDEF'
 from public.kelompok k
 join (values
-  (1, 'K1 Dewasa 40 menikah',  (current_date - interval '40 years')::date, null::smallint, 'L', 'menikah'),
-  (1, 'K1 Remaja 15',          (current_date - interval '15 years')::date, null, 'P', null),
-  (1, 'K1 Lajang 25',          (current_date - interval '25 years')::date, null, 'L', 'lajang'),
-  (1, 'K1 Lansia 65 menikah',  (current_date - interval '65 years')::date, null, 'P', 'menikah'),
-  (1, 'K1 Anak 8',             (current_date - interval '8 years')::date,  null, 'L', null),
-  (1, 'K1 Tahun Saja 16',      null, (extract(year from current_date)::int - 16)::smallint, 'P', null),
-  (1, 'K1 Tanpa Lahir',        null, null, 'L', null),
-  (2, 'K2 Remaja 17',          (current_date - interval '17 years')::date, null, 'L', null),
-  (2, 'K2 Dewasa 50',          (current_date - interval '50 years')::date, null, 'P', null),
-  (3, 'K3 Pra-Remaja 13',      (current_date - interval '13 years')::date, null, 'P', null),
-  (4, 'K4 Mandiri 22 lajang',  (current_date - interval '22 years')::date, null, 'L', 'lajang')
-) as v(nomor, nama, tgl, thn, jk, st) on v.nomor = k.nomor;
+  (1, 'K1 Menikah Bekerja 40',  (current_date - interval '40 years')::date, null::smallint, 'L', 'menikah', 'bekerja'),
+  (1, 'K1 SMP',                 (current_date - interval '15 years')::date, null, 'P', 'lajang',  'smp'),
+  (1, 'K1 Lajang Bekerja 25',   (current_date - interval '25 years')::date, null, 'L', 'lajang',  'bekerja'),
+  (1, 'K1 Lansia 65 Bekerja',   (current_date - interval '65 years')::date, null, 'P', 'lajang',  'bekerja'),
+  (1, 'K1 SD',                  (current_date - interval '8 years')::date,  null, 'L', null,      'sd'),
+  (1, 'K1 SMA Tahun Saja',      null, (extract(year from current_date)::int - 16)::smallint, 'P', 'lajang', 'sma_smk'),
+  (1, 'K1 Tanpa Kategori',      (current_date - interval '30 years')::date, null, 'L', 'lajang',  null),
+  (2, 'K2 SMA',                 (current_date - interval '17 years')::date, null, 'L', 'lajang',  'sma_smk'),
+  (2, 'K2 Janda 50',            (current_date - interval '50 years')::date, null, 'P', 'janda_duda', null),
+  (2, 'K2 Lansia Tahun Saja',   null, (extract(year from current_date)::int - 70)::smallint, 'L', null, null),
+  (3, 'K3 SMP Tanpa Lahir',     null, null, 'P', 'lajang',  'smp'),
+  (4, 'K4 Kuliah',              (current_date - interval '22 years')::date, null, 'L', 'lajang',  'kuliah')
+) as v(nomor, nama, tgl, thn, jk, nikah, sekolah) on v.nomor = k.nomor;
 
 insert into public.jamaah_keringanan (jamaah_id)
-  select id from public.jamaah where nama_lengkap = 'K1 Remaja 15';
+  select id from public.jamaah where nama_lengkap = 'K1 SMP';
 
 -- ---------------------------------------------------------------------
 -- Tes struktur (sebagai pemilik DB)
 -- ---------------------------------------------------------------------
 select uji.cek('Kode: semua jamaah punya kode KW- + 6 karakter tanpa 0/O/1/I/L',
   (select bool_and(kode ~ '^KW-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$') from public.jamaah));
-select uji.cek('Kode: unik untuk 11 jamaah (nilai dari klien "KW-ABCDEF" diabaikan)',
-  (select count(distinct kode) = 11 from public.jamaah));
+select uji.cek('Kode: unik untuk 12 jamaah (nilai dari klien "KW-ABCDEF" diabaikan)',
+  (select count(distinct kode) = 12 from public.jamaah));
 select uji.harus_gagal('Kode: update kode ditolak trigger',
-  $q$ update public.jamaah set kode = 'KW-ZZZZZZ' where nama_lengkap = 'K1 Anak 8' $q$, 'tidak boleh diubah');
+  $q$ update public.jamaah set kode = 'KW-ZZZZZZ' where nama_lengkap = 'K1 SD' $q$, 'tidak boleh diubah');
 select uji.harus_gagal('Tahun lahir: tahun beda dengan tanggal lahir ditolak (check)',
   $q$ insert into public.jamaah (kelompok_id, nama_lengkap, tanggal_lahir, tahun_lahir, jenis_kelamin)
       select id, 'Tes', '2010-05-01', 2011, 'L' from public.kelompok where nomor = 1 $q$, 'jamaah_tahun_sesuai_tanggal');
 select uji.harus_berhasil('Tahun lahir: tahun sama dengan tanggal lahir diterima',
   $q$ insert into public.jamaah (kelompok_id, nama_lengkap, tanggal_lahir, tahun_lahir, jenis_kelamin)
       select id, 'Tes', '2010-05-01', 2010, 'L' from public.kelompok where nomor = 1 $q$);
+select uji.harus_gagal('Kategori: usia_max < usia_min ditolak (check)',
+  $q$ insert into public.kategori_jamaah (kode, nama, usia_min, usia_max, urutan)
+      values ('x', 'X', 30, 20, 99) $q$, 'kategori_jamaah_rentang_usia');
 select uji.harus_gagal('Penugasan: admin_kelompok tanpa kelompok_id ditolak',
   $q$ insert into public.penugasan_peran (user_id, peran_id)
       select '00000000-0000-0000-0000-00000000000d', id from public.peran where kode = 'admin_kelompok' $q$, 'wajib memiliki kelompok_id');
@@ -1361,26 +1511,54 @@ select uji.cek('RLS: aktif di semua tabel public',
 select uji.cek('GRANT: anon tidak punya hak apa pun di tabel/view public',
   (select count(*) = 0 from information_schema.role_table_grants
    where grantee = 'anon' and table_schema = 'public'));
-select uji.cek('GRANT: authenticated hanya SELECT pada view (bukan INSERT/UPDATE/DELETE)',
-  (select array_agg(privilege_type::text order by privilege_type) = array['SELECT']
+select uji.cek('GRANT: authenticated hanya SELECT pada kedua view',
+  (select array_agg(distinct privilege_type::text) = array['SELECT']
    from information_schema.role_table_grants
-   where grantee = 'authenticated' and table_name = 'jamaah_dengan_kategori'));
+   where grantee = 'authenticated'
+     and table_name in ('jamaah_dengan_kategori', 'jamaah_tanpa_kategori')));
 
--- Kategori (tanpa RLS, langsung dari view sebagai pemilik)
-select uji.cek('Kategori: umur 65 menikah → lansia (urutan terkecil saat tumpang tindih)',
-  (select kategori_usia_kode = 'lansia' from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Lansia 65 menikah'));
-select uji.cek('Kategori: umur 40 menikah → berkeluarga',
-  (select kategori_usia_kode = 'berkeluarga' from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Dewasa 40 menikah'));
-select uji.cek('Kategori: umur 50 status kosong → dewasa (hanya kategori tanpa syarat status)',
-  (select kategori_usia_kode = 'dewasa' from public.jamaah_dengan_kategori where nama_lengkap = 'K2 Dewasa 50'));
-select uji.cek('Kategori: umur 25 lajang → usia_mandiri',
-  (select kategori_usia_kode = 'usia_mandiri' from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Lajang 25'));
-select uji.cek('Kategori: umur 8 → caberawit',
-  (select kategori_usia_kode = 'caberawit' from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Anak 8'));
-select uji.cek('Tahun lahir: dipakai bila tanggal_lahir kosong (umur 16 → remaja)',
-  (select usia = 16 and kategori_usia_kode = 'remaja' from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Tahun Saja 16'));
-select uji.cek('Tanpa tanggal & tahun lahir: tidak punya kategori',
-  (select kategori_usia_id is null and not termasuk_generus from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Tanpa Lahir'));
+-- Kategori (langsung dari view sebagai pemilik)
+select uji.cek('Kategori: lajang SMP → pra_remaja',
+  uji.kategori('K1 SMP') = 'pra_remaja');
+select uji.cek('Kategori: SMP tanpa tanggal & tahun lahir tetap pra_remaja (umur tidak dipakai)',
+  uji.kategori('K3 SMP Tanpa Lahir') = 'pra_remaja');
+select uji.cek('Kategori: lajang bekerja (25) → remaja_dewasa (generus)',
+  (select kategori_jamaah_kode = 'remaja_dewasa' and termasuk_generus
+   from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Lajang Bekerja 25'));
+select uji.cek('Kategori: umur 65 bekerja → lansia (urutan 1 menang atas remaja_dewasa urutan 6)',
+  uji.kategori('K1 Lansia 65 Bekerja') = 'lansia');
+select uji.cek('Kategori: menikah + bekerja → berkeluarga (urutan 2 menang atas remaja_dewasa urutan 6)',
+  uji.kategori('K1 Menikah Bekerja 40') = 'berkeluarga');
+select uji.cek('Kategori: janda_duda, status sekolah kosong → berkeluarga',
+  uji.kategori('K2 Janda 50') = 'berkeluarga');
+select uji.cek('Kategori: SD → caberawit',
+  uji.kategori('K1 SD') = 'caberawit');
+select uji.cek('Tahun lahir: dipakai bila tanggal_lahir kosong (usia 16 dari tahun lahir)',
+  (select usia = 16 and kategori_jamaah_kode = 'remaja_muda'
+   from public.jamaah_dengan_kategori where nama_lengkap = 'K1 SMA Tahun Saja'));
+select uji.cek('Tahun lahir: umur 70 dari tahun lahir saja → lansia',
+  uji.kategori('K2 Lansia Tahun Saja') = 'lansia');
+select uji.cek('Tanpa kategori: sekolah kosong, lajang, umur 30 → tidak punya kategori',
+  (select kategori_jamaah_id is null and not termasuk_generus
+   from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Tanpa Kategori'));
+select uji.cek('jamaah_tanpa_kategori: berisi tepat jamaah aktif yang tak cocok kategori mana pun',
+  (select array_agg(nama_lengkap) = array['K1 Tanpa Kategori'] from public.jamaah_tanpa_kategori));
+
+-- Trigger status_sekolah_diperbarui
+select uji.cek('status_sekolah_diperbarui: diisi hari ini saat insert dengan status sekolah',
+  (select status_sekolah_diperbarui = current_date from public.jamaah where nama_lengkap = 'K1 SD'));
+select uji.cek('status_sekolah_diperbarui: kosong saat insert tanpa status sekolah',
+  (select status_sekolah_diperbarui is null from public.jamaah where nama_lengkap = 'K1 Tanpa Kategori'));
+-- Simulasikan data lama (lewati trigger hanya untuk menyiapkan tanggal lampau).
+set session_replication_role = replica;
+update public.jamaah set status_sekolah_diperbarui = date '2020-07-15' where nama_lengkap = 'K2 SMA';
+set session_replication_role = default;
+update public.jamaah set nama_panggilan = 'Adi' where nama_lengkap = 'K2 SMA';
+select uji.cek('status_sekolah_diperbarui: tidak berubah bila status_sekolah tidak berubah',
+  (select status_sekolah_diperbarui = date '2020-07-15' from public.jamaah where nama_lengkap = 'K2 SMA'));
+update public.jamaah set status_sekolah_diperbarui = date '1999-01-01' where nama_lengkap = 'K2 SMA';
+select uji.cek('status_sekolah_diperbarui: nilai manual dari klien diabaikan',
+  (select status_sekolah_diperbarui = date '2020-07-15' from public.jamaah where nama_lengkap = 'K2 SMA'));
 
 -- ---------------------------------------------------------------------
 -- Tes RLS per peran
@@ -1389,8 +1567,10 @@ set role authenticated;
 
 -- Admin desa
 select uji.sebagai('00000000-0000-0000-0000-00000000000a');
-select uji.cek('Admin desa: melihat 11/11 jamaah dan 1 penanda keringanan',
-  (select count(*) = 11 from public.jamaah) and (select count(*) = 1 from public.jamaah_keringanan));
+select uji.cek('Admin desa: melihat 12/12 jamaah dan 1 penanda keringanan',
+  (select count(*) = 12 from public.jamaah) and (select count(*) = 1 from public.jamaah_keringanan));
+select uji.cek('Admin desa: jamaah_tanpa_kategori berisi 1 baris',
+  (select count(*) = 1 from public.jamaah_tanpa_kategori));
 
 -- Admin kelompok 1
 select uji.sebagai('00000000-0000-0000-0000-00000000000b');
@@ -1401,7 +1581,7 @@ select uji.harus_gagal('Admin kelompok 1: menambah jamaah ke Kelompok 2 ditolak'
       select id, 'Penyusup', 'L' from public.kelompok where nomor = 2 $q$, 'row-level security');
 select uji.harus_gagal('Admin kelompok 1: memindahkan jamaah ke Kelompok 2 ditolak',
   $q$ update public.jamaah set kelompok_id = (select id from public.kelompok where nomor = 2)
-      where nama_lengkap = 'K1 Dewasa 40 menikah' $q$, 'row-level security');
+      where nama_lengkap = 'K1 SD' $q$, 'row-level security');
 select uji.harus_gagal('Admin kelompok 1: memberi dirinya peran admin_desa ditolak',
   $q$ insert into public.penugasan_peran (user_id, peran_id)
       select '00000000-0000-0000-0000-00000000000b', id from public.peran where kode = 'admin_desa' $q$, 'row-level security');
@@ -1414,25 +1594,28 @@ select uji.cek('Admin generus desa: melihat 6 jamaah generus di 4 kelompok',
   (select count(*) = 6 and count(distinct kelompok_id) = 4 from public.jamaah));
 select uji.cek('Admin generus desa: tidak melihat jamaah non-generus',
   (select bool_and(termasuk_generus) from public.jamaah_dengan_kategori));
+select uji.cek('Admin generus desa: jamaah tanpa kategori tidak terlihat (juga di jamaah_tanpa_kategori)',
+  (select count(*) = 0 from public.jamaah where nama_lengkap = 'K1 Tanpa Kategori')
+  and (select count(*) = 0 from public.jamaah_tanpa_kategori));
 select uji.cek('Admin generus desa: melihat penanda keringanan jamaah generus',
   (select count(*) = 1 from public.jamaah_keringanan));
 select uji.cek('Admin generus desa: tidak melihat keluarga (tanpa izin keluarga)',
   (select count(*) = 0 from public.keluarga));
-select uji.harus_gagal('Admin generus: mengubah tanggal lahir hingga keluar cakupan ditolak (WITH CHECK)',
-  $q$ update public.jamaah set tanggal_lahir = (current_date - interval '40 years')::date
-      where nama_lengkap = 'K2 Remaja 17' $q$, 'row-level security');
-select uji.harus_gagal('Admin generus: mengubah status menjadi menikah hingga keluar cakupan ditolak (WITH CHECK)',
-  $q$ update public.jamaah set status_pernikahan = 'menikah'
-      where nama_lengkap = 'K4 Mandiri 22 lajang' $q$, 'row-level security');
-select uji.harus_berhasil('Admin generus: mengubah data yang tetap dalam cakupan diterima',
-  $q$ update public.jamaah set nama_panggilan = 'Dek' where nama_lengkap = 'K2 Remaja 17' $q$);
+select uji.harus_gagal('Admin generus: mengubah status_sekolah hingga keluar cakupan ditolak (WITH CHECK)',
+  $q$ update public.jamaah set status_sekolah = 'sd' where nama_lengkap = 'K2 SMA' $q$, 'row-level security');
+select uji.harus_gagal('Admin generus: mengosongkan status_sekolah hingga keluar cakupan ditolak (WITH CHECK)',
+  $q$ update public.jamaah set status_sekolah = null where nama_lengkap = 'K2 SMA' $q$, 'row-level security');
+select uji.harus_gagal('Admin generus: mengubah status_pernikahan menjadi menikah ditolak (WITH CHECK)',
+  $q$ update public.jamaah set status_pernikahan = 'menikah' where nama_lengkap = 'K4 Kuliah' $q$, 'row-level security');
+select uji.harus_berhasil('Admin generus: mengubah status_sekolah yang tetap generus (sma_smk → kuliah) diterima',
+  $q$ update public.jamaah set status_sekolah = 'kuliah' where nama_lengkap = 'K2 SMA' $q$);
 
 -- Admin generus Kelompok 1
 select uji.sebagai('00000000-0000-0000-0000-00000000000e');
 select uji.cek('Admin generus Kelompok 1: hanya melihat 3 generus Kelompok 1',
   (select count(*) = 3 and bool_and(nama_lengkap like 'K1 %') from public.jamaah));
 select uji.cek('Admin generus Kelompok 1: tidak melihat generus kelompok lain',
-  (select count(*) = 0 from public.jamaah where nama_lengkap like 'K2 %' or nama_lengkap like 'K4 %'));
+  (select count(*) = 0 from public.jamaah where nama_lengkap not like 'K1 %'));
 
 -- Izin global tidak pernah lolos untuk peran hanya_generus
 reset role;
@@ -1446,45 +1629,49 @@ reset role;
 delete from public.peran_izin
   where izin_kode = 'kelompok.kelola' and peran_id = (select id from public.peran where kode = 'admin_generus');
 
--- Perubahan status pernikahan memindahkan kategori & cakupan
+-- Perubahan status sekolah & pernikahan oleh admin desa
 set role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-00000000000a');
-update public.jamaah set status_pernikahan = 'menikah' where nama_lengkap = 'K1 Lajang 25';
-select uji.cek('Status lajang → menikah (umur 25): kategori usia_mandiri → berkeluarga',
-  (select kategori_usia_kode = 'berkeluarga' from public.jamaah_dengan_kategori where nama_lengkap = 'K1 Lajang 25'));
+update public.jamaah set status_sekolah = 'sma_smk' where nama_lengkap = 'K1 SMP';
+select uji.cek('Status sekolah SMP → SMA/SMK: kategori pra_remaja → remaja_muda (umur tidak berubah)',
+  uji.kategori('K1 SMP') = 'remaja_muda');
+select uji.cek('status_sekolah_diperbarui: menjadi hari ini saat status_sekolah berubah',
+  (select status_sekolah_diperbarui = current_date from public.jamaah where nama_lengkap = 'K1 SMP'));
+update public.jamaah set status_pernikahan = 'menikah' where nama_lengkap = 'K1 Lajang Bekerja 25';
+select uji.cek('Lajang bekerja → menikah: kategori remaja_dewasa → berkeluarga',
+  uji.kategori('K1 Lajang Bekerja 25') = 'berkeluarga');
 select uji.cek('updated_by terisi otomatis dengan admin yang mengubah',
-  (select updated_by = '00000000-0000-0000-0000-00000000000a' from public.jamaah where nama_lengkap = 'K1 Lajang 25'));
+  (select updated_by = '00000000-0000-0000-0000-00000000000a' from public.jamaah where nama_lengkap = 'K1 Lajang Bekerja 25'));
 select uji.sebagai('00000000-0000-0000-0000-00000000000c');
 select uji.cek('... dan jamaah itu hilang dari cakupan admin generus desa (6 → 5)',
   (select count(*) = 5 from public.jamaah)
-  and (select count(*) = 0 from public.jamaah where nama_lengkap = 'K1 Lajang 25'));
+  and (select count(*) = 0 from public.jamaah where nama_lengkap = 'K1 Lajang Bekerja 25'));
 
 -- Admin tanpa penugasan
 select uji.sebagai('00000000-0000-0000-0000-00000000000d');
-reset role;
-delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-00000000000d';
-set role authenticated;
 select uji.cek('Login tanpa penugasan: tidak bisa membaca peran/izin/peran_izin',
   (select count(*) = 0 from public.peran) and (select count(*) = 0 from public.izin)
   and (select count(*) = 0 from public.peran_izin));
-select uji.cek('Login tanpa penugasan: bisa membaca 4 kelompok dan 7 kategori usia',
-  (select count(*) = 4 from public.kelompok) and (select count(*) = 7 from public.kategori_usia));
-select uji.cek('Login tanpa penugasan: 0 jamaah dan 0 keringanan',
-  (select count(*) = 0 from public.jamaah) and (select count(*) = 0 from public.jamaah_keringanan));
+select uji.cek('Login tanpa penugasan: bisa membaca 4 kelompok dan 6 kategori jamaah',
+  (select count(*) = 4 from public.kelompok) and (select count(*) = 6 from public.kategori_jamaah));
+select uji.cek('Login tanpa penugasan: 0 jamaah, 0 keringanan, 0 baris jamaah_tanpa_kategori',
+  (select count(*) = 0 from public.jamaah) and (select count(*) = 0 from public.jamaah_keringanan)
+  and (select count(*) = 0 from public.jamaah_tanpa_kategori));
 
 -- Pengguna login tanpa baris admin (calon akun generus Fase 2)
 select uji.sebagai('00000000-0000-0000-0000-00000000000f');
 select uji.cek('Pengguna login non-admin: tidak bisa membaca peran/izin, 0 jamaah',
   (select count(*) = 0 from public.peran) and (select count(*) = 0 from public.izin)
   and (select count(*) = 0 from public.jamaah));
-select uji.cek('Pengguna login non-admin: bisa membaca kelompok & kategori usia',
-  (select count(*) = 4 from public.kelompok) and (select count(*) = 7 from public.kategori_usia));
+select uji.cek('Pengguna login non-admin: bisa membaca kelompok & kategori jamaah',
+  (select count(*) = 4 from public.kelompok) and (select count(*) = 6 from public.kategori_jamaah));
 reset role;
 
 -- Anon
 set role anon;
 select uji.harus_gagal('Anon: membaca jamaah ditolak', $q$ select * from public.jamaah $q$, 'permission denied');
 select uji.harus_gagal('Anon: membaca view jamaah_dengan_kategori ditolak', $q$ select * from public.jamaah_dengan_kategori $q$, 'permission denied');
+select uji.harus_gagal('Anon: membaca view jamaah_tanpa_kategori ditolak', $q$ select * from public.jamaah_tanpa_kategori $q$, 'permission denied');
 select uji.harus_gagal('Anon: membaca kelompok ditolak', $q$ select * from public.kelompok $q$, 'permission denied');
 select uji.harus_gagal('Anon: memanggil fungsi private ditolak', $q$ select private.boleh('jamaah.lihat', null) $q$, 'permission denied');
 reset role;

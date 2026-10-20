@@ -31,13 +31,15 @@ cakupannya satu desa.
 - **UI**: gaya One UI (halus, interaktif, intuitif). Laptop sebagai tampilan
   utama, tapi tetap nyaman di HP. PWA.
 - **Tidak ada NIK atau data sensitif lain** sampai pengurus memutuskan aturannya.
+  Status pernikahan hanya `lajang`/`menikah`/`janda_duda`, tanpa alasan
+  perceraian atau wafatnya pasangan.
 
 ### Fase
 
 | Fase | Isi | Status |
 | ---- | --- | ------ |
 | 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, logo, dokumen | Selesai |
-| 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan, kategori usia, kode jamaah, peran sebagai data, RLS | Usulan skema v2 di `docs/schema-proposal.md` (menunggu review, belum ada migrasi) |
+| 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Usulan skema v2 di `docs/schema-proposal.md` (menunggu review, belum ada migrasi) |
 | 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | Belum |
 | 3 | Monitoring kegiatan | Belum |
 
@@ -141,10 +143,13 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
    data sensitif apa pun**.
 3. **Detail hak akses**: apa saja yang boleh dilihat/diubah tiap peran (admin
    desa, admin kelompok, admin generus).
-4. **Kategori usia**: angka batas umur dan syarat status (seed DRAF di
-   `docs/schema-proposal.md` §4.3). Kategori dihitung otomatis dari usia +
-   status pernikahan; angkanya bisa diubah lewat data tanpa migrasi.
-5. **Janda/duda**: perlu nilai status pernikahan tersendiri atau tidak, dan
-   masuk kategori usia apa.
+4. **Kategori jamaah**: aturan dan angka seed (DRAF di
+   `docs/schema-proposal.md` §4.4). Kategori dihitung otomatis dari aturan
+   data (status sekolah, status pernikahan, dan usia untuk lansia); bisa diubah
+   lewat data tanpa migrasi. Termasuk: apakah remaja dewasa diberi batas atas
+   umur (saat ini tidak ada).
+5. **Pembaruan status sekolah tahunan**: status sekolah diperbarui manual
+   tiap tahun ajaran baru (sekitar Juli); siapa penanggung jawabnya, dan
+   apakah nanti perlu kolom `kelas` untuk kenaikan jenjang otomatis.
 6. **Pengurus generus per kelompok**: apakah setiap kelompok punya admin
    generus sendiri, atau hanya tingkat desa (skema mendukung keduanya).
