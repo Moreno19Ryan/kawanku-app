@@ -1,0 +1,64 @@
+import Image from "next/image";
+
+type LogoDesaProps = {
+  /** `mark` = lambang saja; `horizontal` = lambang + tulisan nama desa. */
+  variant?: "mark" | "horizontal";
+  /** Tinggi dalam px; lebar mengikuti rasio asli (jangan diregangkan). */
+  height: number;
+  /**
+   * `auto` = ikut tema (terang/gelap), `light` = selalu varian terang
+   * (mis. kertas/kartu putih), `grayscale` = cetak hitam putih.
+   */
+  tone?: "auto" | "light" | "grayscale";
+  className?: string;
+};
+
+const RATIO = { mark: 1761 / 1360, horizontal: 593.2 / 120 } as const;
+const FILE = { mark: "logo-desa", horizontal: "logo-desa-horizontal" } as const;
+const ALT = "Logo Desa Kartika Wanasari";
+
+/**
+ * Logo Desa Kartika Wanasari (identitas desa, bukan logo aplikasi).
+ * Aturan: jangan ubah warna di luar varian yang ada, jangan regangkan,
+ * jangan putar. Lihat public/brand/desa.
+ */
+export function LogoDesa({
+  variant = "mark",
+  height,
+  tone = "auto",
+  className = "",
+}: LogoDesaProps) {
+  const width = Math.round(height * RATIO[variant]);
+  const base = `/brand/desa/${FILE[variant]}`;
+
+  if (tone === "grayscale" || tone === "light") {
+    return (
+      <Image
+        src={`${base}${tone === "grayscale" ? "-grayscale" : ""}.svg`}
+        alt={ALT}
+        width={width}
+        height={height}
+        className={className}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Image
+        src={`${base}.svg`}
+        alt={ALT}
+        width={width}
+        height={height}
+        className={`dark:hidden ${className}`}
+      />
+      <Image
+        src={`${base}-dark.svg`}
+        alt={ALT}
+        width={width}
+        height={height}
+        className={`hidden dark:block ${className}`}
+      />
+    </>
+  );
+}

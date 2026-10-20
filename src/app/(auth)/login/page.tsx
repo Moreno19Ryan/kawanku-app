@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LogoDesa } from "@/components/brand/logo-desa";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { Card } from "@/components/ui/card";
 
@@ -14,8 +15,10 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-gutter py-10">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex justify-center">
-          <BrandMark height={36} />
+        {/* Logo desa di atas formulir; logo KawanKu sebagai identitas aplikasi. */}
+        <div className="mb-6 flex flex-col items-center gap-2">
+          <LogoDesa height={80} />
+          <BrandMark height={28} />
         </div>
 
         <Card className="p-6 sm:p-8">

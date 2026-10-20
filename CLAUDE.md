@@ -63,7 +63,10 @@ src/
     globals.css         # design token
     favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
-    layout/             # sidebar, bottom nav, header, brand
+    brand/              # LogoDesa (logo Desa Kartika Wanasari)
+    dokumen/            # KopDokumen: header wajib setiap dokumen cetak/ekspor
+    kartu/              # KartuQr: kartu absensi jalur 1 (ukuran KTP)
+    layout/             # sidebar, bottom nav, header, footer, BrandMark
     ui/                 # komponen dasar (Card, ...)
   lib/
     supabase/
@@ -73,7 +76,8 @@ src/
       env.ts            # baca NEXT_PUBLIC_SUPABASE_*
   proxy.ts              # Next.js proxy (dulu middleware)
 public/
-  brand/                # logo resmi (horizontal & mark, terang/gelap), og-image
+  brand/                # logo aplikasi KawanKu (horizontal & mark), og-image
+    desa/               # logo Desa Kartika Wanasari (+ png/ untuk PDF/email/cetak)
   icons/                # ikon PWA (dirujuk manifest)
   manifest.webmanifest  # manifest PWA
 docs/                   # dokumen desain (usulan skema, dsb.)
@@ -106,8 +110,13 @@ supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
 - Warna, radius, dan spacing memakai token (`bg-surface`, `rounded-card`,
   `px-gutter`), bukan nilai hex/px langsung. `brand` = biru logo; `primary` =
   turunannya untuk teks/tombol (kontras AA).
-- Logo: pakai `BrandMark` (`public/brand/`). Jangan ubah warna atau memutar
-  logo, dan beri jarak bebas ≥ ½ tinggi huruf K.
+- Logo aplikasi: pakai `BrandMark` (`public/brand/`). Jangan ubah warna atau
+  memutar logo, dan beri jarak bebas ≥ ½ tinggi huruf K.
+- Logo desa: pakai `LogoDesa` (`public/brand/desa/`, lihat README aset desa).
+  Footer = horizontal 28–36 px; login = lambang 72–96 px di atas formulir;
+  setiap dokumen cetak/ekspor wajib memakai `KopDokumen` (hitam putih →
+  `hitamPutih`); kartu QR memakai `KartuQr`. Jangan regangkan, putar, atau
+  ubah warnanya di luar varian yang ada.
 
 **Database**
 - Tabel & kolom: `snake_case`, nama tabel tunggal (`warga`, `kelompok`).
