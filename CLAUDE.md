@@ -42,7 +42,7 @@ cakupannya satu desa.
 | Fase | Isi | Status |
 | ---- | --- | ------ |
 | 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, logo, dokumen | Selesai |
-| 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Usulan skema v2 di `docs/schema-proposal.md` (menunggu review, belum ada migrasi) |
+| 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Skema v2 disetujui; migrasi `supabase/migrations/20261020170000_*` + tes pgTAP |
 | 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | Belum |
 | 3 | Monitoring kegiatan | Belum |
 
@@ -89,7 +89,10 @@ public/
   icons/                # ikon PWA (dirujuk manifest)
   manifest.webmanifest  # manifest PWA
 docs/                   # dokumen desain (usulan skema, dsb.)
-supabase/migrations/    # (nanti) file migrasi, hanya setelah disetujui
+supabase/
+  config.toml           # konfigurasi stack lokal/CI (Postgres 17)
+  migrations/           # migrasi; diterapkan ke produksi hanya setelah "OK, jalankan"
+  tests/                # tes pgTAP (RLS & aturan), dijalankan CI di setiap PR supabase/**
 ```
 
 ## Aturan kerja (WAJIB, sama dengan GENSITI)
