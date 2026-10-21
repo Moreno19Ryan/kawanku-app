@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
+import { ArrowLeft } from "lucide-react";
 import { FormGantiPin } from "@/components/generus/form-ganti-pin";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +25,12 @@ async function GantiPin({ cari }: { cari: Promise<Record<string, string | string
   const next = Array.isArray(param.next) ? param.next[0] : param.next;
   return (
     <div className="flex flex-col gap-4 pt-6">
+      {!generus.pinAwal && (
+        <Link href="/saya/profil" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+          <ArrowLeft className="size-4" aria-hidden />
+          Profil saya
+        </Link>
+      )}
       <h1 className="text-2xl font-semibold tracking-tight">Ganti PIN</h1>
       {generus.pinAwal && (
         <p className="rounded-card bg-primary-soft px-4 py-3 text-sm text-primary">
