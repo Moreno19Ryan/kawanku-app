@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ArrowLeft, QrCode, Search } from "lucide-react";
+import { ArrowLeft, ChartColumn, QrCode, Search } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { FormSesi } from "@/components/absensi/form-sesi";
 import { PanelScan } from "@/components/absensi/panel-scan";
@@ -137,7 +137,11 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
         title={sesi.nama}
         description={`${tanggalJam(sesi.mulai)}${sesi.selesai ? ` – ${tanggalJam(sesi.selesai)}` : ""} · ${wilayah}`}
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={`/absensi/rekap?jenis=sesi&sesi=${sesi.id}`} className={buttonClass("netral", "h-9 px-4")}>
+              <ChartColumn className="size-4" aria-hidden />
+              Rekap
+            </Link>
             {sesi.hanya_generus && <Badge nada="utama">Generus saja</Badge>}
             <Badge nada={sesi.ditutup ? "netral" : "sukses"}>{sesi.ditutup ? "Ditutup" : "Dibuka"}</Badge>
           </div>
