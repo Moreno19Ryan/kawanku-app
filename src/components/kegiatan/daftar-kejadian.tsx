@@ -26,11 +26,14 @@ export function DaftarKejadian({
   namaKelompok,
   tautan = true,
   kosong = "Tidak ada kegiatan di rentang ini.",
+  aksi,
 }: {
   kejadian: Kejadian[];
   namaKelompok: Map<string, string>;
   tautan?: boolean;
   kosong?: string;
+  /** Isi tambahan di kanan baris (mis. tautan "Izin" untuk generus); hanya bila tautan=false. */
+  aksi?: (k: Kejadian) => React.ReactNode;
 }) {
   if (kejadian.length === 0) return <Card className="text-center text-sm text-muted">{kosong}</Card>;
   const hariIni = hariIniWib();
@@ -97,7 +100,10 @@ export function DaftarKejadian({
                       {isiBaris}
                     </Link>
                   ) : (
-                    <div className="flex items-center gap-4 px-4 py-3 sm:px-5">{isiBaris}</div>
+                    <div className="flex items-center gap-4 px-4 py-3 sm:px-5">
+                      {isiBaris}
+                      {aksi?.(k)}
+                    </div>
                   )}
                 </li>
               );

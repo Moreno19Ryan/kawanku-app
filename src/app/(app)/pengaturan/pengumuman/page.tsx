@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
 import { hapusPengumuman, ubahStatusPengumuman } from "@/lib/sistem/actions";
-import type { Pengumuman } from "@/lib/sistem/data";
+import { KOLOM_PENGUMUMAN, type Pengumuman } from "@/lib/sistem/data";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
 
@@ -23,7 +23,7 @@ export default function PengumumanPage() {
       <KembaliKePengaturan />
       <PageHeader
         title="Pengumuman"
-        description="Banner di atas aplikasi untuk semua admin."
+        description="Banner di atas aplikasi untuk admin, generus, atau keduanya."
       />
       <Suspense fallback={<Skeleton className="h-96" />}>
         <IsiPengumuman />
@@ -47,7 +47,7 @@ async function IsiPengumuman() {
   const supabase = await createClient();
   const { data: daftar, error } = await supabase
     .from("pengumuman")
-    .select("id, pesan, nada, aktif, mulai, berakhir")
+    .select(KOLOM_PENGUMUMAN)
     .order("mulai", { ascending: false })
     .limit(50)
     .returns<Pengumuman[]>();
@@ -59,7 +59,7 @@ async function IsiPengumuman() {
     <div className="flex flex-col gap-4 sm:gap-6">
       <Card>
         <h2 className="mb-5 text-lg font-semibold">Pengumuman baru</h2>
-        <FormPengumuman />
+        <FormPengumuman pilihSasaran />
       </Card>
 
       {daftar.length > 0 && (
@@ -73,6 +73,10 @@ async function IsiPengumuman() {
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge nada={status.nada}>{status.label}</Badge>
                       <Badge>{p.nada === "peringatan" ? "Peringatan" : "Info"}</Badge>
+                      <Badge nada={p.sasaran === "admin" ? "netral" : "utama"}>
+                        {p.sasaran === "admin" ? "Admin" : p.sasaran === "generus" ? "Generus" : "Admin & generus"}
+                        {p.kelompok_id ? " · kelompok" : ""}
+                      </Badge>
                     </div>
                     <p className="mt-2">{p.pesan}</p>
                     <p className="mt-1 text-xs text-muted">

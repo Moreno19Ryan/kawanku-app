@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeft, ChevronRight, MapPin } from "lucide-react";
+import { ArrowLeft, ChevronRight, KeyRound, MapPin } from "lucide-react";
 import { FormProfil, FormUsulanKoreksi } from "@/components/generus/form-profil";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
@@ -133,6 +133,15 @@ async function ProfilSaya() {
           <span className="block font-medium">Alamat</span>
           <span className="block truncate text-sm text-muted">{ringkasAlamat || "Belum diisi"}</span>
         </span>
+        <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
+      </Link>
+
+      <Link
+        href="/saya/pin"
+        className="flex items-center gap-3 rounded-card bg-surface p-5 transition-colors duration-200 ease-oneui hover:bg-surface-muted"
+      >
+        <KeyRound className="size-5 shrink-0 text-primary" aria-hidden />
+        <span className="min-w-0 flex-1 font-medium">Ganti PIN</span>
         <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
       </Link>
 

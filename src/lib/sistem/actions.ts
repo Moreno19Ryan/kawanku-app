@@ -110,7 +110,10 @@ export async function buatPengumuman(_prev: StateAksi, formData: FormData): Prom
   if (!mulai || (berakhirInput && !berakhir)) return { galat: "Tanggal tidak valid." };
   if (berakhir && berakhir <= mulai) return { galat: "Waktu berakhir harus setelah waktu mulai." };
 
-  const { error } = await ctx.supabase.from("pengumuman").insert({ pesan, nada, mulai, berakhir });
+  const sasaranInput = String(formData.get("sasaran") ?? "admin");
+  const sasaran = ["admin", "generus", "semua"].includes(sasaranInput) ? sasaranInput : "admin";
+
+  const { error } = await ctx.supabase.from("pengumuman").insert({ pesan, nada, mulai, berakhir, sasaran });
   if (error) return GAGAL;
 
   refresh();
