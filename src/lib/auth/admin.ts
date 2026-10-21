@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 export type PenugasanAdmin = {
   peranKode: string;
   peranNama: string;
+  /** Peran khusus jamaah generus (admin generus). */
+  hanyaGenerus: boolean;
   /** null = seluruh desa. */
   kelompok: { id: string; nomor: number; nama: string } | null;
 };
@@ -146,11 +148,29 @@ export async function bacaAdmin(
     penugasan: berlaku.map((p) => ({
       peranKode: p.peran!.kode,
       peranNama: p.peran!.nama,
+      hanyaGenerus: p.peran!.hanya_generus,
       kelompok: p.kelompok,
     })),
     izinGlobal: [...izinGlobal],
     izinKelompok,
   };
+}
+
+/** Semua perannya khusus generus (admin generus desa/kelompok). */
+export function adalahAdminGenerus(admin: AdminSaatIni): boolean {
+  return admin.penugasan.every((p) => p.hanyaGenerus);
+}
+
+/**
+ * Siapa yang mengelola akun ini (sama dengan private.boleh_kelola_akun):
+ * admin generus kelompok → admin kelompoknya; selain itu → admin desa.
+ */
+export function pengelolaAkun(admin: AdminSaatIni): string {
+  if (punyaIzin(admin, "sistem.kelola")) return "Pengembang";
+  const kelompok = admin.penugasan.every((p) => p.hanyaGenerus && p.kelompok)
+    ? [...new Set(admin.penugasan.map((p) => p.kelompok!.nama))]
+    : [];
+  return kelompok.length > 0 ? `Admin ${kelompok.join(" / ")}` : "Admin desa";
 }
 
 /** Label singkat peran, mis. "Admin Kelompok · Kelompok 1". */

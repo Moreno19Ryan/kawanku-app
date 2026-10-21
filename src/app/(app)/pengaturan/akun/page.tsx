@@ -7,7 +7,7 @@ import { TombolKeluarSemua } from "@/components/pengaturan/tombol-keluar-semua";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { labelPenugasan, wajibAdmin } from "@/lib/auth/admin";
+import { labelPenugasan, pengelolaAkun, wajibAdmin } from "@/lib/auth/admin";
 
 export const metadata: Metadata = {
   title: "Akun saya",
@@ -71,7 +71,8 @@ async function ProfilAkun() {
         </div>
       </dl>
       <p className="mt-5 text-xs text-muted">
-        Nama dan peran diatur oleh admin yang mengelola akses.
+        Nama, peran, dan atur ulang kata sandi dikelola oleh{" "}
+        <span className="font-medium text-fg">{pengelolaAkun(admin)}</span>.
       </p>
     </Card>
   );

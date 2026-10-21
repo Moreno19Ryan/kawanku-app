@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Target } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { FormKategori } from "@/components/pengaturan/form-kategori";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
+import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { wajibAdmin } from "@/lib/auth/admin";
+import { adalahAdminGenerus, punyaIzin, wajibAdmin } from "@/lib/auth/admin";
 import { LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
+import {
+  hapusKategori,
+  pindahKategori,
+  simpanKategori,
+  tambahKategori,
+} from "@/lib/pengaturan/kategori-actions";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -58,48 +67,142 @@ function syarat(k: BarisKategori): string[] {
 }
 
 async function DaftarKategori() {
-  await wajibAdmin();
+  const admin = await wajibAdmin();
+  const bolehUbah = punyaIzin(admin, "pengaturan.kelola");
+  const generus = adalahAdminGenerus(admin);
   const supabase = await createClient();
-  const { data: kategori } = await supabase
-    .from("kategori_jamaah")
-    .select(
-      "id, urutan, nama, usia_min, usia_max, status_sekolah_berlaku, status_pernikahan_berlaku, termasuk_generus",
-    )
-    .order("urutan")
-    .returns<BarisKategori[]>();
+
+  const [{ data: kategori }, { data: jamaah }] = await Promise.all([
+    supabase
+      .from("kategori_jamaah")
+      .select(
+        "id, urutan, nama, usia_min, usia_max, status_sekolah_berlaku, status_pernikahan_berlaku, termasuk_generus",
+      )
+      .order("urutan")
+      .returns<BarisKategori[]>(),
+    // Jumlah jamaah aktif per kategori, sebatas yang boleh dilihat (RLS).
+    supabase
+      .from("jamaah_dengan_kategori")
+      .select("kategori_jamaah_id")
+      .eq("aktif", true)
+      .returns<{ kategori_jamaah_id: string | null }[]>(),
+  ]);
 
   if (!kategori) {
     return <Card className="text-sm text-danger">Gagal memuat kategori. Muat ulang halaman.</Card>;
   }
 
+  const jumlah = new Map<string | null, number>();
+  for (const j of jamaah ?? []) {
+    jumlah.set(j.kategori_jamaah_id, (jumlah.get(j.kategori_jamaah_id) ?? 0) + 1);
+  }
+  const tanpaKategori = jumlah.get(null) ?? 0;
+  const sasaran = kategori.filter((k) => k.termasuk_generus).map((k) => k.nama);
+
   return (
     <div className="flex flex-col gap-3">
+      {generus && (
+        <Card className="flex gap-4 bg-primary-soft/50">
+          <Target className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+          <div className="text-sm">
+            <p className="font-medium">Jamaah yang kamu urus</p>
+            <p className="mt-1 text-muted">
+              Sebagai admin generus, kamu hanya melihat dan mengurus jamaah berkategori generus
+              {sasaran.length > 0 ? `: ${sasaran.join(", ")}` : ""}. Bila status sekolah atau
+              pernikahan jamaah berubah sehingga kategorinya bukan generus lagi, jamaah itu
+              otomatis keluar dari daftarmu.
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {bolehUbah && (
+        <Card className="text-sm text-muted">
+          Perubahan aturan langsung berlaku untuk semua jamaah, termasuk siapa saja yang bisa
+          dilihat admin generus (saklar <span className="font-medium text-fg">Termasuk generus</span>
+          ). Pastikan sesuai keputusan pengurus.
+        </Card>
+      )}
+
       <ol className="flex flex-col gap-3">
-        {kategori.map((k) => (
+        {kategori.map((k, i) => (
           <li key={k.id}>
-            <Card className="flex gap-4">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-surface-muted text-sm font-semibold text-muted">
-                {k.urutan}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-semibold">
-                  {k.nama}
-                  {k.termasuk_generus && <Badge nada="utama">Generus</Badge>}
-                </p>
-                <ul className="mt-1 text-sm text-muted">
-                  {syarat(k).map((s) => (
-                    <li key={s}>{s}</li>
-                  ))}
-                </ul>
+            <Card className="flex flex-col gap-4">
+              <div className="flex gap-4">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-surface-muted text-sm font-semibold text-muted">
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-2 font-semibold">
+                    {k.nama}
+                    {k.termasuk_generus && (
+                      <Badge nada="utama">{generus ? "Generus · sasaranmu" : "Generus"}</Badge>
+                    )}
+                  </p>
+                  <ul className="mt-1 text-sm text-muted">
+                    {syarat(k).map((s) => (
+                      <li key={s}>{s}</li>
+                    ))}
+                  </ul>
+                  {jamaah && (
+                    <p className="mt-2 text-xs text-muted">{jumlah.get(k.id) ?? 0} jamaah aktif</p>
+                  )}
+                </div>
+                {bolehUbah && (
+                  <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+                    {i > 0 && (
+                      <TombolAksi aksi={pindahKategori.bind(null, k.id, "naik")} label="Naik" />
+                    )}
+                    {i < kategori.length - 1 && (
+                      <TombolAksi aksi={pindahKategori.bind(null, k.id, "turun")} label="Turun" />
+                    )}
+                  </div>
+                )}
               </div>
+
+              {bolehUbah && (
+                <details className="group border-t border-border pt-4">
+                  <summary className="cursor-pointer list-none text-sm font-medium text-primary marker:hidden">
+                    <span className="group-open:hidden">Ubah aturan</span>
+                    <span className="hidden group-open:inline">Tutup</span>
+                  </summary>
+                  <div className="mt-4 flex flex-col gap-5">
+                    <FormKategori aksi={simpanKategori.bind(null, k.id)} nilai={k} />
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                      <p className="text-xs text-muted">
+                        Jamaah di kategori ini akan pindah ke kategori lain yang cocok, atau
+                        menjadi &ldquo;tanpa kategori&rdquo;.
+                      </p>
+                      <TombolAksi
+                        aksi={hapusKategori.bind(null, k.id)}
+                        label="Hapus kategori"
+                        varian="bahaya"
+                        konfirmasi={`Hapus kategori “${k.nama}”? Data jamaah tidak ikut terhapus.`}
+                      />
+                    </div>
+                  </div>
+                </details>
+              )}
             </Card>
           </li>
         ))}
       </ol>
+
       <p className="text-sm text-muted">
-        Jamaah yang tidak cocok dengan aturan mana pun tampil sebagai &ldquo;tanpa kategori&rdquo;.
-        Aturan dan angkanya masih DRAF dan akan diubah admin desa sesuai keputusan pengurus.
+        Jamaah yang tidak cocok dengan aturan mana pun tampil sebagai &ldquo;tanpa kategori&rdquo;
+        {jamaah ? ` (saat ini ${tanpaKategori} jamaah aktif)` : ""}.
+        {!bolehUbah && " Aturan kategori diatur oleh admin desa sesuai keputusan pengurus."}
       </p>
+
+      {bolehUbah && (
+        <Card className="mt-3">
+          <h2 className="text-lg font-semibold">Tambah kategori</h2>
+          <p className="mt-1 mb-5 text-sm text-muted">
+            Kategori baru ditaruh paling bawah (dicek terakhir). Ubah urutannya dengan tombol Naik.
+          </p>
+          <FormKategori aksi={tambahKategori} labelKirim="Tambah kategori" />
+        </Card>
+      )}
     </div>
   );
 }
