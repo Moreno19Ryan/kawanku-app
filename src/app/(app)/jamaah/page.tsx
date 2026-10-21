@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronRight, CircleAlert, Plus, Search, X } from "lucide-react";
 import { JamaahBelumMenyala } from "@/components/jamaah/belum-menyala";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
+import { cariPemeriksaan, getPerluDicek } from "@/lib/jamaah/periksa";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 
 const PER_HALAMAN = 50;
 
-type Cari = { q?: string; kelompok?: string; kategori?: string; status?: string; hal?: string };
+type Cari = { q?: string; kelompok?: string; kategori?: string; status?: string; hal?: string; periksa?: string };
 
 type BarisJamaah = {
   id: string;
@@ -78,6 +79,20 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
   const namaKelompok = new Map(akses.kelompokLihat.map((k) => [k.id, k.nama]));
 
   const supabase = await createClient();
+  // Mode "Perlu dicek": daftar dihitung di server (lib/jamaah/periksa), filter lain diabaikan.
+  const pemeriksaan = cariPemeriksaan(satu(param.periksa));
+  const periksa = await getPerluDicek();
+  const jumlahPerluDicek = periksa?.perJamaah.size ?? 0;
+  let jamaah: BarisJamaah[] | null;
+  let count: number | null;
+  if (pemeriksaan && periksa) {
+    const ids = periksa.hasil[pemeriksaan.kode];
+    count = ids.length;
+    jamaah = ids
+      .slice((hal - 1) * PER_HALAMAN, hal * PER_HALAMAN)
+      .map((id) => periksa.baris.get(id))
+      .filter((j): j is NonNullable<typeof j> => Boolean(j));
+  } else {
   let kueri = supabase
     .from("jamaah_dengan_kategori")
     .select(
@@ -91,10 +106,13 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
   else if (aturan.some((k) => k.id === kategori)) kueri = kueri.eq("kategori_jamaah_id", kategori);
   if (status !== "semua") kueri = kueri.eq("aktif", status === "aktif");
 
-  const { data: jamaah, count } = await kueri
+  const hasil = await kueri
     .order("nama_lengkap")
     .range((hal - 1) * PER_HALAMAN, hal * PER_HALAMAN - 1)
     .returns<BarisJamaah[]>();
+  jamaah = hasil.data;
+  count = hasil.count;
+  }
 
   // Penanda keringanan hanya untuk admin yang berizin (RLS menyaring sisanya).
   const keringanan = new Set<string>();
@@ -114,6 +132,7 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
   const jumlahHal = Math.max(1, Math.ceil(total / PER_HALAMAN));
   const keHal = (n: number) => {
     const u = new URLSearchParams();
+    if (pemeriksaan) u.set("periksa", pemeriksaan.kode);
     if (q) u.set("q", q);
     if (kelompok) u.set("kelompok", kelompok);
     if (kategori) u.set("kategori", kategori);
@@ -122,7 +141,7 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
     const s = u.toString();
     return s ? `/jamaah?${s}` : "/jamaah";
   };
-  const adaFilter = Boolean(q || kelompok || kategori || status !== "aktif");
+  const adaFilter = Boolean(pemeriksaan || q || kelompok || kategori || status !== "aktif");
 
   return (
     <>
@@ -134,17 +153,44 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
             : `Data jamaah ${akses.kelompokLihat.map((k) => k.nama).join(", ")}.`
         }
         actions={
-          akses.kelompokTambah.length > 0 ? (
-            <Link href="/jamaah/baru" className={buttonClass("utama")}>
-              <Plus className="size-4" aria-hidden />
-              Tambah jamaah
-            </Link>
-          ) : akses.kelompokUbah.length === 0 ? (
-            <Badge>Hanya lihat</Badge>
-          ) : null
+          <>
+            {jumlahPerluDicek > 0 && (
+              <Link href="/jamaah/periksa" className={buttonClass("kedua")}>
+                <CircleAlert className="size-4" aria-hidden />
+                Perlu dicek ({jumlahPerluDicek})
+              </Link>
+            )}
+            {akses.kelompokTambah.length > 0 ? (
+              <Link href="/jamaah/baru" className={buttonClass("utama")}>
+                <Plus className="size-4" aria-hidden />
+                Tambah jamaah
+              </Link>
+            ) : akses.kelompokUbah.length === 0 ? (
+              <Badge>Hanya lihat</Badge>
+            ) : null}
+          </>
         }
       />
 
+      {pemeriksaan ? (
+        <div className="mb-4 flex items-start gap-3 rounded-card bg-warning/10 p-4 sm:p-5">
+          <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
+          <div className="min-w-0 flex-1 text-sm">
+            <p className="font-semibold">Perlu dicek: {pemeriksaan.judul}</p>
+            <p className="mt-0.5 text-muted">{pemeriksaan.keterangan}</p>
+            <Link href="/jamaah/periksa" className="mt-2 inline-block font-medium text-primary">
+              Semua yang perlu dicek
+            </Link>
+          </div>
+          <Link
+            href="/jamaah"
+            aria-label="Tutup filter perlu dicek"
+            className="rounded-pill p-1.5 text-muted hover:bg-surface hover:text-fg"
+          >
+            <X className="size-5" aria-hidden />
+          </Link>
+        </div>
+      ) : (
       <form method="get" action="/jamaah" className="mb-4 flex flex-col gap-3 rounded-card bg-surface p-4 sm:p-5">
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" aria-hidden />
@@ -189,6 +235,7 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
           </button>
         </div>
       </form>
+      )}
 
       <div className="mb-3 flex items-center justify-between gap-3 px-1 text-sm text-muted">
         <p>

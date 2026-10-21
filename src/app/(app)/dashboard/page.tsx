@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { labelPenugasan } from "@/lib/auth/admin";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
+import { getPerluDicek } from "@/lib/jamaah/periksa";
 import { createClient } from "@/lib/supabase/server";
 import { waktuRelatif } from "@/lib/waktu";
 
@@ -202,9 +203,13 @@ async function Ringkasan() {
   const aktif = data.filter((j) => j.aktif);
   const generus = aktif.filter((j) => j.termasuk_generus).length;
   const laki = aktif.filter((j) => j.jenis_kelamin === "L").length;
-  const tanpaKategori = aktif.filter((j) => !j.kategori_jamaah_id).length;
-  const tanpaLahir = aktif.filter((j) => !j.tanggal_lahir && !j.tahun_lahir).length;
   const nonaktif = data.length - aktif.length;
+  const periksa = await getPerluDicek();
+  const jumlahPerluDicek = periksa?.perJamaah.size ?? 0;
+  const ringkasPerluDicek = (periksa?.daftar ?? [])
+    .filter((p) => periksa!.hasil[p.kode].length > 0)
+    .map((p) => `${p.judul.toLowerCase()} (${periksa!.hasil[p.kode].length})`)
+    .join(", ");
   const terbaru = [...data].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5);
   const namaKelompok = new Map(akses.kelompokLihat.map((k) => [k.id, k.nama]));
 
@@ -259,24 +264,20 @@ async function Ringkasan() {
         <Angka label="Perempuan" nilai={aktif.length - laki} />
       </section>
 
-      {(tanpaKategori > 0 || tanpaLahir > 0) && (
-        <Card className="mt-4 flex items-start gap-3 sm:mt-6">
-          <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
-          <div className="text-sm">
-            <p className="font-medium">Data perlu dilengkapi</p>
-            <ul className="mt-1 text-muted">
-              {tanpaKategori > 0 && (
-                <li>
-                  <Link href="/jamaah?kategori=tanpa" className="font-medium text-primary hover:underline">
-                    {tanpaKategori} jamaah tanpa kategori
-                  </Link>{" "}
-                  (status sekolah/pernikahan atau usia belum cocok aturan mana pun)
-                </li>
-              )}
-              {tanpaLahir > 0 && <li>{tanpaLahir} jamaah belum diisi tanggal/tahun lahir</li>}
-            </ul>
-          </div>
-        </Card>
+      {jumlahPerluDicek > 0 && (
+        <Link
+          href="/jamaah/periksa"
+          className="mt-4 flex items-center gap-3 rounded-card bg-surface p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-colors duration-200 ease-oneui hover:bg-surface-muted sm:mt-6 sm:p-6"
+        >
+          <CircleAlert className="size-5 shrink-0 text-warning" aria-hidden />
+          <span className="min-w-0 flex-1 text-sm">
+            <span className="block font-medium">Data perlu dicek</span>
+            <span className="block text-muted">
+              {jumlahPerluDicek} jamaah: {ringkasPerluDicek}
+            </span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
+        </Link>
       )}
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-2">
