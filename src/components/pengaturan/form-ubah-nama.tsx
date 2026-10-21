@@ -6,14 +6,17 @@ import { INPUT_CLASS } from "@/components/ui/input";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { PesanAksi } from "./pesan-aksi";
 
-export function FormNamaKelompok({
+/** Satu input nama + tombol Simpan (nama kelompok, nama admin). */
+export function FormUbahNama({
   aksi,
   nama,
-  nomor,
+  label,
+  maxLength = 60,
 }: {
   aksi: (prev: StateAksi, formData: FormData) => Promise<StateAksi>;
   nama: string;
-  nomor: number;
+  label: string;
+  maxLength?: number;
 }) {
   const [state, action, pending] = useActionState(aksi, {});
 
@@ -23,9 +26,9 @@ export function FormNamaKelompok({
         <input
           name="nama"
           required
-          maxLength={60}
+          maxLength={maxLength}
           defaultValue={nama}
-          aria-label={`Nama kelompok ${nomor}`}
+          aria-label={label}
           className={`${INPUT_CLASS} h-10 min-w-0 flex-1 text-sm`}
         />
         <button type="submit" disabled={pending} className={buttonClass("kedua", "h-10")}>

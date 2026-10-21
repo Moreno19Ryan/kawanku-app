@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { Sidebar } from "@/components/layout/sidebar";
+import { TombolTema } from "@/components/tema/tombol-tema";
 
 /**
  * Kerangka area admin: sidebar di desktop, bottom nav di HP.
@@ -25,9 +26,12 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 
       <div className="sticky top-0 z-10 flex items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg lg:hidden">
         <BrandMark height={24} />
-        <Suspense fallback={<div className="size-8" />}>
-          <AkunAdmin ringkas />
-        </Suspense>
+        <div className="flex items-center gap-1">
+          <TombolTema />
+          <Suspense fallback={<div className="size-8" />}>
+            <AkunAdmin ringkas />
+          </Suspense>
+        </div>
       </div>
 
       {/* Konten flex-1 mendorong footer ke paling bawah walau isi halaman pendek. */}

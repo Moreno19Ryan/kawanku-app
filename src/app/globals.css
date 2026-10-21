@@ -25,8 +25,21 @@
   --kk-danger: #d93a3a;
 }
 
+/*
+ * Tema: <html data-theme="light|dark"> dipasang skrip di <head> dari
+ * pilihan pengguna (localStorage "kk-tema"). Tanpa atribut = ikut perangkat.
+ * Token gelap sengaja ditulis dua kali (ikut perangkat & dipaksa gelap);
+ * ubah keduanya bersamaan.
+ */
+:root {
+  color-scheme: light dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --kk-bg: #0b0c10;
     --kk-surface: #17181d;
     --kk-surface-muted: #202229;
@@ -40,6 +53,35 @@
     --kk-success: #3cc47c;
     --kk-warning: #f0a92b;
     --kk-danger: #f06363;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --kk-bg: #0b0c10;
+  --kk-surface: #17181d;
+  --kk-surface-muted: #202229;
+  --kk-border: #2a2c34;
+  --kk-fg: #f2f3f6;
+  --kk-muted: #9a9fad;
+  --kk-brand: #2bb3ea;
+  --kk-primary: #2bb3ea;
+  --kk-primary-fg: #06202b;
+  --kk-primary-soft: #0f2c3a;
+  --kk-success: #3cc47c;
+  --kk-warning: #f0a92b;
+  --kk-danger: #f06363;
+}
+
+/* Varian dark: ikut tema aplikasi, bukan hanya media query perangkat. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
   }
 }
 

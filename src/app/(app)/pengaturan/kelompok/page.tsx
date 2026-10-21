@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
-import { FormNamaKelompok } from "@/components/pengaturan/form-nama-kelompok";
+import { FormUbahNama } from "@/components/pengaturan/form-ubah-nama";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +63,11 @@ async function DaftarKelompok() {
                 }
               />
             </div>
-            <FormNamaKelompok aksi={ubahNamaKelompok.bind(null, k.id)} nama={k.nama} nomor={k.nomor} />
+            <FormUbahNama
+              aksi={ubahNamaKelompok.bind(null, k.id)}
+              nama={k.nama}
+              label={`Nama kelompok ${k.nomor}`}
+            />
           </Card>
         </li>
       ))}

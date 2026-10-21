@@ -170,6 +170,29 @@ export async function ubahStatusAdmin(
   return { pesan: aktif ? "Admin diaktifkan." : "Admin dinonaktifkan." };
 }
 
+export async function ubahNamaAdmin(
+  userId: string,
+  _prev: StateAksi,
+  formData: FormData,
+): Promise<StateAksi> {
+  const ctx = await konteks("akses.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+
+  const nama = String(formData.get("nama") ?? "").trim().replace(/\s+/g, " ");
+  if (!nama) return { galat: "Nama wajib diisi." };
+  if (nama.length > 80) return { galat: "Nama maksimal 80 karakter." };
+
+  const { data, error } = await ctx.supabase
+    .from("admin")
+    .update({ nama })
+    .eq("user_id", userId)
+    .select("user_id");
+  if (error || data.length === 0) return GAGAL;
+
+  refresh();
+  return { pesan: "Nama tersimpan." };
+}
+
 export async function tambahPenugasan(
   userId: string,
   _prev: StateAksi,
