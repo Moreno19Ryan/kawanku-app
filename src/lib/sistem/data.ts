@@ -17,7 +17,13 @@ export type Pengumuman = {
   aktif: boolean;
   mulai: string;
   berakhir: string | null;
+  /** admin | generus | semua */
+  sasaran: string;
+  /** null = seluruh desa */
+  kelompok_id: string | null;
 };
+
+export const KOLOM_PENGUMUMAN = "id, pesan, nada, aktif, mulai, berakhir, sasaran, kelompok_id";
 
 export type Fitur = {
   id: string;
@@ -50,14 +56,18 @@ export const getStatusSistem = cache(async (): Promise<StatusSistem> => {
   };
 });
 
-/** Pengumuman yang sedang tayang (aktif, sudah mulai, belum berakhir). */
-export const getPengumumanTayang = cache(async (): Promise<Pengumuman[]> => {
+/**
+ * Pengumuman yang sedang tayang (aktif, sudah mulai, belum berakhir) untuk
+ * admin (sasaran admin/semua) atau generus (generus/semua; wilayah lewat RLS).
+ */
+export const getPengumumanTayang = cache(async (untuk: "admin" | "generus" = "admin"): Promise<Pengumuman[]> => {
   const supabase = await createClient();
   const sekarang = new Date().toISOString();
   const { data } = await supabase
     .from("pengumuman")
-    .select("id, pesan, nada, aktif, mulai, berakhir")
+    .select(KOLOM_PENGUMUMAN)
     .eq("aktif", true)
+    .in("sasaran", [untuk, "semua"])
     .lte("mulai", sekarang)
     .or(`berakhir.is.null,berakhir.gt."${sekarang}"`)
     .order("mulai", { ascending: false })

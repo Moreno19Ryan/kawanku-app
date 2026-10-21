@@ -129,7 +129,12 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   detail jamaah. Semua RPC ini hanya menulis baris `jamaah_saya()`. Izin/sakit
   diajukan generus di `/saya/izin` (`pengajuan_izin`, per kejadian kalender),
   disetujui admin di `/absensi/izin` atau halaman pertemuan, lalu otomatis
-  tercatat di absensi (trigger, hadir tidak ditimpa). QR layar jalur 2 di
+  tercatat di absensi (trigger, hadir tidak ditimpa). Beranda generus:
+  statistik & lencana dari RPC `kehadiran_saya()` (termasuk pertemuan
+  terlewat; dihitung di `src/lib/generus/kehadiran.ts`, murni), pengumuman
+  bersasaran (`pengumuman.sasaran` admin/generus/semua + `kelompok_id`;
+  pengurus kegiatan menulis di `/kegiatan/pengumuman`), jadwal 30 hari di
+  `/saya/jadwal`, menu bawah `NavGenerus`. QR layar jalur 2 di
   `/layar/[id]` (RPC `token_layar` / `absen_layar`).
 - Kegiatan (`/kegiatan`, `docs/kegiatan.md`): saklar fitur `kegiatan`, izin
   `kegiatan.lihat`/`kegiatan.kelola` (`getAksesKegiatan`). Kalender rutin
@@ -160,8 +165,9 @@ src/
                         # akun/ (akun generus), rekap/ (pratinjau rekap bulanan/per kegiatan),
                         # izin/ (pengajuan izin generus)
       kegiatan/         # agenda/kalender, pertemuan/ (pemateri, materi, batal, absensi),
-                        # kelola/ & kelola/[id]/ (kegiatan & jadwal)
-    (generus)/          # area akun generus: saya/ (beranda, pin/, scan/, profil/, alamat/, izin/), absen/ (hasil QR)
+                        # kelola/ & kelola/[id]/ (kegiatan & jadwal), pengumuman/ (untuk generus)
+    (generus)/          # area akun generus: saya/ (beranda, jadwal/, kehadiran/, scan/, profil/,
+                        # alamat/, pin/, izin/), absen/ (hasil QR)
     layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,

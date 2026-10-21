@@ -246,3 +246,66 @@ export async function bukaAbsensiPertemuan(k: KunciPertemuan & { mulai: string }
   }
   redirect(`/absensi/${data}`);
 }
+
+// ---------------------------------------------------------------------
+// Pengumuman untuk generus (pengurus kegiatan di wilayahnya; batas = RLS
+// private.boleh_kelola_pengumuman)
+// ---------------------------------------------------------------------
+
+/** Wilayah pengumuman generus yang boleh dipilih: "desa" atau id kelompok. */
+export async function buatPengumumanGenerus(_prev: StateAksi, fd: FormData): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const pesan = teks(fd, "pesan", 300);
+  if (!pesan) return { galat: "Isi pesan pengumuman." };
+  const wilayah = String(fd.get("wilayah") ?? "");
+  const bolehDesa = ctx.akses.kelolaDesa && wilayah === "desa";
+  if (!bolehDesa && !ctx.akses.kelompokKelola.some((k) => k.id === wilayah)) return TIDAK_BERHAK;
+  const nada = fd.get("nada") === "peringatan" ? "peringatan" : "info";
+  const mulaiInput = String(fd.get("mulai") ?? "");
+  const berakhirInput = String(fd.get("berakhir") ?? "");
+  const mulai = mulaiInput ? dariInputWib(mulaiInput) : new Date().toISOString();
+  const berakhir = berakhirInput ? dariInputWib(berakhirInput) : null;
+  if (!mulai || (berakhirInput && !berakhir)) return { galat: "Tanggal tidak valid." };
+  if (berakhir && berakhir <= mulai) return { galat: "Waktu berakhir harus setelah waktu mulai." };
+
+  const { error } = await ctx.supabase.from("pengumuman").insert({
+    pesan,
+    nada,
+    mulai,
+    berakhir,
+    sasaran: "generus",
+    kelompok_id: wilayah === "desa" ? null : wilayah,
+  });
+  if (error) return GAGAL;
+  refresh();
+  return { pesan: "Pengumuman dibuat. Generus melihatnya di berandanya." };
+}
+
+export async function ubahStatusPengumumanGenerus(id: string, aktif: boolean): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const { data, error } = await ctx.supabase
+    .from("pengumuman")
+    .update({ aktif })
+    .eq("id", id)
+    .eq("sasaran", "generus")
+    .select("id");
+  if (error || !data?.length) return GAGAL;
+  refresh();
+  return { pesan: aktif ? "Ditayangkan." : "Disembunyikan." };
+}
+
+export async function hapusPengumumanGenerus(id: string): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const { data, error } = await ctx.supabase
+    .from("pengumuman")
+    .delete()
+    .eq("id", id)
+    .eq("sasaran", "generus")
+    .select("id");
+  if (error || !data?.length) return GAGAL;
+  refresh();
+  return { pesan: "Dihapus." };
+}

@@ -70,3 +70,31 @@ Izin: `kegiatan.lihat`, `kegiatan.kelola`. Membuka absensi juga butuh
   jadwal, atau agenda). Di `[id]`: ubah data, ubah jadwal, pertemuan 5 pekan ke
   depan, hapus.
 - **`/saya`** (generus): jadwal 7 hari ke depan.
+
+## Beranda generus (21 Okt 2026)
+
+Migrasi `20261022040000_beranda_generus`. Akun generus tidak polos: beranda
+menampilkan pengumuman, pertemuan berikutnya (pemateri & materi), statistik
+kehadiran, lencana, jadwal 7 hari, dan riwayat. Menu bawah: Beranda · Jadwal ·
+Scan · Kehadiran · Profil.
+
+- **Statistik & lencana** hanya data dirinya sendiri, dari RPC
+  `kehadiran_saya(p_batas)` (security definer, hanya `jamaah_saya()`): sesi
+  tempat ia menjadi peserta sejak profilnya ada, berstatus hadir / izin /
+  sakit / `alpa` (sesi selesai tanpa catatan) / `berjalan`. Perhitungan di
+  `src/lib/generus/kehadiran.ts` (murni):
+  - persentase hadir bulan ini (WIB);
+  - rentetan hadir beruntun (izin/sakit tidak memutus, terlewat memutus);
+  - lencana: rentetan 3/5/10, hadir penuh bulan lalu (≥2 pertemuan),
+    10/25/50/100 kehadiran, "Amanah" (bulan ini ≥3 pertemuan, tidak ada yang
+    terlewat, pernah izin/sakit);
+  - sapaan yang menyesuaikan (sambutan, ajakan kembali hadir, apresiasi).
+  Tidak ada peringkat antar teman.
+- **Pengumuman bersasaran**: `pengumuman.sasaran` (`admin` / `generus` /
+  `semua`) + `kelompok_id` (kosong = seluruh desa). Pengumuman sistem
+  (`pengumuman.kelola`, pengembang) di Pengaturan → Pengumuman; pengurus
+  kegiatan (`kegiatan.kelola`) menulis pengumuman **untuk generus** di
+  wilayahnya di `/kegiatan/pengumuman`. Akun generus hanya membaca pengumuman
+  generus/semua di desa atau kelompoknya; banner admin hanya admin/semua.
+- **Jadwal** `/saya/jadwal`: 30 hari, pemateri & materi bila sudah diisi,
+  tautan "Izin" per pertemuan yang belum lewat.

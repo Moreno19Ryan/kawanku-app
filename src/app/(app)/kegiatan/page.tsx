@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CalendarClock, Settings2 } from "lucide-react";
+import { CalendarClock, Megaphone, Settings2 } from "lucide-react";
 import { DaftarKejadian, hrefPertemuan } from "@/components/kegiatan/daftar-kejadian";
 import { KegiatanBelumMenyala } from "@/components/kegiatan/belum-menyala";
 import { PageHeader } from "@/components/layout/page-header";
@@ -60,10 +60,16 @@ async function Kalender({ cari }: { cari: Promise<Cari> }) {
         description="Jadwal pengajian & agenda jamaah, pemateri, materi, dan absensinya."
         actions={
           akses.targetKegiatan.length > 0 ? (
-            <Link href="/kegiatan/kelola" className={buttonClass("kedua")}>
-              <Settings2 className="size-4" aria-hidden />
-              Kelola kegiatan
-            </Link>
+            <>
+              <Link href="/kegiatan/pengumuman" className={buttonClass("kedua")}>
+                <Megaphone className="size-4" aria-hidden />
+                Pengumuman generus
+              </Link>
+              <Link href="/kegiatan/kelola" className={buttonClass("kedua")}>
+                <Settings2 className="size-4" aria-hidden />
+                Kelola kegiatan
+              </Link>
+            </>
           ) : null
         }
       />
