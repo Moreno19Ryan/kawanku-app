@@ -103,10 +103,47 @@ function IsianAlamat({ awalan, nilai }: { awalan: "ktp" | "dom"; nilai: NilaiPri
   );
 }
 
-export function FormPribadi({ aksi, nilai }: { aksi: Aksi; nilai: NilaiPribadi | null }) {
-  const [state, onSubmit, pending] = useFormAksi(aksi);
-  // Belum ada data: anggap domisili sama dengan KTP (paling umum).
+/** Alamat KTP/KIA + domisili (dengan saklar "sama"); dipakai admin & generus. */
+function BagianAlamat({ nilai, dokumen }: { nilai: NilaiPribadi | null; dokumen: "KIA" | "KTP" }) {
+  // Belum ada data: anggap domisili sama dengan alamat KTP/KIA (paling umum).
   const [sama, setSama] = useState(nilai ? nilai.domisili_sama_ktp : true);
+  return (
+    <>
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-3 text-sm font-semibold">Alamat sesuai {dokumen}</legend>
+        <IsianAlamat awalan="ktp" nilai={nilai} />
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-3 text-sm font-semibold">Alamat saat ini (domisili)</legend>
+        <div className="flex items-center justify-between gap-4 rounded-control bg-surface-muted p-4">
+          <p className="text-sm font-medium">Sama dengan alamat {dokumen}</p>
+          <Saklar
+            name="domisili_sama_ktp"
+            label={`Sama dengan alamat ${dokumen}`}
+            checked={sama}
+            onChange={(e) => setSama(e.target.checked)}
+          />
+        </div>
+        {!sama && <IsianAlamat awalan="dom" nilai={nilai} />}
+      </fieldset>
+
+      <input type="hidden" name="dokumen" value={dokumen} />
+    </>
+  );
+}
+
+export function FormPribadi({
+  aksi,
+  nilai,
+  dokumen = "KTP",
+}: {
+  aksi: Aksi;
+  nilai: NilaiPribadi | null;
+  /** "KIA" untuk anak di bawah 17 tahun. */
+  dokumen?: "KIA" | "KTP";
+}) {
+  const [state, onSubmit, pending] = useFormAksi(aksi);
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -117,26 +154,26 @@ export function FormPribadi({ aksi, nilai }: { aksi: Aksi; nilai: NilaiPribadi |
           <input name="nama_ibu" maxLength={120} defaultValue={nilai?.nama_ibu ?? ""} className={INPUT_CLASS} />
         </Kolom>
       </div>
+      <BagianAlamat nilai={nilai} dokumen={dokumen} />
+      <Kirim pending={pending} state={state} />
+    </form>
+  );
+}
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 text-sm font-semibold">Alamat sesuai KTP</legend>
-        <IsianAlamat awalan="ktp" nilai={nilai} />
-      </fieldset>
-
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 text-sm font-semibold">Alamat saat ini (domisili)</legend>
-        <div className="flex items-center justify-between gap-4 rounded-control bg-surface-muted p-4">
-          <p className="text-sm font-medium">Sama dengan alamat KTP</p>
-          <Saklar
-            name="domisili_sama_ktp"
-            label="Sama dengan alamat KTP"
-            checked={sama}
-            onChange={(e) => setSama(e.target.checked)}
-          />
-        </div>
-        {!sama && <IsianAlamat awalan="dom" nilai={nilai} />}
-      </fieldset>
-
+/** Form alamat untuk generus sendiri (tanpa nama orang tua). */
+export function FormAlamat({
+  aksi,
+  nilai,
+  dokumen,
+}: {
+  aksi: Aksi;
+  nilai: NilaiPribadi | null;
+  dokumen: "KIA" | "KTP";
+}) {
+  const [state, onSubmit, pending] = useFormAksi(aksi);
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <BagianAlamat nilai={nilai} dokumen={dokumen} />
       <Kirim pending={pending} state={state} />
     </form>
   );

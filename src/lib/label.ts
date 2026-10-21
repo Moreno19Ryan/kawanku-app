@@ -65,3 +65,11 @@ export const LABEL_ALASAN_IZIN: Record<string, string> = {
   kerja: "Kerja",
   lainnya: "Lainnya",
 };
+
+/**
+ * Dokumen identitas untuk label alamat: anak di bawah 17 tahun memakai KIA
+ * (Kartu Identitas Anak), selebihnya KTP. Kolom database tetap ktp_*.
+ */
+export function dokumenIdentitas(usia: number | null): "KIA" | "KTP" {
+  return usia !== null && usia < 17 ? "KIA" : "KTP";
+}

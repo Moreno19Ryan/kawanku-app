@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { KeyRound, ScanLine } from "lucide-react";
+import { KeyRound, MapPin, ScanLine } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -88,10 +88,16 @@ async function BerandaGenerus() {
         )}
       </section>
 
-      <Link href="/saya/pin" className={buttonClass("netral", "self-center")}>
-        <KeyRound className="size-4" aria-hidden />
-        Ganti PIN
-      </Link>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Link href="/saya/alamat" className={buttonClass("netral")}>
+          <MapPin className="size-4" aria-hidden />
+          Alamat saya
+        </Link>
+        <Link href="/saya/pin" className={buttonClass("netral")}>
+          <KeyRound className="size-4" aria-hidden />
+          Ganti PIN
+        </Link>
+      </div>
     </div>
   );
 }

@@ -34,6 +34,7 @@ import { formatNoHp } from "@/lib/jamaah/format";
 import { buatKeluargaDariJamaah, hubungkanKeKeluarga } from "@/lib/jamaah/keluarga-actions";
 import { cariPemeriksaan, getPerluDicek } from "@/lib/jamaah/periksa";
 import {
+  dokumenIdentitas,
   LABEL_HUBUNGAN,
   LABEL_PENDIDIKAN,
   LABEL_STATUS_PERNIKAHAN,
@@ -440,20 +441,20 @@ async function Detail({
             <dl className="mt-4 grid gap-4 sm:grid-cols-2">
               <Baris label="Nama ayah kandung">{pribadi?.nama_ayah ?? "–"}</Baris>
               <Baris label="Nama ibu kandung">{pribadi?.nama_ibu ?? "–"}</Baris>
-              <Baris label="Alamat sesuai KTP">
+              <Baris label={`Alamat sesuai ${dokumenIdentitas(j.usia)}`}>
                 <span className="font-normal">{(pribadi && alamatSatuBaris(pribadi, "ktp")) ?? "–"}</span>
               </Baris>
               <Baris label="Alamat saat ini (domisili)">
                 <span className="font-normal">
                   {pribadi?.domisili_sama_ktp
-                    ? "Sama dengan alamat KTP"
+                    ? `Sama dengan alamat ${dokumenIdentitas(j.usia)}`
                     : ((pribadi && alamatSatuBaris(pribadi, "dom")) ?? "–")}
                 </span>
               </Baris>
             </dl>
             {akses.bolehKelolaPribadi && (
               <Lipat judul={pribadi ? "Ubah orang tua & alamat" : "Isi orang tua & alamat"}>
-                <FormPribadi aksi={simpanPribadi.bind(null, j.id)} nilai={pribadi} />
+                <FormPribadi aksi={simpanPribadi.bind(null, j.id)} nilai={pribadi} dokumen={dokumenIdentitas(j.usia)} />
               </Lipat>
             )}
           </Card>
