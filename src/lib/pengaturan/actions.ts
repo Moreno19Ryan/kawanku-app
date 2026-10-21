@@ -94,6 +94,37 @@ function buatSandiSementara() {
   return `${blok()}-${blok()}-${blok()}`;
 }
 
+/**
+ * Akun/peran tingkat sistem (pengembang: izin sistem.kelola) hanya boleh
+ * dikelola pemegang sistem.kelola. RLS sudah menjaga tabelnya; cek ini wajib
+ * sebelum memakai secret key (yang melewati RLS) dan memberi pesan jelas.
+ */
+async function terlindungSistem(
+  ctx: NonNullable<Awaited<ReturnType<typeof konteks>>>,
+  target: { userId?: string; peranId?: string },
+): Promise<boolean> {
+  if (punyaIzin(ctx.admin, "sistem.kelola")) return false;
+  if (target.peranId) {
+    const { data } = await ctx.supabase
+      .from("peran_izin")
+      .select("izin_kode")
+      .eq("peran_id", target.peranId)
+      .eq("izin_kode", "sistem.kelola");
+    if (data === null || data.length > 0) return true;
+  }
+  if (target.userId) {
+    const { data } = await ctx.supabase
+      .from("penugasan_peran")
+      .select("id, peran!inner(peran_izin!inner(izin_kode))")
+      .eq("user_id", target.userId)
+      .eq("peran.peran_izin.izin_kode", "sistem.kelola");
+    if (data === null || data.length > 0) return true;
+  }
+  return false;
+}
+
+const TERLINDUNG: StateAksi = { galat: "Akun dan peran pengembang hanya bisa diubah oleh pengembang." };
+
 const TANPA_SECRET: StateAksi = {
   galat: "Fitur ini belum aktif: SUPABASE_SECRET_KEY belum dipasang di server.",
 };
@@ -306,6 +337,7 @@ export async function buatAdmin(_prev: StateAksi, formData: FormData): Promise<S
 
   const tujuan = await bacaPeranWilayah(ctx.supabase, formData);
   if ("galat" in tujuan) return tujuan;
+  if (await terlindungSistem(ctx, { peranId: tujuan.peran_id })) return TERLINDUNG;
 
   const sandiSementara = buatSandiSementara();
   const { data: dibuat, error: galatAuth } = await adminAuth.auth.admin.createUser({
@@ -344,6 +376,7 @@ export async function aturUlangKataSandi(userId: string): Promise<StateAksi> {
   }
   const adminAuth = createAdminClient();
   if (!adminAuth) return TANPA_SECRET;
+  if (await terlindungSistem(ctx, { userId })) return TERLINDUNG;
 
   // Pastikan targetnya memang admin yang terlihat oleh pemanggil (lewat RLS),
   // bukan akun lain (mis. akun generus nanti).

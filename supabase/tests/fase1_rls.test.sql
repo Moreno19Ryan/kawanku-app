@@ -260,7 +260,7 @@ select uji.harus_gagal('Admin kelompok 1: memberi dirinya peran admin_desa ditol
   $q$ insert into public.penugasan_peran (user_id, peran_id)
       select '00000000-0000-0000-0000-00000000000b', id from public.peran where kode = 'admin_desa' $q$, 'row-level security');
 select uji.cek('Admin kelompok 1: tetap bisa membaca peran/izin (admin aktif)',
-  (select count(*) = 3 from public.peran) and (select count(*) > 0 from public.izin));
+  (select count(*) >= 3 from public.peran) and (select count(*) > 0 from public.izin));
 
 -- Admin generus tingkat desa
 select uji.sebagai('00000000-0000-0000-0000-00000000000c');
