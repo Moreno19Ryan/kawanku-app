@@ -1,4 +1,12 @@
-import { Building2, KeyRound, ShieldCheck, Tags, UserRound, type LucideIcon } from "lucide-react";
+import {
+  Building2,
+  KeyRound,
+  Palette,
+  ShieldCheck,
+  Tags,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 
 export type BagianPengaturan = {
   href: string;
@@ -17,6 +25,12 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     judul: "Akun saya",
     keterangan: "Profil, peran, dan kata sandi",
     icon: UserRound,
+  },
+  {
+    href: "/pengaturan/tampilan",
+    judul: "Tampilan",
+    keterangan: "Tema terang, gelap, atau ikut perangkat",
+    icon: Palette,
   },
   {
     href: "/pengaturan/admin",

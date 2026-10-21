@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { TombolTema } from "@/components/tema/tombol-tema";
 import { BrandMark } from "./brand-mark";
 import { NAV_ITEMS, isActive } from "./nav-items";
 
@@ -15,8 +16,9 @@ export function Sidebar({ akun }: { akun?: ReactNode }) {
 
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-sidebar flex-col gap-6 px-4 py-6 lg:flex">
-      <div>
+      <div className="flex items-center justify-between">
         <BrandMark />
+        <TombolTema />
       </div>
 
       <nav aria-label="Menu utama" className="flex flex-col gap-1">

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SKRIP_TEMA } from "@/lib/tema";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,7 +53,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="id"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // data-theme dipasang skrip tema sebelum React hidrasi.
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SKRIP_TEMA }} />
+      </head>
       <body className="min-h-full bg-bg font-sans text-fg">{children}</body>
     </html>
   );

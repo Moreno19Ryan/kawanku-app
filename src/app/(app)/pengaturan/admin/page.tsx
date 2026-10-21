@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { FormBuatAdmin } from "@/components/pengaturan/form-buat-admin";
 import { FormTambahPenugasan } from "@/components/pengaturan/form-tambah-penugasan";
+import { FormUbahNama } from "@/components/pengaturan/form-ubah-nama";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import type { OpsiPeran } from "@/components/pengaturan/pilih-peran-wilayah";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
@@ -15,10 +16,12 @@ import {
   aturUlangKataSandi,
   hapusPenugasan,
   tambahPenugasan,
+  ubahNamaAdmin,
   ubahStatusAdmin,
 } from "@/lib/pengaturan/actions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { tanggalJam, waktuRelatif } from "@/lib/waktu";
 
 export const metadata: Metadata = {
   title: "Admin & akses",
@@ -71,10 +74,12 @@ async function DaftarAdmin() {
 
   // Secret key hanya dipakai di sini SETELAH wajibIzin("akses.kelola") di atas.
   const adminAuth = createAdminClient();
-  const email = new Map<string, string>();
+  const akun = new Map<string, { email?: string; terakhirMasuk?: string }>();
   if (adminAuth) {
     const { data } = await adminAuth.auth.admin.listUsers({ perPage: 1000 });
-    data?.users.forEach((u) => u.email && email.set(u.id, u.email));
+    data?.users.forEach((u) =>
+      akun.set(u.id, { email: u.email, terakhirMasuk: u.last_sign_in_at ?? undefined }),
+    );
   }
 
   return (
@@ -113,8 +118,8 @@ async function DaftarAdmin() {
                         {a.aktif ? "Aktif" : "Nonaktif"}
                       </Badge>
                     </p>
-                    {email.has(a.user_id) && (
-                      <p className="mt-0.5 truncate text-sm text-muted">{email.get(a.user_id)}</p>
+                    {akun.has(a.user_id) && (
+                      <InfoAkun {...akun.get(a.user_id)!} />
                     )}
                   </div>
                   {!diriSendiri && (
@@ -169,19 +174,46 @@ async function DaftarAdmin() {
                   </div>
                 </div>
 
-                {adminAuth && !diriSendiri && (
-                  <div className="mt-4 border-t border-border pt-4">
+                <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
+                  <details>
+                    <summary className="w-fit cursor-pointer list-none rounded-pill text-sm font-medium text-primary hover:underline">
+                      Ubah nama
+                    </summary>
+                    <div className="mt-2 max-w-md">
+                      <FormUbahNama
+                        aksi={ubahNamaAdmin.bind(null, a.user_id)}
+                        nama={a.nama}
+                        label={`Nama ${a.nama}`}
+                        maxLength={80}
+                      />
+                    </div>
+                  </details>
+                  {adminAuth && !diriSendiri && (
                     <TombolAturUlangSandi
                       aksi={aturUlangKataSandi.bind(null, a.user_id)}
                       nama={a.nama}
                     />
-                  </div>
-                )}
+                  )}
+                </div>
               </Card>
             </li>
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/** Email + kapan terakhir masuk (dari Supabase Auth, butuh secret key). */
+function InfoAkun({ email, terakhirMasuk }: { email?: string; terakhirMasuk?: string }) {
+  return (
+    <div className="mt-0.5 flex flex-col text-sm text-muted sm:flex-row sm:flex-wrap sm:gap-x-3">
+      {email && <span className="truncate">{email}</span>}
+      {terakhirMasuk ? (
+        <span title={tanggalJam(terakhirMasuk)}>Terakhir masuk {waktuRelatif(terakhirMasuk)}</span>
+      ) : (
+        <span className="text-warning">Belum pernah masuk</span>
+      )}
     </div>
   );
 }

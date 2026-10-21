@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { Card } from "@/components/ui/card";
+import { TombolTema } from "@/components/tema/tombol-tema";
 import { FormMasuk } from "@/components/auth/form-masuk";
 
 export const metadata: Metadata = {
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
  */
 export default function AdminLoginPage() {
   return (
-    <div className="flex min-h-dvh flex-col px-gutter py-10">
+    <div className="relative flex min-h-dvh flex-col px-gutter py-10">
+      <TombolTema className="absolute top-4 right-4" />
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
         <div className="mb-6 flex justify-center">
           <BrandMark height={36} />

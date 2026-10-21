@@ -93,7 +93,7 @@ src/
     (app)/              # area admin, memakai layout sidebar + bottom nav
       layout.tsx
       dashboard/page.tsx
-      pengaturan/       # akun, admin & akses, kelompok, peran & izin (difilter izin)
+      pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin (difilter izin)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
       keluar/route.ts   # hapus sesi non-admin lalu ke /login (bukan untuk <Link>)
@@ -103,6 +103,7 @@ src/
   components/
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
     pengaturan/         # form & tombol aksi halaman Pengaturan, daftar bagian
+    tema/               # TombolTema (cepat), PilihTema (terang/gelap/ikut perangkat)
     brand/              # LogoDesa (logo Desa Kartika Wanasari)
     dokumen/            # KopDokumen: header wajib setiap dokumen cetak/ekspor
     kartu/              # KartuQr: kartu absensi jalur 1 (ukuran KTP)
@@ -115,6 +116,8 @@ src/
       tujuan.ts         # validasi ?next= (cegah open redirect)
     pengaturan/
       actions.ts        # Server Action Pengaturan (kata sandi, admin, peran, kelompok)
+    tema.ts             # pilihan tema + skrip inline <head> (anti kedip)
+    waktu.ts            # waktuRelatif / tanggalJam (Bahasa Indonesia, WIB)
     supabase/
       client.ts         # client untuk browser (Client Components)
       server.ts         # client untuk server (Server Components/Actions)
@@ -157,6 +160,10 @@ supabase/
 - Fungsi & variabel: `camelCase`. Konstanta modul: `UPPER_SNAKE_CASE`.
 - Rute URL: Bahasa Indonesia, huruf kecil (`/jamaah`, `/kegiatan`, `/absensi`).
 - Import memakai alias `@/` (mis. `@/lib/supabase/server`).
+- Tema: `<html data-theme="light|dark">` dari pilihan per perangkat
+  (localStorage `kk-tema`); tanpa atribut = ikut perangkat. Pakai varian
+  `dark:` (sudah mengikuti tema aplikasi), jangan `@media (prefers-color-scheme)`
+  langsung. Token gelap di `globals.css` ditulis dua kali; ubah keduanya.
 - Warna, radius, dan spacing memakai token (`bg-surface`, `rounded-card`,
   `px-gutter`), bukan nilai hex/px langsung. `brand` = biru logo; `primary` =
   turunannya untuk teks/tombol (kontras AA).
