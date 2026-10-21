@@ -7,7 +7,9 @@ import { KembaliKeJamaah } from "@/components/jamaah/kembali";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DaftarUsulan } from "@/components/jamaah/daftar-usulan";
 import { getPerluDicek } from "@/lib/jamaah/periksa";
+import { getUsulanMenunggu } from "@/lib/jamaah/usulan";
 
 export const metadata: Metadata = {
   title: "Perlu dicek",
@@ -29,7 +31,7 @@ export default function PerluDicekPage() {
 }
 
 async function DaftarPeriksa() {
-  const periksa = await getPerluDicek();
+  const [periksa, usulan] = await Promise.all([getPerluDicek(), getUsulanMenunggu()]);
   if (!periksa) return <JamaahBelumMenyala />;
 
   const total = periksa.perJamaah.size;
@@ -43,6 +45,7 @@ async function DaftarPeriksa() {
 
   return (
     <div className="flex flex-col gap-4">
+      <DaftarUsulan usulan={usulan} />
       <Card className="flex items-center gap-3">
         {total === 0 ? (
           <CircleCheck className="size-5 shrink-0 text-success" aria-hidden />

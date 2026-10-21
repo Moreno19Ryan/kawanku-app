@@ -64,6 +64,21 @@ desa/kelurahan), semua kosong di awal, cakupan seluruh Indonesia.
   baris `jamaah_pribadi` miliknya sendiri; nama orang tua tidak ditampilkan
   dan tetap diubah admin. `updated_by` mencatat akun generus yang mengubah.
 
+## Diubah sendiri oleh generus (21 Okt 2026)
+
+Halaman `/saya/profil` (migrasi `20261022020000_profil_generus`):
+
+- **Diubah langsung**: nama panggilan, no. HP/WA, email (RPC
+  `ubah_profil_saya`; no. HP wali tetap lewat admin) dan alamat
+  (`/saya/alamat`). Generus bisa membaca baris `jamaah_kontak` miliknya.
+- **Lewat laporan**: nama lengkap, tanggal lahir, jenis kelamin, status
+  sekolah, pendidikan, status pernikahan, kelompok, keluarga, lainnya.
+  Generus mengirim `usulan_koreksi` (satu yang menunggu per bagian); admin
+  yang boleh mengubah jamaahnya membetulkan data lalu menandai "Sudah
+  dibetulkan" atau "Tolak" dengan tanggapan. Laporan tampil di Dashboard,
+  Perlu dicek, dan detail jamaah. Generus bisa membatalkan selama menunggu.
+- Semua perubahan tercatat di `updated_by` (akun generus atau admin).
+
 ## Masih menunggu pengurus
 
 - Kegunaan NIK & No. KK (kolomnya sudah ada, opsional).

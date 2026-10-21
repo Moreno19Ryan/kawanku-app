@@ -10,3 +10,11 @@ export function formatNoHp(no: string | null): string {
 export function samarkan(nomor: string): string {
   return `${nomor.slice(0, 4)}${"•".repeat(8)}${nomor.slice(-4)}`;
 }
+
+/** Isian no. HP → "08xxxxxxxxxx" (null = kosong, undefined = tidak valid). */
+export function bacaNoHp(nilai: FormDataEntryValue | null): string | null | undefined {
+  const angka = String(nilai ?? "").replace(/[\s\-().]/g, "");
+  if (!angka) return null;
+  const normal = angka.replace(/^\+?62/, "0");
+  return /^08\d{8,12}$/.test(normal) ? normal : undefined;
+}
