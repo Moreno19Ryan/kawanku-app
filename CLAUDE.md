@@ -47,7 +47,7 @@ cakupannya satu desa.
 | ---- | --- | ------ |
 | 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, logo, dokumen | Selesai |
 | 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Skema v2 disetujui; migrasi `supabase/migrations/20261020170513_*` diterapkan ke produksi + tes pgTAP. Login admin (email + kata sandi) aktif |
-| 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | Belum |
+| 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | 2a (sesi, kartu QR, scan, rekap) dikerjakan, `docs/absensi.md`; 2b (akun generus + QR layar) belum |
 | 3 | Monitoring kegiatan | Belum |
 
 ## Stack
@@ -113,6 +113,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   per kelompok (`kelompokKeluargaLihat`/`Kelola` di `getAksesJamaah`). Anggota
   keluarga harus sekelompok (FK komposit), jadi `ubahJamaah` melepas jamaah
   dari keluarganya saat pindah kelompok.
+- Absensi (`/absensi`, `docs/absensi.md`) dibuka lewat saklar fitur `absensi`
+  dan izin `absensi.lihat`/`absensi.kelola` (`getAksesAbsensi`). Pencatatan
+  lewat RPC `catat_absensi_kode` (security invoker, batas tetap RLS). Lembar
+  cetak kartu di `/cetak/kartu` (di luar layout admin).
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
   diketahui saat runtime.
@@ -133,9 +137,11 @@ src/
       jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah),
                         # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin),
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
+      absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,
                         # bantuan (difilter izin)
+    cetak/kartu/        # lembar cetak kartu QR (A4, tanpa navigasi)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
       keluar/route.ts   # hapus sesi non-admin lalu ke /login (bukan untuk <Link>)
@@ -143,6 +149,7 @@ src/
     globals.css         # design token
     favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
+    absensi/            # FormSesi, PanelScan (scanner USB), PilihStatus, TombolCetak
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
     bantuan/            # KontakPengembang (WhatsApp/email; Bantuan, login, perawatan, galat)
     jamaah/             # FormJamaah (pratinjau kategori), FormJandaDuda, form data sensitif,
@@ -170,6 +177,9 @@ src/
       kategori.ts       # hitungUsia/cariKategori: pratinjau di form (sama dengan DB)
       format.ts         # formatNoHp, samarkan (server & klien)
       periksa.ts        # getPerluDicek: pemeriksaan kelengkapan data (server-only)
+    absensi/
+      akses.ts          # getAksesAbsensi: izin per wilayah ∩ saklar fitur `absensi` (server-only)
+      actions.ts        # Server Action sesi, catat kode/status, kartu QR
     wilayah/            # kode wilayah Kemendagri (data statis) + anakWilayah/namaLengkapWilayah
     sistem/
       data.ts           # status perawatan, pengumuman tayang, fitur (server-only, fail-open)

@@ -53,3 +53,15 @@ export const LABEL_HUBUNGAN: Record<string, string> = {
   orang_tua: "Orang tua",
   lainnya: "Lainnya",
 };
+
+export const LABEL_STATUS_ABSENSI: Record<string, string> = {
+  hadir: "Hadir",
+  izin: "Izin",
+  sakit: "Sakit",
+};
+
+export const LABEL_ALASAN_IZIN: Record<string, string> = {
+  kuliah: "Kuliah",
+  kerja: "Kerja",
+  lainnya: "Lainnya",
+};
