@@ -232,7 +232,7 @@ sebelum pengajian, dan admin yang menyetujui. Migrasi
 
 - Tabel `pengajuan_izin`: satu kejadian kalender (kegiatan, kelompok
   pelaksana, tanggal; kunci yang sama dengan `pertemuan`), jadi bisa diajukan
-  walau absensinya belum dibuka. `jenis` izin (alasan kuliah/kerja/lainnya +
+  walau absensinya belum dibuka. `jenis` izin (alasan sekolah/kuliah/kerja/lainnya +
   catatan opsional ≤150) atau sakit (tanpa keterangan: data kesehatan tidak
   disimpan). Satu pengajuan aktif per jamaah per pertemuan.
 - Validasi (trigger `atur_pengajuan_izin`): hanya untuk dirinya sendiri,

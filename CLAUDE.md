@@ -310,23 +310,26 @@ supabase/
 - Branch: `feat/...`, `fix/...`, `chore/...`, `docs/...`.
 - Commit: Conventional Commits (`feat: ...`, `fix: ...`, `docs: ...`).
 
-## Keputusan yang masih menunggu pengurus
+## Keputusan pengurus
 
-1. **Data awal jamaah**: sumber, format, dan siapa yang mengimpor.
-2. **Data sensitif**: sudah diputuskan Reno (21 Okt 2026), lihat
-   `docs/data-pribadi-jamaah.md`. Yang masih menunggu: kegunaan NIK & No. KK
-   (kolomnya opsional) dan lama penyimpanan data.
-3. **Detail hak akses**: apa saja yang boleh dilihat/diubah tiap peran (admin
-   desa, admin kelompok, admin generus).
-4. **Kategori jamaah**: aturan dan angka seed (DRAF di
-   `docs/schema-proposal.md` §4.4). Kategori dihitung otomatis dari aturan
-   data (status sekolah, status pernikahan, dan usia untuk lansia); bisa diubah
-   lewat data tanpa migrasi, dari Pengaturan → Kategori jamaah (izin
-   `pengaturan.kelola`, yaitu admin desa). Saklar "Termasuk generus" langsung
-   mengubah jamaah yang terlihat admin generus. Sudah diputuskan: remaja dewasa tanpa batas atas
-   umur.
-5. **Pembaruan status sekolah tahunan**: status sekolah diperbarui manual
-   tiap tahun ajaran baru (sekitar Juli); siapa penanggung jawabnya, dan
-   apakah nanti perlu kolom `kelas` untuk kenaikan jenjang otomatis.
-6. **Pengurus generus per kelompok**: apakah setiap kelompok punya admin
-   generus sendiri, atau hanya tingkat desa (skema mendukung keduanya).
+Sudah diputuskan Reno (21 Okt 2026):
+
+- **Data sensitif**: lihat `docs/data-pribadi-jamaah.md`. Kegunaan NIK & No.
+  KK dan lama penyimpanan dibiarkan seperti sekarang (kolom opsional,
+  disimpan selama jamaah tercatat).
+- **Kategori jamaah**: bukan draf lagi, melainkan **data sistem**. Dihitung
+  otomatis dari aturan data (status sekolah, status pernikahan, usia untuk
+  lansia) dan diubah admin desa lewat Pengaturan → Kategori jamaah (izin
+  `pengaturan.kelola`) tanpa migrasi. Remaja dewasa tanpa batas atas umur.
+- **Pembaruan status sekolah tahunan** (sekitar Juli): tanggung jawab
+  **admin kelompok** untuk jamaah kelompoknya.
+- **Admin generus**: ada di tingkat desa **dan** per kelompok (skema dan
+  akun produksi sudah mendukung keduanya).
+- **Alasan izin**: sekolah, kuliah, kerja, lainnya.
+- **Tunda**: target hafalan/capaian materi (Fase 3c) dan keterangan telat.
+
+Masih dirangkai bersama (lalu dicocokkan dengan pengurus):
+
+1. **Detail hak akses** tiap peran: draf di `docs/hak-akses.md`.
+2. **Kolom `kelas`** + halaman kenaikan kelas tahunan untuk admin kelompok:
+   usulan di `docs/status-sekolah-tahunan.md`.
