@@ -15,6 +15,9 @@ export type AksesJamaah = {
   kelompokLihat: KelompokRingkas[];
   kelompokTambah: KelompokRingkas[];
   kelompokUbah: KelompokRingkas[];
+  /** Kelompok (yang menyala) tempat admin boleh melihat / mengelola keluarga. */
+  kelompokKeluargaLihat: KelompokRingkas[];
+  kelompokKeluargaKelola: KelompokRingkas[];
   /** Izin lain (minimal di satu wilayah). Batas sebenarnya tetap RLS. */
   bolehHapus: boolean;
   bolehLihatKeringanan: boolean;
@@ -83,6 +86,8 @@ export const getAksesJamaah = cache(async (): Promise<AksesJamaah | null> => {
     kelompokLihat: saring(kelompokFitur, wilayah(admin, "jamaah.lihat")),
     kelompokTambah: saring(kelompokFitur, wilayah(admin, "jamaah.tambah")),
     kelompokUbah: saring(kelompokFitur, wilayah(admin, "jamaah.ubah")),
+    kelompokKeluargaLihat: saring(kelompokFitur, wilayah(admin, "keluarga.lihat")),
+    kelompokKeluargaKelola: saring(kelompokFitur, wilayah(admin, "keluarga.kelola")),
     bolehHapus: ada("jamaah.hapus"),
     bolehLihatKeringanan: ada("keringanan.lihat"),
     bolehKelolaKeringanan: ada("keringanan.kelola"),

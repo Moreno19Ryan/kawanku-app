@@ -148,12 +148,26 @@ export async function ubahJamaah(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("jamaah").update(isi).eq("id", id).select("id");
+  // Keluarga harus satu kelompok dengan anggotanya (FK komposit): pindah
+  // kelompok = lepas dari keluarga lama.
+  const { data: lama } = await supabase
+    .from("jamaah")
+    .select("kelompok_id, keluarga_id")
+    .eq("id", id)
+    .maybeSingle();
+  const lepasKeluarga = Boolean(lama?.keluarga_id && lama.kelompok_id !== isi.kelompok_id);
+  const ubah = lepasKeluarga ? { ...isi, keluarga_id: null, hubungan_keluarga: null } : isi;
+
+  const { data, error } = await supabase.from("jamaah").update(ubah).eq("id", id).select("id");
   if (error) return error.code === "42501" ? DI_LUAR_WEWENANG : GAGAL;
   if (data.length === 0) return DI_LUAR_WEWENANG;
 
   refresh();
-  return { pesan: "Tersimpan." };
+  return {
+    pesan: lepasKeluarga
+      ? "Tersimpan. Karena pindah kelompok, jamaah dilepas dari keluarganya yang lama."
+      : "Tersimpan.",
+  };
 }
 
 export async function ubahStatusJamaah(id: string, aktif: boolean): Promise<StateAksi> {

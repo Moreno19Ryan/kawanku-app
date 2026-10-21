@@ -109,6 +109,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `admin.izinWilayah`). Menu bersyarat dihitung di server (`nav-terbuka.tsx`);
   daftar hanya memuat kelompok yang menyala. Batas data tetap RLS: admin
   generus hanya melihat/menyimpan jamaah berkategori generus.
+- Keluarga (`/jamaah/keluarga`) memakai izin `keluarga.lihat`/`keluarga.kelola`
+  per kelompok (`kelompokKeluargaLihat`/`Kelola` di `getAksesJamaah`). Anggota
+  keluarga harus sekelompok (FK komposit), jadi `ubahJamaah` melepas jamaah
+  dari keluarganya saat pindah kelompok.
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
   diketahui saat runtime.
@@ -127,7 +131,8 @@ src/
     api/wilayah/        # GET daftar wilayah di bawah kode induk (untuk PilihWilayah)
       dashboard/page.tsx
       jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah),
-                        # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin)
+                        # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin),
+                        # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,
                         # bantuan (difilter izin)
@@ -141,7 +146,7 @@ src/
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
     bantuan/            # KontakPengembang (WhatsApp/email; Bantuan, login, perawatan, galat)
     jamaah/             # FormJamaah (pratinjau kategori), FormJandaDuda, form data sensitif,
-                        # PilihWilayah (provinsi → desa)
+                        # PilihWilayah (provinsi → desa), form keluarga
     pengaturan/         # form & tombol aksi halaman Pengaturan, daftar bagian
     tema/               # TombolTema (cepat), PilihTema (terang/gelap/ikut perangkat)
     sistem/             # GerbangPerawatan, BannerPengumuman, form panel pengembang
@@ -161,6 +166,7 @@ src/
     jamaah/
       akses.ts          # getAksesJamaah: izin per wilayah ∩ saklar fitur `jamaah` (server-only)
       actions.ts        # Server Action tambah/ubah/status/hapus, keringanan, janda/duda
+      keluarga-actions.ts # Server Action keluarga (buat, ubah nama, hapus, anggota, hubungan)
       kategori.ts       # hitungUsia/cariKategori: pratinjau di form (sama dengan DB)
       format.ts         # formatNoHp, samarkan (server & klien)
       periksa.ts        # getPerluDicek: pemeriksaan kelengkapan data (server-only)
