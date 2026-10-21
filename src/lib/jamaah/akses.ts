@@ -21,6 +21,13 @@ export type AksesJamaah = {
   bolehKelolaKeringanan: boolean;
   bolehLihatJandaDuda: boolean;
   bolehKelolaJandaDuda: boolean;
+  /** Data sensitif (tabel terpisah): kontak, pribadi (orang tua & alamat), identitas. */
+  bolehLihatKontak: boolean;
+  bolehKelolaKontak: boolean;
+  bolehLihatPribadi: boolean;
+  bolehKelolaPribadi: boolean;
+  bolehLihatIdentitas: boolean;
+  bolehKelolaIdentitas: boolean;
   /** Semua perannya khusus generus. */
   generusSaja: boolean;
 };
@@ -81,6 +88,12 @@ export const getAksesJamaah = cache(async (): Promise<AksesJamaah | null> => {
     bolehKelolaKeringanan: ada("keringanan.kelola"),
     bolehLihatJandaDuda: ada("janda_duda.lihat"),
     bolehKelolaJandaDuda: ada("janda_duda.kelola"),
+    bolehLihatKontak: ada("kontak.lihat"),
+    bolehKelolaKontak: ada("kontak.kelola"),
+    bolehLihatPribadi: ada("pribadi.lihat"),
+    bolehKelolaPribadi: ada("pribadi.kelola"),
+    bolehLihatIdentitas: ada("identitas.lihat"),
+    bolehKelolaIdentitas: ada("identitas.kelola"),
     generusSaja: admin.penugasan.every((p) => p.hanyaGenerus),
   };
 });

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Data wilayah Kemendagri (dibuat otomatis, ±2 MB).
+    "src/lib/wilayah/data.ts",
   ]),
 ]);
 

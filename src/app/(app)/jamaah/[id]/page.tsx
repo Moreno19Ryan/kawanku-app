@@ -2,6 +2,13 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CircleCheck } from "lucide-react";
 import { FormJamaah } from "@/components/jamaah/form-jamaah";
+import {
+  FormIdentitas,
+  FormKontak,
+  FormPribadi,
+  NomorTersamar,
+  type NilaiPribadi,
+} from "@/components/jamaah/form-data-sensitif";
 import { FormJandaDuda } from "@/components/jamaah/form-janda-duda";
 import { JamaahBelumMenyala } from "@/components/jamaah/belum-menyala";
 import { KembaliKeJamaah } from "@/components/jamaah/kembali";
@@ -14,11 +21,21 @@ import {
   aturJandaDuda,
   aturKeringanan,
   hapusJamaah,
+  simpanIdentitas,
+  simpanKontak,
+  simpanPribadi,
   ubahJamaah,
   ubahStatusJamaah,
 } from "@/lib/jamaah/actions";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
-import { LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
+import { formatNoHp } from "@/lib/jamaah/format";
+import {
+  LABEL_PENDIDIKAN,
+  LABEL_STATUS_PERNIKAHAN,
+  LABEL_STATUS_SEKOLAH,
+  labelJenisMuballigh,
+  labelMuballigh,
+} from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { waktuRelatif } from "@/lib/waktu";
 
@@ -43,7 +60,42 @@ type DetailJamaah = {
   termasuk_generus: boolean;
   aktif: boolean;
   updated_at: string;
+  tempat_lahir: string | null;
+  pendidikan_terakhir: string | null;
+  kegiatan: string | null;
+  muballigh: boolean;
+  jenis_muballigh: string | null;
+  paket_caberawit: string | null;
 };
+
+type DataPribadi = NilaiPribadi & { ktp_wilayah: string | null; dom_wilayah: string | null };
+
+/** Alamat satu baris: "Jl. …, RT 003/RW 013, Wanasari, Cibitung, …, 17520". */
+function alamatSatuBaris(a: DataPribadi, awalan: "ktp" | "dom"): string | null {
+  const jalan = a[`${awalan}_jalan`];
+  const rt = a[`${awalan}_rt`];
+  const rw = a[`${awalan}_rw`];
+  const wilayah = a[`${awalan}_wilayah`];
+  const pos = a[`${awalan}_kode_pos`];
+  const rtRw =
+    rt !== null || rw !== null
+      ? `RT ${String(rt ?? "–").padStart(3, "0")}/RW ${String(rw ?? "–").padStart(3, "0")}`
+      : null;
+  const bagian = [jalan, rtRw, wilayah, pos].filter(Boolean);
+  return bagian.length ? bagian.join(", ") : null;
+}
+
+function Lipat({ judul, children }: { judul: string; children: React.ReactNode }) {
+  return (
+    <details className="group mt-5 border-t border-border pt-4">
+      <summary className="cursor-pointer list-none text-sm font-medium text-primary marker:hidden">
+        <span className="group-open:hidden">{judul}</span>
+        <span className="hidden group-open:inline">Tutup</span>
+      </summary>
+      <div className="mt-4">{children}</div>
+    </details>
+  );
+}
 
 const LABEL_JANDA_DUDA: Record<string, string> = {
   cerai_hidup: "Cerai hidup",
@@ -103,7 +155,7 @@ async function Detail({
     ? await supabase
         .from("jamaah_dengan_kategori")
         .select(
-          "id, kode, nama_lengkap, nama_panggilan, jenis_kelamin, tanggal_lahir, tahun_lahir, usia, status_pernikahan, status_sekolah, status_sekolah_diperbarui, kelompok_id, kategori_jamaah_nama, termasuk_generus, aktif, updated_at",
+          "id, kode, nama_lengkap, nama_panggilan, jenis_kelamin, tanggal_lahir, tahun_lahir, usia, status_pernikahan, status_sekolah, status_sekolah_diperbarui, kelompok_id, kategori_jamaah_nama, termasuk_generus, aktif, updated_at, tempat_lahir, pendidikan_terakhir, kegiatan, muballigh, jenis_muballigh, paket_caberawit",
         )
         .eq("id", id)
         .maybeSingle<DetailJamaah>()
@@ -121,12 +173,28 @@ async function Detail({
     );
   }
 
-  const [{ data: keringanan }, { data: jandaDuda }] = await Promise.all([
+  const [{ data: keringanan }, { data: jandaDuda }, { data: kontak }, { data: pribadi }, { data: identitas }] = await Promise.all([
     akses.bolehLihatKeringanan
       ? supabase.from("jamaah_keringanan").select("aktif").eq("jamaah_id", j.id).maybeSingle()
       : Promise.resolve({ data: null }),
     akses.bolehLihatJandaDuda && j.status_pernikahan === "janda_duda"
       ? supabase.from("jamaah_janda_duda").select("jenis").eq("jamaah_id", j.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Data sensitif: hanya diambil bila berizin (RLS tetap pembatasnya).
+    akses.bolehLihatKontak
+      ? supabase.from("jamaah_kontak").select("no_hp, no_hp_wali, email").eq("jamaah_id", j.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    akses.bolehLihatPribadi
+      ? supabase
+          .from("jamaah_pribadi")
+          .select(
+            "nama_ayah, nama_ibu, ktp_kode_wilayah, ktp_wilayah, ktp_jalan, ktp_rt, ktp_rw, ktp_kode_pos, domisili_sama_ktp, dom_kode_wilayah, dom_wilayah, dom_jalan, dom_rt, dom_rw, dom_kode_pos",
+          )
+          .eq("jamaah_id", j.id)
+          .maybeSingle<DataPribadi>()
+      : Promise.resolve({ data: null }),
+    akses.bolehLihatIdentitas
+      ? supabase.from("jamaah_identitas").select("nik, no_kk").eq("jamaah_id", j.id).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -168,6 +236,7 @@ async function Detail({
           <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Baris label="Jenis kelamin">{j.jenis_kelamin === "L" ? "Laki-laki" : "Perempuan"}</Baris>
             <Baris label="Lahir">
+              {j.tempat_lahir && `${j.tempat_lahir}, `}
               {j.tanggal_lahir
                 ? tanggalPanjang(j.tanggal_lahir)
                 : j.tahun_lahir
@@ -187,6 +256,18 @@ async function Detail({
               {j.status_pernikahan ? LABEL_STATUS_PERNIKAHAN[j.status_pernikahan] : "Belum diisi"}
             </Baris>
             <Baris label="Kelompok">{kelompok.nama}</Baris>
+            <Baris label="Pendidikan terakhir">
+              {j.pendidikan_terakhir ? LABEL_PENDIDIKAN[j.pendidikan_terakhir] : "–"}
+            </Baris>
+            <Baris label="Pekerjaan / kegiatan">{j.kegiatan ?? "–"}</Baris>
+            {j.muballigh && (
+              <Baris label={labelMuballigh(j.jenis_kelamin)}>
+                {j.jenis_muballigh
+                  ? labelJenisMuballigh(j.jenis_muballigh, j.jenis_kelamin)
+                  : "Ya · penugasan (MT/MS) belum dipilih"}
+              </Baris>
+            )}
+            {j.paket_caberawit && <Baris label="Paket caberawit">Paket {j.paket_caberawit}</Baris>}
           </dl>
           <p className="mt-5 text-xs text-muted">Terakhir diubah {waktuRelatif(j.updated_at)}.</p>
         </Card>
@@ -212,6 +293,95 @@ async function Detail({
                 />
               </div>
             </details>
+          </Card>
+        )}
+
+        {akses.bolehLihatKontak && (
+          <Card>
+            <h2 className="text-lg font-semibold">Kontak</h2>
+            <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+              <Baris label="No. HP/WhatsApp">
+                {kontak?.no_hp ? (
+                  <a
+                    href={`https://wa.me/62${kontak.no_hp.slice(1)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {formatNoHp(kontak.no_hp)}
+                  </a>
+                ) : (
+                  "–"
+                )}
+              </Baris>
+              <Baris label="No. HP orang tua/wali">
+                {kontak?.no_hp_wali ? (
+                  <a
+                    href={`https://wa.me/62${kontak.no_hp_wali.slice(1)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {formatNoHp(kontak.no_hp_wali)}
+                  </a>
+                ) : (
+                  "–"
+                )}
+              </Baris>
+              <Baris label="Email">
+                <span className="break-all">{kontak?.email ?? "–"}</span>
+              </Baris>
+            </dl>
+            {akses.bolehKelolaKontak && (
+              <Lipat judul={kontak ? "Ubah kontak" : "Isi kontak"}>
+                <FormKontak aksi={simpanKontak.bind(null, j.id)} nilai={kontak} />
+              </Lipat>
+            )}
+          </Card>
+        )}
+
+        {akses.bolehLihatPribadi && (
+          <Card>
+            <h2 className="text-lg font-semibold">Orang tua & alamat</h2>
+            <p className="mt-1 text-sm text-muted">Data terbatas, hanya untuk admin yang berizin.</p>
+            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Baris label="Nama ayah kandung">{pribadi?.nama_ayah ?? "–"}</Baris>
+              <Baris label="Nama ibu kandung">{pribadi?.nama_ibu ?? "–"}</Baris>
+              <Baris label="Alamat sesuai KTP">
+                <span className="font-normal">{(pribadi && alamatSatuBaris(pribadi, "ktp")) ?? "–"}</span>
+              </Baris>
+              <Baris label="Alamat saat ini (domisili)">
+                <span className="font-normal">
+                  {pribadi?.domisili_sama_ktp
+                    ? "Sama dengan alamat KTP"
+                    : ((pribadi && alamatSatuBaris(pribadi, "dom")) ?? "–")}
+                </span>
+              </Baris>
+            </dl>
+            {akses.bolehKelolaPribadi && (
+              <Lipat judul={pribadi ? "Ubah orang tua & alamat" : "Isi orang tua & alamat"}>
+                <FormPribadi aksi={simpanPribadi.bind(null, j.id)} nilai={pribadi} />
+              </Lipat>
+            )}
+          </Card>
+        )}
+
+        {akses.bolehLihatIdentitas && (
+          <Card>
+            <h2 className="text-lg font-semibold">Identitas (NIK & No. KK)</h2>
+            <p className="mt-1 text-sm text-muted">
+              Opsional, bukan ID jamaah (ID tetap kode {j.kode}). Nomor disamarkan; tekan ikon mata
+              untuk menampilkan.
+            </p>
+            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Baris label="NIK">{identitas?.nik ? <NomorTersamar nomor={identitas.nik} /> : "–"}</Baris>
+              <Baris label="No. KK">{identitas?.no_kk ? <NomorTersamar nomor={identitas.no_kk} /> : "–"}</Baris>
+            </dl>
+            {akses.bolehKelolaIdentitas && (
+              <Lipat judul={identitas ? "Ubah NIK & No. KK" : "Isi NIK & No. KK"}>
+                <FormIdentitas aksi={simpanIdentitas.bind(null, j.id)} nilai={identitas} />
+              </Lipat>
+            )}
           </Card>
         )}
 
