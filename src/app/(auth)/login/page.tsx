@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
         <Card className="p-6 sm:p-8">
           <h1 className="text-2xl font-semibold tracking-tight">Masuk Admin</h1>
           <p className="mt-1 text-sm text-muted">
-            Khusus admin desa, kelompok, dan generus.
+            Assalamu&apos;alaikum. Khusus admin desa, kelompok, dan generus.
           </p>
 
           <FormMasuk />

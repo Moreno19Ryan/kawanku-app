@@ -109,7 +109,7 @@ export function ringkasKehadiran(catatan: CatatanKehadiran[], sekarang = new Dat
   if (selesai.length === 0) {
     sapaan = "Selamat datang! Kehadiranmu akan tercatat di sini setelah pengajian pertama.";
   } else if (selesai[0].status === "alpa") {
-    sapaan = "Pertemuan terakhir terlewat. Yuk hadir di pengajian berikutnya, kami menunggumu 🤗";
+    sapaan = "Pertemuan terakhir terlewat. InsyaAllah hadir di pengajian berikutnya, ya. Kami menunggumu 🤗";
   } else if (rentetan >= 3) {
     sapaan = `MasyaAllah, ${rentetan} pertemuan berturut-turut! Pertahankan, ya.`;
   } else if (bulanIni.persen !== null && bulanIni.persen >= 80) {

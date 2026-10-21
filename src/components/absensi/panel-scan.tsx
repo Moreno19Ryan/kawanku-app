@@ -6,11 +6,12 @@ import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
 import type { HasilScan } from "@/lib/absensi/actions";
 import { bunyi, type JenisBunyi } from "@/lib/absensi/bunyi";
+import { ucapanSyukur } from "@/lib/label";
 import { jam } from "@/lib/waktu";
 
 /** Teks besar di layar setelah scan. */
 const PESAN: Record<HasilScan["hasil"], string> = {
-  tercatat: "Alhamdulillah, kamu sudah tercatat hadir",
+  tercatat: "Kamu sudah tercatat hadir",
   sudah: "Alhamdulillah, kamu sudah absen sebelumnya",
   tidak_dikenal: "Kode tidak dikenal",
   kartu_dicabut: "Kartu ini sudah dicabut (diganti kartu baru)",
@@ -110,7 +111,11 @@ export function PanelScan({
               <CircleAlert className="size-8 shrink-0" aria-hidden />
             )}
             <span className="min-w-0">
-              <span className="block text-lg font-semibold">{PESAN[terakhir.hasil]}</span>
+              <span className="block text-lg font-semibold">
+                {terakhir.hasil === "tercatat"
+                  ? `${ucapanSyukur(terakhir.jenisKelamin)}, kamu sudah tercatat hadir`
+                  : PESAN[terakhir.hasil]}
+              </span>
               <span className="block text-sm">
                 {[
                   terakhir.nama ?? terakhir.kodeAsal,

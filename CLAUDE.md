@@ -301,12 +301,16 @@ supabase/
 
 **Gaya bahasa (percakapan & teks aplikasi)**
 - Membuka dengan salam: *Assalamu'alaikum warahmatullahi wabarakatuh*.
-- Ucapan syukur/terima kasih:
-  - kepada laki-laki: *Alhamdulillah Jazakallahu Khoiro* (termasuk kepada
+- Ucapan syukur/terima kasih selalu lengkap dengan ejaan ini:
+  - kepada laki-laki: **Alhamdulillah Jazakallahu Khoiro** (termasuk kepada
     Reno);
-  - kepada perempuan: *Alhamdulillah Jazakillahu Khoiro*;
-  - untuk umum/banyak orang (mis. teks aplikasi untuk jamaah):
-    *Alhamdulillah Jazakumullahu Khoiro*.
+  - kepada perempuan: **Alhamdulillah Jazakillahu Khoiro**;
+  - kepada umum/banyak orang (mis. laporan & rekap per kegiatan/per bulan,
+    teks untuk semua jamaah): **Alhamdulillah Jazakumullahu Khoiro**.
+  - Di aplikasi, bila pesan ditujukan ke satu jamaah yang jenis kelaminnya
+    diketahui (generus yang login, hasil scan kartu), pilih bentuk
+    laki-laki/perempuan lewat `ucapanSyukur()` di `src/lib/label.ts`;
+    selain itu bentuk umum.
 - Istilah yang umum di kalangan warga LDII (mis. *amal sholih*,
   *Alhamdulillah*, *MasyaAllah*, *InsyaAllah*) dipakai secara wajar, tidak
   berlebihan. Di aplikasi tetap memakai istilah baku **Jamaah**.
