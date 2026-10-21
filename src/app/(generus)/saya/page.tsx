@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DaftarKejadian } from "@/components/kegiatan/daftar-kejadian";
 import { wajibGenerus } from "@/lib/generus/akun";
+import { getKalender } from "@/lib/kegiatan/data";
+import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
@@ -41,6 +44,8 @@ async function BerandaGenerus() {
     .limit(30)
     .returns<Riwayat[]>();
   const riwayat = data ?? [];
+  const hariIni = hariIniWib();
+  const jadwal = await getKalender(hariIni, tambahHari(hariIni, 6), [generus.jamaah.kelompokId]);
   const hadir = riwayat.filter((r) => r.status === "hadir").length;
 
   return (
@@ -60,6 +65,16 @@ async function BerandaGenerus() {
       <p className="-mt-2 text-center text-xs text-muted">
         Arahkan kamera ke QR di layar admin. Bisa juga pakai aplikasi kamera HP.
       </p>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="px-1 text-sm font-semibold text-muted">Jadwal 7 hari ke depan</h2>
+        <DaftarKejadian
+          kejadian={jadwal}
+          namaKelompok={new Map([[generus.jamaah.kelompokId, generus.jamaah.kelompok ?? "Kelompok"]])}
+          tautan={false}
+          kosong="Belum ada jadwal kegiatan pekan ini."
+        />
+      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="px-1 text-sm font-semibold text-muted">
