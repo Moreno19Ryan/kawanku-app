@@ -64,7 +64,7 @@ erDiagram
 | `jamaah` | `kode`, `nama_lengkap`, `nama_panggilan`, `tanggal_lahir`, `tahun_lahir`, `jenis_kelamin` (`L`/`P`), `status_pernikahan`, `status_sekolah`, `status_sekolah_diperbarui`, `kelompok_id`, `keluarga_id`, `hubungan_keluarga`, `aktif` | Lahir dan status boleh kosong (kosong = belum diisi). `status_sekolah_diperbarui` diisi trigger. FK komposit menjamin keluarga jamaah ada di kelompok yang sama. |
 | `jamaah_keringanan` | Penanda jalur keringanan (`jenis = 'tanpa_hp'`, `aktif`) | Tabel terpisah, lihat §4.8. |
 | `jamaah_janda_duda` | Keterangan janda/duda: `jenis` (`cerai_hidup` / `cerai_mati`) | Tabel terpisah dengan izin `janda_duda.*` (default hanya admin desa), lihat §4.3. Tidak ada baris = belum diketahui. |
-| `kategori_jamaah` | `urutan`, `kode`, `nama`, `usia_min`, `usia_max`, `status_sekolah_berlaku[]`, `status_pernikahan_berlaku[]`, `termasuk_generus` | Kategori sebagai aturan data, lihat §4.4. Seed masih DRAF. |
+| `kategori_jamaah` | `urutan`, `kode`, `nama`, `usia_min`, `usia_max`, `status_sekolah_berlaku[]`, `status_pernikahan_berlaku[]`, `termasuk_generus` | Kategori sebagai aturan data, lihat §4.4. Data sistem (diubah admin desa lewat aplikasi). |
 | `peran` | `kode`, `nama`, `wilayah` (desa/kelompok/fleksibel), `hanya_generus` | Peran baru cukup ditambah sebagai baris. |
 | `izin` | Daftar kemampuan (`jamaah.lihat`, `jamaah.ubah`, `keringanan.lihat`, ...) | |
 | `peran_izin` | Peran → izin | Pemetaan default masih DRAF (§5). |
@@ -173,7 +173,7 @@ disimpan, sehingga perubahan status atau umur langsung tercermin.
 dewasa ditentukan oleh **status sekolah**, sama sekali tidak memakai umur.
 Jadi jamaah SMP tetap pra-remaja walau tanggal lahirnya belum diketahui.
 
-Seed sementara (**DRAF**; akan diubah lewat data tanpa migrasi):
+Seed awal, kini **data sistem** (Reno, 21 Okt 2026): diubah admin desa lewat Pengaturan → Kategori jamaah, tanpa migrasi:
 
 | urutan | kode | nama tampil | usia | status sekolah | status pernikahan | generus |
 | -----: | ---- | ----------- | ---- | -------------- | ----------------- | :-----: |
