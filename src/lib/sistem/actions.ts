@@ -1,0 +1,144 @@
+"use server";
+
+import { refresh } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { bacaAdmin, punyaIzin } from "@/lib/auth/admin";
+import type { StateAksi } from "@/lib/pengaturan/actions";
+import { dariInputWib } from "@/lib/waktu";
+
+const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
+const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
+
+/** Client + admin bila memegang izin global `izin` (RLS tetap pembatasnya). */
+async function konteks(izin: string) {
+  const supabase = await createClient();
+  const admin = await bacaAdmin(supabase);
+  if (!admin || !punyaIzin(admin, izin)) return null;
+  return { supabase, admin };
+}
+
+// ---------------------------------------------------------------------
+// Mode perawatan (sistem.kelola)
+// ---------------------------------------------------------------------
+
+export async function simpanPerawatan(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
+  const ctx = await konteks("sistem.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+
+  const aktif = formData.get("aktif") === "on";
+  const pesan = String(formData.get("pesan") ?? "").trim() || null;
+  const perkiraanInput = String(formData.get("perkiraan_selesai") ?? "");
+  const perkiraan = dariInputWib(perkiraanInput);
+  if (pesan && pesan.length > 500) return { galat: "Pesan maksimal 500 karakter." };
+  if (perkiraanInput && !perkiraan) return { galat: "Perkiraan selesai tidak valid." };
+
+  const { data, error } = await ctx.supabase
+    .from("pengaturan_sistem")
+    .update({ mode_perawatan: aktif, pesan_perawatan: pesan, perkiraan_selesai: perkiraan })
+    .eq("tunggal", true)
+    .select("id");
+  if (error || data.length === 0) return GAGAL;
+
+  refresh();
+  return {
+    pesan: aktif
+      ? "Mode perawatan AKTIF. Admin lain sekarang melihat halaman perawatan."
+      : "Mode perawatan dimatikan.",
+  };
+}
+
+// ---------------------------------------------------------------------
+// Saklar fitur (sistem.kelola)
+// ---------------------------------------------------------------------
+
+export async function simpanFitur(
+  fiturId: string,
+  _prev: StateAksi,
+  formData: FormData,
+): Promise<StateAksi> {
+  const ctx = await konteks("sistem.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+
+  const aktif = formData.get("aktif") === "on";
+  const semua = formData.get("cakupan") !== "pilih";
+  const kelompok = formData.getAll("kelompok").map(String).filter(Boolean);
+  if (aktif && !semua && kelompok.length === 0) {
+    return { galat: "Pilih minimal satu kelompok, atau pilih “Semua kelompok”." };
+  }
+
+  const { data, error } = await ctx.supabase
+    .from("fitur")
+    .update({ aktif, semua_kelompok: semua })
+    .eq("id", fiturId)
+    .select("id");
+  if (error || data.length === 0) return GAGAL;
+
+  // Ganti daftar kelompok sekaligus (hapus lalu isi ulang).
+  const { error: galatHapus } = await ctx.supabase
+    .from("fitur_kelompok")
+    .delete()
+    .eq("fitur_id", fiturId);
+  if (galatHapus) return GAGAL;
+  if (!semua && kelompok.length > 0) {
+    const { error: galatIsi } = await ctx.supabase
+      .from("fitur_kelompok")
+      .insert(kelompok.map((kelompok_id) => ({ fitur_id: fiturId, kelompok_id })));
+    if (galatIsi) return GAGAL;
+  }
+
+  refresh();
+  return { pesan: "Tersimpan." };
+}
+
+// ---------------------------------------------------------------------
+// Pengumuman (pengumuman.kelola)
+// ---------------------------------------------------------------------
+
+export async function buatPengumuman(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
+  const ctx = await konteks("pengumuman.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+
+  const pesan = String(formData.get("pesan") ?? "").trim().replace(/\s+/g, " ");
+  const nada = formData.get("nada") === "peringatan" ? "peringatan" : "info";
+  const mulaiInput = String(formData.get("mulai") ?? "");
+  const berakhirInput = String(formData.get("berakhir") ?? "");
+  const mulai = mulaiInput ? dariInputWib(mulaiInput) : new Date().toISOString();
+  const berakhir = berakhirInput ? dariInputWib(berakhirInput) : null;
+
+  if (!pesan) return { galat: "Isi pesan pengumuman." };
+  if (pesan.length > 300) return { galat: "Pesan maksimal 300 karakter." };
+  if (!mulai || (berakhirInput && !berakhir)) return { galat: "Tanggal tidak valid." };
+  if (berakhir && berakhir <= mulai) return { galat: "Waktu berakhir harus setelah waktu mulai." };
+
+  const { error } = await ctx.supabase.from("pengumuman").insert({ pesan, nada, mulai, berakhir });
+  if (error) return GAGAL;
+
+  refresh();
+  return { pesan: "Pengumuman dibuat." };
+}
+
+export async function ubahStatusPengumuman(id: string, aktif: boolean): Promise<StateAksi> {
+  const ctx = await konteks("pengumuman.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+
+  const { data, error } = await ctx.supabase
+    .from("pengumuman")
+    .update({ aktif })
+    .eq("id", id)
+    .select("id");
+  if (error || data.length === 0) return GAGAL;
+
+  refresh();
+  return { pesan: aktif ? "Pengumuman ditayangkan." : "Pengumuman disembunyikan." };
+}
+
+export async function hapusPengumuman(id: string): Promise<StateAksi> {
+  const ctx = await konteks("pengumuman.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+
+  const { data, error } = await ctx.supabase.from("pengumuman").delete().eq("id", id).select("id");
+  if (error || data.length === 0) return GAGAL;
+
+  refresh();
+  return { pesan: "Pengumuman dihapus." };
+}

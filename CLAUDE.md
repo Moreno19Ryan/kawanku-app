@@ -83,6 +83,13 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Peran/akun "tingkat sistem" (memegang `sistem.kelola`, yaitu pengembang)
   hanya bisa diubah pemegang `sistem.kelola` (dijaga RLS). Sebelum memakai
   secret key untuk akun lain, cek dulu dengan `terlindungSistem()`.
+- Panel pengembang (`docs/panel-pengembang.md`): `GerbangPerawatan` di layout
+  area admin menahan admin selain pengembang saat mode perawatan
+  (`pengaturan_sistem` atau env `MODE_PERAWATAN=1`); `BannerPengumuman`
+  menampilkan pengumuman. Pembacaan tabel sistem bersifat fail-open
+  (tabel/galat → aplikasi tetap jalan normal).
+- Form pengaturan dikirim lewat `useFormAksi()` (onSubmit), bukan prop
+  `action`, supaya React tidak mereset isian setelah validasi server gagal.
 - Pengaman "jangan sampai tidak ada admin pengelola akses" (tidak bisa
   menonaktifkan diri sendiri / mencabut peran pengelola terakhir) saat ini
   dicek di Server Action, belum di database.
@@ -98,7 +105,8 @@ src/
     (app)/              # area admin, memakai layout sidebar + bottom nav
       layout.tsx
       dashboard/page.tsx
-      pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin (difilter izin)
+      pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
+                        # pengumuman, panel pengembang (sistem) (difilter izin)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
       keluar/route.ts   # hapus sesi non-admin lalu ke /login (bukan untuk <Link>)
@@ -109,11 +117,12 @@ src/
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
     pengaturan/         # form & tombol aksi halaman Pengaturan, daftar bagian
     tema/               # TombolTema (cepat), PilihTema (terang/gelap/ikut perangkat)
+    sistem/             # GerbangPerawatan, BannerPengumuman, form panel pengembang
     brand/              # LogoDesa (logo Desa Kartika Wanasari)
     dokumen/            # KopDokumen: header wajib setiap dokumen cetak/ekspor
     kartu/              # KartuQr: kartu absensi jalur 1 (ukuran KTP)
     layout/             # sidebar, bottom nav, header, footer, BrandMark
-    ui/                 # komponen dasar (Card, Badge, Skeleton, buttonClass, INPUT_CLASS)
+    ui/                 # komponen dasar (Card, Badge, Skeleton, Saklar, buttonClass, INPUT_CLASS)
   lib/
     auth/
       admin.ts          # DAL: getAdminSaatIni / wajibAdmin (server-only)
@@ -121,6 +130,9 @@ src/
       tujuan.ts         # validasi ?next= (cegah open redirect)
     pengaturan/
       actions.ts        # Server Action Pengaturan (kata sandi, admin, peran, kelompok)
+    sistem/
+      data.ts           # status perawatan, pengumuman tayang, fitur (server-only, fail-open)
+      actions.ts        # Server Action panel pengembang & pengumuman
     tema.ts             # pilihan tema + skrip inline <head> (anti kedip)
     waktu.ts            # waktuRelatif / tanggalJam (Bahasa Indonesia, WIB)
     supabase/

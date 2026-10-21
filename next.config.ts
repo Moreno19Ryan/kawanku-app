@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // Ditampilkan di Panel pengembang → Info sistem.
+  env: {
+    WAKTU_BUILD: new Date().toISOString(),
+  },
   partialPrefetching: true,
   turbopack: {
     rules: {

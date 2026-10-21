@@ -26,3 +26,26 @@ export function tanggalJam(iso: string): string {
     timeZone: ZONA,
   }).format(new Date(iso))} WIB`;
 }
+
+/** ISO → nilai <input type="datetime-local"> dalam WIB ("2026-10-21T08:15"). */
+export function keInputWib(iso: string | null): string {
+  if (!iso) return "";
+  // sv-SE menghasilkan "YYYY-MM-DD HH:mm".
+  return new Intl.DateTimeFormat("sv-SE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: ZONA,
+  })
+    .format(new Date(iso))
+    .replace(" ", "T");
+}
+
+/** Nilai <input type="datetime-local"> (dianggap WIB) → ISO, atau null bila kosong/tidak valid. */
+export function dariInputWib(nilai: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(nilai)) return null;
+  const waktu = new Date(`${nilai}:00+07:00`);
+  return Number.isNaN(waktu.getTime()) ? null : waktu.toISOString();
+}

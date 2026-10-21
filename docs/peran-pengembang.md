@@ -43,7 +43,7 @@ tidak bisa mengatur ulang kata sandi akun pengembang.
 
 ## Tes
 
-- `supabase/tests/pengembang_rls.test.sql`: 31 skenario. Sudah dicek
+- `supabase/tests/pengembang_rls.test.sql`: 32 skenario. Sudah dicek
   dengan mutasi: mengembalikan policy lama membuat tesnya gagal.
 - `supabase/tests/fase1_rls.test.sql`: satu cek jumlah peran dilonggarkan
   (`= 3` → `>= 3`), karena seed sekarang punya 4 peran.
