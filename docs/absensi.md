@@ -115,7 +115,7 @@ Tes: `supabase/tests/akun_generus_rls.test.sql`.
 
 | Hal | Keputusan |
 | --- | --- |
-| Username | Dari nama lengkap atau nama panggilan. Sistem mengusulkan (`nadia`, `nadia.putri`), admin boleh mengubah. |
+| Username | Nama lengkap tanpa spasi/titik, huruf kecil (`abdulazizsyahputra`, maks. 30 karakter). Nama panggilan jadi usulan kedua; admin boleh mengubah. Bila sudah dipakai, ditambah angka (`…2`). |
 | PIN awal | Tanggal lahir **DDMMYY**. Wajib diganti saat login pertama, dan tidak boleh tanggal lahir lagi. Tanpa tanggal lahir lengkap → admin mengetik PIN 6 angka. |
 | Pengelola | Pengelola absensi wilayahnya (izin `akun_generus.kelola`): admin desa, admin kelompok, admin generus. |
 | Isi akun | Absen (scan QR) + riwayat kehadiran sendiri + ganti PIN. |

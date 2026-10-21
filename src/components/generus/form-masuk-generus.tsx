@@ -73,7 +73,7 @@ export function FormMasukGenerus() {
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="mis. nadia"
+          placeholder="mis. abdulazizsyahputra"
           className={INPUT_CLASS}
         />
       </label>
