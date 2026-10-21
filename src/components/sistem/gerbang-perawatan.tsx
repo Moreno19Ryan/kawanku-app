@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Wrench } from "lucide-react";
+import { BarisKontakPengembang } from "@/components/bantuan/kontak-pengembang";
 import { Card } from "@/components/ui/card";
 import { buttonClass } from "@/components/ui/button";
 import { keluar } from "@/lib/auth/actions";
@@ -51,6 +52,7 @@ function HalamanPerawatan({ status }: { status: StatusSistem }) {
             <span className="font-semibold">{tanggalJam(status.perkiraanSelesai)}</span>
           </p>
         )}
+        <BarisKontakPengembang awalan="Ada yang mendesak?" />
         <form action={keluar} className="mt-2">
           <button type="submit" className={buttonClass("netral")}>
             Keluar

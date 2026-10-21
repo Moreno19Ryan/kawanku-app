@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { KartuKontakPengembang } from "@/components/bantuan/kontak-pengembang";
 import { PageHeader } from "@/components/layout/page-header";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { Card } from "@/components/ui/card";
@@ -70,6 +71,11 @@ const TANYA_JAWAB: TanyaJawab[] = [
       "Otomatis dari status sekolah, status pernikahan, dan usia (untuk lansia). Lihat aturannya di Pengaturan → Kategori jamaah.",
   },
   {
+    tanya: "Aplikasi error, tidak bisa dibuka, atau fiturnya tidak jalan.",
+    jawab:
+      "Muat ulang halaman dulu. Kalau masih bermasalah, hubungi pengembang lewat WhatsApp atau email di bawah, sertakan nama akunmu, halaman yang dibuka, dan tangkapan layar.",
+  },
+  {
     tanya: "Muncul halaman “Sedang perawatan”.",
     jawab:
       "Aplikasi sedang diperbarui. Coba lagi beberapa saat lagi; perkiraan selesai biasanya tertulis di halaman itu.",
@@ -118,10 +124,11 @@ async function DaftarBantuan() {
           ))}
         </ul>
       </Card>
-      <p className="mt-4 text-sm text-muted">
-        Masalah lain atau menemukan kesalahan data? Hubungi{" "}
+      <p className="mt-4 mb-6 text-sm text-muted">
+        Urusan akun (lupa kata sandi, ganti peran) atau kesalahan data jamaah? Hubungi{" "}
         <span className="font-medium text-fg">{pengelolaAkun(admin)}</span>.
       </p>
+      <KartuKontakPengembang />
     </>
   );
 }

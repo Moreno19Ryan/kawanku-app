@@ -121,6 +121,7 @@ src/
   app/
     (app)/              # area admin, memakai layout sidebar + bottom nav
       layout.tsx
+      error.tsx         # galat tak terduga: coba lagi + kontak pengembang
       dashboard/page.tsx
       jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
@@ -134,6 +135,7 @@ src/
     favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
+    bantuan/            # KontakPengembang (WhatsApp/email; Bantuan, login, perawatan, galat)
     jamaah/             # FormJamaah (pratinjau kategori), FormJandaDuda
     pengaturan/         # form & tombol aksi halaman Pengaturan, daftar bagian
     tema/               # TombolTema (cepat), PilihTema (terang/gelap/ikut perangkat)
@@ -158,6 +160,7 @@ src/
     sistem/
       data.ts           # status perawatan, pengumuman tayang, fitur (server-only, fail-open)
       actions.ts        # Server Action panel pengembang & pengumuman
+    kontak.ts           # kontak pengembang (satu sumber untuk semua halaman)
     tema.ts             # pilihan tema + skrip inline <head> (anti kedip)
     waktu.ts            # waktuRelatif / tanggalJam (Bahasa Indonesia, WIB)
     label.ts            # label tampilan enum (status sekolah, pernikahan, wilayah)
