@@ -54,6 +54,15 @@ desa/kelurahan), semua kosong di awal, cakupan seluruh Indonesia.
 - Database menyimpan kode terdalam yang dipilih (`ktp_kode_wilayah`) dan nama
   lengkapnya saat disimpan (`ktp_wilayah`, mis. "Wanasari, Cibitung,
   Kabupaten Bekasi, Jawa Barat"), plus jalan/perumahan, RT, RW, kode pos.
+- Anak di bawah 17 tahun: label "Alamat sesuai KIA" (Kartu Identitas Anak);
+  kolomnya tetap `ktp_*`.
+- 21 Okt 2026: untuk 87 generus + caberawit yang alamat KTP-nya kosong, alamat
+  domisili disalin ke alamat KTP/KIA (saklar "sama" dinyalakan).
+- Generus yang punya akun bisa mengubah alamatnya sendiri di `/saya/alamat`
+  lewat RPC `ubah_alamat_saya()` (security definer; hanya kolom alamat untuk
+  `jamaah_saya()`, PIN awal harus sudah diganti). Generus juga bisa membaca
+  baris `jamaah_pribadi` miliknya sendiri; nama orang tua tidak ditampilkan
+  dan tetap diubah admin. `updated_by` mencatat akun generus yang mengubah.
 
 ## Masih menunggu pengurus
 

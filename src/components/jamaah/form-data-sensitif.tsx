@@ -103,30 +103,12 @@ function IsianAlamat({ awalan, nilai }: { awalan: "ktp" | "dom"; nilai: NilaiPri
   );
 }
 
-export function FormPribadi({
-  aksi,
-  nilai,
-  dokumen = "KTP",
-}: {
-  aksi: Aksi;
-  nilai: NilaiPribadi | null;
-  /** "KIA" untuk anak di bawah 17 tahun. */
-  dokumen?: "KIA" | "KTP";
-}) {
-  const [state, onSubmit, pending] = useFormAksi(aksi);
+/** Alamat KTP/KIA + domisili (dengan saklar "sama"); dipakai admin & generus. */
+function BagianAlamat({ nilai, dokumen }: { nilai: NilaiPribadi | null; dokumen: "KIA" | "KTP" }) {
   // Belum ada data: anggap domisili sama dengan alamat KTP/KIA (paling umum).
   const [sama, setSama] = useState(nilai ? nilai.domisili_sama_ktp : true);
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Kolom label="Nama ayah kandung">
-          <input name="nama_ayah" maxLength={120} defaultValue={nilai?.nama_ayah ?? ""} className={INPUT_CLASS} />
-        </Kolom>
-        <Kolom label="Nama ibu kandung">
-          <input name="nama_ibu" maxLength={120} defaultValue={nilai?.nama_ibu ?? ""} className={INPUT_CLASS} />
-        </Kolom>
-      </div>
-
+    <>
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-3 text-sm font-semibold">Alamat sesuai {dokumen}</legend>
         <IsianAlamat awalan="ktp" nilai={nilai} />
@@ -147,6 +129,51 @@ export function FormPribadi({
       </fieldset>
 
       <input type="hidden" name="dokumen" value={dokumen} />
+    </>
+  );
+}
+
+export function FormPribadi({
+  aksi,
+  nilai,
+  dokumen = "KTP",
+}: {
+  aksi: Aksi;
+  nilai: NilaiPribadi | null;
+  /** "KIA" untuk anak di bawah 17 tahun. */
+  dokumen?: "KIA" | "KTP";
+}) {
+  const [state, onSubmit, pending] = useFormAksi(aksi);
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Kolom label="Nama ayah kandung">
+          <input name="nama_ayah" maxLength={120} defaultValue={nilai?.nama_ayah ?? ""} className={INPUT_CLASS} />
+        </Kolom>
+        <Kolom label="Nama ibu kandung">
+          <input name="nama_ibu" maxLength={120} defaultValue={nilai?.nama_ibu ?? ""} className={INPUT_CLASS} />
+        </Kolom>
+      </div>
+      <BagianAlamat nilai={nilai} dokumen={dokumen} />
+      <Kirim pending={pending} state={state} />
+    </form>
+  );
+}
+
+/** Form alamat untuk generus sendiri (tanpa nama orang tua). */
+export function FormAlamat({
+  aksi,
+  nilai,
+  dokumen,
+}: {
+  aksi: Aksi;
+  nilai: NilaiPribadi | null;
+  dokumen: "KIA" | "KTP";
+}) {
+  const [state, onSubmit, pending] = useFormAksi(aksi);
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <BagianAlamat nilai={nilai} dokumen={dokumen} />
       <Kirim pending={pending} state={state} />
     </form>
   );
