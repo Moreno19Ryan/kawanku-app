@@ -58,4 +58,7 @@ desa/kelurahan), semua kosong di awal, cakupan seluruh Indonesia.
 ## Masih menunggu pengurus
 
 - Kegunaan NIK & No. KK (kolomnya sudah ada, opsional).
-- Paket "GU" di data generus lama (di luar A–F).
+- Paket "GU" di data generus lama (di luar A–F): 4 anak Caberawit hasil impor
+  untuk **sementara diisi Paket F** (21 Okt 2026, keputusan Reno) sampai
+  dikonfirmasi pengurus. Bila GU ternyata paket tersendiri, tambahkan nilai
+  enum `paket_caberawit` lewat migrasi lalu ubah keempat jamaah tersebut.
