@@ -121,7 +121,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   browser), area generus `/saya` & `/absen` (`getGenerusSaatIni` /
   `wajibGenerus`, `src/lib/generus/`). Akun generus tidak punya baris
   `admin`; `wajibAdmin()` mengarahkan akun generus ke `/saya`, dan
-  `wajibGenerus()` mengarahkan admin ke `/dashboard`. QR layar jalur 2 di
+  `wajibGenerus()` mengarahkan admin ke `/dashboard`. Generus bisa mengubah
+  alamatnya sendiri di `/saya/alamat` (RPC `ubah_alamat_saya`, hanya kolom
+  alamat miliknya; nama orang tua tetap lewat admin). QR layar jalur 2 di
   `/layar/[id]` (RPC `token_layar` / `absen_layar`).
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
@@ -145,7 +147,7 @@ src/
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
       absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
                         # akun/ (akun generus)
-    (generus)/          # area akun generus: saya/ (beranda, pin/, scan/), absen/ (hasil QR)
+    (generus)/          # area akun generus: saya/ (beranda, pin/, scan/, alamat/), absen/ (hasil QR)
     layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,
