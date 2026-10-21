@@ -14,7 +14,8 @@ Akun untuk pengembang aplikasi, terpisah dari pengurus desa:
 - **Data jamaah: hanya lihat** (migrasi
   `20261021120000_pengembang_lihat_jamaah`, keputusan Reno): izin
   `jamaah.lihat` untuk seluruh desa, supaya modul Jamaah bisa dipantau.
-  Tidak ada `jamaah.tambah/ubah/hapus`, `keluarga.*`, `keringanan.*`, atau
+  Ditambah `keluarga.lihat` (migrasi `20261021160000_pengembang_lihat_keluarga`).
+  Tidak ada `jamaah.tambah/ubah/hapus`, `keluarga.kelola`, `keringanan.*`, atau
   `janda_duda.*`; data terbatas tetap tersembunyi.
 
 ## Aturan baru (RLS)
