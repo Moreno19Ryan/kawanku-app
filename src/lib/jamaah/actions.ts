@@ -306,7 +306,8 @@ type Alamat = {
 
 function bacaAlamat(formData: FormData, awalan: "ktp" | "dom"): Alamat | string {
   const ambil = (n: string) => String(formData.get(`${awalan}_${n}`) ?? "").trim();
-  const nama = awalan === "ktp" ? "alamat KTP" : "alamat domisili";
+  const dokumen = formData.get("dokumen") === "KIA" ? "KIA" : "KTP";
+  const nama = awalan === "ktp" ? `alamat ${dokumen}` : "alamat domisili";
   const kode = ambil("kode_wilayah");
   if (kode && !adaWilayah(kode)) return `Wilayah ${nama} tidak dikenal.`;
   const jalan = ambil("jalan").replace(/\s+/g, " ");

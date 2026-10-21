@@ -103,9 +103,18 @@ function IsianAlamat({ awalan, nilai }: { awalan: "ktp" | "dom"; nilai: NilaiPri
   );
 }
 
-export function FormPribadi({ aksi, nilai }: { aksi: Aksi; nilai: NilaiPribadi | null }) {
+export function FormPribadi({
+  aksi,
+  nilai,
+  dokumen = "KTP",
+}: {
+  aksi: Aksi;
+  nilai: NilaiPribadi | null;
+  /** "KIA" untuk anak di bawah 17 tahun. */
+  dokumen?: "KIA" | "KTP";
+}) {
   const [state, onSubmit, pending] = useFormAksi(aksi);
-  // Belum ada data: anggap domisili sama dengan KTP (paling umum).
+  // Belum ada data: anggap domisili sama dengan alamat KTP/KIA (paling umum).
   const [sama, setSama] = useState(nilai ? nilai.domisili_sama_ktp : true);
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
@@ -119,17 +128,17 @@ export function FormPribadi({ aksi, nilai }: { aksi: Aksi; nilai: NilaiPribadi |
       </div>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 text-sm font-semibold">Alamat sesuai KTP</legend>
+        <legend className="mb-3 text-sm font-semibold">Alamat sesuai {dokumen}</legend>
         <IsianAlamat awalan="ktp" nilai={nilai} />
       </fieldset>
 
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-3 text-sm font-semibold">Alamat saat ini (domisili)</legend>
         <div className="flex items-center justify-between gap-4 rounded-control bg-surface-muted p-4">
-          <p className="text-sm font-medium">Sama dengan alamat KTP</p>
+          <p className="text-sm font-medium">Sama dengan alamat {dokumen}</p>
           <Saklar
             name="domisili_sama_ktp"
-            label="Sama dengan alamat KTP"
+            label={`Sama dengan alamat ${dokumen}`}
             checked={sama}
             onChange={(e) => setSama(e.target.checked)}
           />
@@ -137,6 +146,7 @@ export function FormPribadi({ aksi, nilai }: { aksi: Aksi; nilai: NilaiPribadi |
         {!sama && <IsianAlamat awalan="dom" nilai={nilai} />}
       </fieldset>
 
+      <input type="hidden" name="dokumen" value={dokumen} />
       <Kirim pending={pending} state={state} />
     </form>
   );
