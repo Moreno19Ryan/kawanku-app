@@ -61,6 +61,7 @@ export const LABEL_STATUS_ABSENSI: Record<string, string> = {
 };
 
 export const LABEL_ALASAN_IZIN: Record<string, string> = {
+  sekolah: "Sekolah",
   kuliah: "Kuliah",
   kerja: "Kerja",
   lainnya: "Lainnya",
