@@ -170,7 +170,60 @@ Tes: `supabase/tests/akun_generus_rls.test.sql`.
 - Belum login → `/masuk?next=/absen?t=…`. Bila login memakan waktu lebih dari
   90 detik, generus cukup scan ulang.
 
+## Rekap absensi (cetak & ekspor)
+
+Absensi → **Rekap** (`/absensi/rekap`). Tombol **Rekap** juga ada di halaman
+setiap sesi.
+
+1. **Pilih jenis rekap:**
+   - **Bulanan**: pilih bulan, wilayah (seluruh desa atau satu kelompok), dan
+     peserta (semua jamaah atau generus saja).
+   - **Per kegiatan**: pilih satu sesi.
+2. **Pratinjau** langsung tampil di bawah filter. Tampilannya sama persis
+   dengan hasil cetak.
+3. **Cetak / PDF** membuka `/cetak/rekap`, halaman tanpa navigasi dengan
+   `KopDokumen` hitam putih. Rekap bulanan dicetak A4 mendatar, rekap per
+   kegiatan A4 tegak.
+4. **Unduh Excel (CSV)** lewat `/api/rekap`: pemisah titik koma dan BOM UTF-8,
+   jadi langsung rapi di Excel berbahasa Indonesia dan Google Sheets. Baris
+   teratas berisi kop.
+
+### Isi rekap
+
+**Bulanan**: matriks peserta × pertemuan dengan kode berikut.
+
+| Kode | Arti |
+| --- | --- |
+| H | Hadir |
+| I | Izin |
+| S | Sakit |
+| A | Tidak hadir |
+| · | Bukan peserta pertemuan itu |
+
+- Tiap peserta dihitung jumlah H/I/S/A dan **%**, yaitu hadir dibagi
+  pertemuan yang diikutinya.
+- Ada baris "Hadir per pertemuan" dan daftar pertemuan.
+- Peserta = jamaah aktif di wilayah yang dipilih, ditambah jamaah yang punya
+  catatan meski kini nonaktif. Sesi tingkat desa ikut dihitung untuk setiap
+  kelompok.
+
+**Per kegiatan**: daftar peserta dengan status dan keterangan (jam & jalur,
+atau alasan izin).
+
+**Catatan otomatis** dihitung dari data, tanpa layanan luar:
+
+| Rekap | Isi catatan |
+| --- | --- |
+| Bulanan | Rata-rata kehadiran; naik/turun dibanding bulan lalu; pertemuan paling ramai/sepi; yang hadir di semua pertemuan; yang **perlu disapa** (tidak hadir 3 pertemuan terakhir berturut-turut) |
+| Per kegiatan | % kehadiran; kehadiran per kelompok (sesi desa); naik/turun dibanding pertemuan sebelumnya di wilayah & sasaran yang sama; alasan izin terbanyak |
+
+### Hak akses
+
+- Pratinjau: pemegang `absensi.lihat` (batas data tetap RLS).
+- Cetak & ekspor: hanya pengelola absensi (`absensi.kelola`). Pengembang hanya
+  bisa melihat, sesuai keputusan "pengembang tidak bisa menarik data".
+- Penanda keringanan tidak dicetak.
+
 ## Belum (berikutnya)
 
 - Keterangan telat (toleransi per sesi).
-- Cetak/ekspor rekap absensi (wajib `KopDokumen`).
