@@ -150,8 +150,8 @@ async function Ringkasan() {
 
   const header = (
     <PageHeader
-      title={`${sapaan()}, ${admin.nama.split(" ")[0]}`}
-      description={admin.penugasan.map(labelPenugasan).join(" · ")}
+      title={`Assalamu'alaikum, ${admin.nama.split(" ")[0]}`}
+      description={[sapaan(), ...admin.penugasan.map(labelPenugasan)].join(" · ")}
       actions={
         akses.kelompokTambah.length > 0 ? (
           <Link href="/jamaah/baru" className={buttonClass("utama")}>

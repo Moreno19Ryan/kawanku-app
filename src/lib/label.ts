@@ -1,3 +1,13 @@
+/**
+ * Ucapan syukur/terima kasih baku (CLAUDE.md → Gaya bahasa): laki-laki
+ * Jazakallahu, perempuan Jazakillahu, umum/banyak orang Jazakumullahu.
+ */
+export function ucapanSyukur(jenisKelamin?: string | null): string {
+  if (jenisKelamin === "L") return "Alhamdulillah Jazakallahu Khoiro";
+  if (jenisKelamin === "P") return "Alhamdulillah Jazakillahu Khoiro";
+  return "Alhamdulillah Jazakumullahu Khoiro";
+}
+
 /** Label tampilan untuk enum database (Bahasa Indonesia). */
 export const LABEL_STATUS_SEKOLAH: Record<string, string> = {
   belum_sekolah: "Belum sekolah",

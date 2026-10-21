@@ -122,6 +122,8 @@ export type HasilScan = {
   nama?: string;
   kode?: string;
   kelompok?: string;
+  /** Jenis kelamin jamaah (untuk ucapan syukur). */
+  jenisKelamin?: "L" | "P";
   /** Penanda keringanan (hanya bila admin boleh melihatnya). */
   keringanan?: boolean;
   /** Waktu tercatat (scan pertama); untuk hasil "sudah". */
@@ -144,9 +146,9 @@ export async function catatKode(sesiId: string, kode: string): Promise<HasilScan
     const [{ data: j }, { data: k }, { data: a }] = await Promise.all([
       ctx.supabase
         .from("jamaah")
-        .select("nama_lengkap, kode, kelompok:kelompok_id(nama)")
+        .select("nama_lengkap, kode, jenis_kelamin, kelompok:kelompok_id(nama)")
         .eq("id", r.jamaah_id)
-        .maybeSingle<{ nama_lengkap: string; kode: string; kelompok: { nama: string } | null }>(),
+        .maybeSingle<{ nama_lengkap: string; kode: string; jenis_kelamin: "L" | "P"; kelompok: { nama: string } | null }>(),
       ctx.akses.bolehLihatKeringanan
         ? ctx.supabase.from("jamaah_keringanan").select("aktif").eq("jamaah_id", r.jamaah_id).maybeSingle()
         : Promise.resolve({ data: null }),
@@ -163,6 +165,7 @@ export async function catatKode(sesiId: string, kode: string): Promise<HasilScan
       hasil.nama = j.nama_lengkap;
       hasil.kode = j.kode;
       hasil.kelompok = j.kelompok?.nama;
+      hasil.jenisKelamin = j.jenis_kelamin;
     }
     hasil.keringanan = Boolean(k?.aktif);
     if (a) hasil.dicatatAt = a.dicatat_at;

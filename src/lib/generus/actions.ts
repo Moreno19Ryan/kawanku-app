@@ -6,7 +6,7 @@ import { getGenerusSaatIni, pinDariTanggalLahir } from "@/lib/generus/akun";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
 import { bacaAlamat } from "@/lib/jamaah/alamat";
 import { bacaNoHp } from "@/lib/jamaah/format";
-import { LABEL_ALASAN_IZIN, LABEL_BAGIAN_USULAN } from "@/lib/label";
+import { LABEL_ALASAN_IZIN, LABEL_BAGIAN_USULAN, ucapanSyukur } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,7 +67,7 @@ export async function simpanAlamatSaya(_prev: StateAksi, formData: FormData): Pr
   });
   if (error) return { galat: "Gagal menyimpan alamat. Coba lagi." };
   refresh();
-  return { pesan: "Alamat tersimpan. Jazaakallahu khoiro!" };
+  return { pesan: `Alamat tersimpan. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
 
 /** Generus mengubah nama panggilan, no. HP/WA, dan email sendiri. */
@@ -93,7 +93,7 @@ export async function simpanProfilSaya(_prev: StateAksi, formData: FormData): Pr
   });
   if (error) return { galat: "Gagal menyimpan. Coba lagi." };
   refresh();
-  return { pesan: "Profil tersimpan." };
+  return { pesan: `Profil tersimpan. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
 
 /** Generus melaporkan data yang salah; admin yang membetulkan. */
@@ -117,7 +117,7 @@ export async function kirimUsulanKoreksi(_prev: StateAksi, formData: FormData): 
   }
   if (error) return { galat: "Gagal mengirim. Coba lagi." };
   refresh();
-  return { pesan: "Terkirim. Admin kelompokmu akan mengeceknya." };
+  return { pesan: `Terkirim, admin kelompokmu akan mengeceknya. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
 
 /** Batalkan laporan yang masih menunggu. */
@@ -168,7 +168,7 @@ export async function ajukanIzin(_prev: StateAksi, formData: FormData): Promise<
   if (error?.code === "23505") return { galat: "Kamu sudah mengajukan izin untuk pertemuan ini." };
   if (error) return { galat: PESAN_IZIN[error.hint ?? ""] ?? "Gagal mengirim. Coba lagi." };
   refresh();
-  return { pesan: "Terkirim. Tunggu persetujuan admin, ya." };
+  return { pesan: `Terkirim, tunggu persetujuan admin ya. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
 
 /** Batalkan pengajuan izin yang masih menunggu. */
@@ -201,6 +201,8 @@ export type HasilAbsen = {
     | "galat";
   sesi?: string;
   dicatat_at?: string;
+  /** Jenis kelamin generus (untuk ucapan syukur). */
+  jenisKelamin?: "L" | "P";
 };
 
 /** Absen dari QR layar (token dari URL /absen?t=...). */
@@ -208,5 +210,6 @@ export async function absen(token: string): Promise<HasilAbsen> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("absen_layar", { p_token: token.slice(0, 120) });
   if (error || !data) return { hasil: "galat" };
-  return data as HasilAbsen;
+  const generus = await getGenerusSaatIni();
+  return { ...(data as HasilAbsen), jenisKelamin: generus?.jamaah.jenisKelamin };
 }

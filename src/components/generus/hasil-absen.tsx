@@ -6,10 +6,11 @@ import { CircleAlert, CircleCheck, LoaderCircle } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
 import { bunyi } from "@/lib/absensi/bunyi";
 import { absen, type HasilAbsen } from "@/lib/generus/actions";
+import { ucapanSyukur } from "@/lib/label";
 import { jam } from "@/lib/waktu";
 
 const PESAN: Record<HasilAbsen["hasil"], string> = {
-  tercatat: "Alhamdulillah, kamu sudah tercatat hadir",
+  tercatat: "Kamu sudah tercatat hadir",
   sudah: "Alhamdulillah, kamu sudah absen sebelumnya",
   kedaluwarsa: "QR sudah kedaluwarsa. Scan ulang QR yang sedang tampil di layar.",
   qr_tidak_sah: "QR tidak dikenal. Pastikan scan QR di layar admin.",
@@ -57,7 +58,9 @@ export function HasilAbsen({ token }: { token: string }) {
     <div className="flex flex-col gap-4">
       <div role="status" aria-live="assertive" className={`flex flex-col items-center gap-3 rounded-card px-6 py-10 text-center ${nada}`}>
         {ok ? <CircleCheck className="size-14" aria-hidden /> : <CircleAlert className="size-14" aria-hidden />}
-        <p className="text-xl font-semibold">{PESAN[hasil.hasil]}</p>
+        <p className="text-xl font-semibold">
+          {hasil.hasil === "tercatat" ? `${ucapanSyukur(hasil.jenisKelamin)}, kamu sudah tercatat hadir` : PESAN[hasil.hasil]}
+        </p>
         {(hasil.sesi || hasil.dicatat_at) && (
           <p className="text-sm">
             {[hasil.sesi, hasil.dicatat_at && ok ? `tercatat pukul ${jam(hasil.dicatat_at)}` : null]

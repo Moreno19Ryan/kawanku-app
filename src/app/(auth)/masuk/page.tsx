@@ -23,7 +23,7 @@ export default function GenerusLoginPage() {
 
         <Card className="p-6 sm:p-8">
           <h1 className="text-2xl font-semibold tracking-tight">Masuk Generus</h1>
-          <p className="mt-1 text-sm text-muted">Untuk absen dengan scan QR di layar admin.</p>
+          <p className="mt-1 text-sm text-muted">Assalamu&apos;alaikum. Silakan masuk untuk absen dengan scan QR di layar admin.</p>
           <FormMasukGenerus />
         </Card>
 

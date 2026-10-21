@@ -4,6 +4,8 @@
  * Fungsi murni (tanpa database), dipakai server; semua bulan dalam WIB.
  */
 
+import { ucapanSyukur } from "@/lib/label";
+
 export type SesiLaporan = {
   id: string;
   nama: string;
@@ -290,6 +292,7 @@ export function hitungLaporan(opsi: {
     }
     if (ringkas.menurun) sorotan.push(`${ringkas.menurun} jamaah kehadirannya menurun tajam dibanding awal periode.`);
     if (ringkas.rajin) sorotan.push(`MasyaAllah, ${ringkas.rajin} jamaah hadir minimal 85% pertemuan.`);
+    if (kehadiran > 0) sorotan.push(`${ucapanSyukur()} atas kehadiran para jamaah.`);
   }
 
   return {

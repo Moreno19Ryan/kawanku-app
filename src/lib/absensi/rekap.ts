@@ -1,6 +1,6 @@
 import "server-only";
 import { getAksesAbsensi, KOLOM_SESI, type AksesAbsensi, type Sesi } from "@/lib/absensi/akses";
-import { LABEL_ALASAN_IZIN } from "@/lib/label";
+import { LABEL_ALASAN_IZIN, ucapanSyukur } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { jam } from "@/lib/waktu";
 
@@ -413,6 +413,7 @@ export async function getRekap(
         catatanOtomatis.push(`Perlu disapa (tidak hadir 3 pertemuan terakhir berturut-turut): ${daftarNama(sapa, 8)}.`);
       }
     }
+    if (total.hadir > 0) catatanOtomatis.push(`${ucapanSyukur()} atas kehadiran para jamaah.`);
   }
 
   return { param: p, judul, keterangan, kolom, baris, total, catatan: catatanOtomatis, namaFile };
