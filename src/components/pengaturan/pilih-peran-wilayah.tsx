@@ -3,13 +3,22 @@
 import { useState } from "react";
 import { INPUT_CLASS } from "@/components/ui/input";
 
-export type OpsiPeran = { id: string; nama: string; wilayah: "desa" | "kelompok" | "fleksibel" };
+export type OpsiPeran = {
+  id: string;
+  nama: string;
+  wilayah: "desa" | "kelompok" | "fleksibel";
+  /** Pemanggil boleh memberi peran ini untuk seluruh desa. */
+  bolehDesa: boolean;
+  /** Kelompok tempat pemanggil boleh memberi peran ini. */
+  kelompokIds: string[];
+};
 export type OpsiKelompok = { id: string; nama: string };
 
 /**
  * Pilihan peran + wilayah (name: peran_id, kelompok_id). Kelompok disembunyikan
  * untuk peran tingkat desa, wajib untuk peran kelompok, dan opsional
- * ("Seluruh desa") untuk peran fleksibel.
+ * ("Seluruh desa") untuk peran fleksibel. Hanya wilayah yang boleh diberikan
+ * pemanggil yang ditawarkan (aturan sebenarnya tetap di RLS).
  */
 export function PilihPeranWilayah({
   peran,
@@ -21,7 +30,10 @@ export function PilihPeranWilayah({
   className?: string;
 }) {
   const [peranId, setPeranId] = useState("");
-  const wilayah = peran.find((p) => p.id === peranId)?.wilayah;
+  const dipilih = peran.find((p) => p.id === peranId);
+  const wilayah = dipilih?.wilayah;
+  const opsiDesa = wilayah === "fleksibel" && dipilih?.bolehDesa;
+  const opsiKelompok = kelompok.filter((k) => dipilih?.kelompokIds.includes(k.id));
 
   return (
     <>
@@ -43,16 +55,17 @@ export function PilihPeranWilayah({
 
       {wilayah && wilayah !== "desa" && (
         <select
+          key={peranId}
           name="kelompok_id"
-          required={wilayah === "kelompok"}
+          required={!opsiDesa}
           defaultValue=""
           aria-label="Wilayah"
           className={`${INPUT_CLASS} w-full text-sm sm:flex-1 ${className}`}
         >
-          <option value="" disabled={wilayah === "kelompok"}>
-            {wilayah === "kelompok" ? "Pilih kelompok…" : "Seluruh desa"}
+          <option value="" disabled={!opsiDesa}>
+            {opsiDesa ? "Seluruh desa" : "Pilih kelompok…"}
           </option>
-          {kelompok.map((k) => (
+          {opsiKelompok.map((k) => (
             <option key={k.id} value={k.id}>
               {k.nama}
             </option>

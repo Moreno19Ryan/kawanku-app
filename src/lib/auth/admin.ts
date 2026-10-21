@@ -7,7 +7,7 @@ export type PenugasanAdmin = {
   peranKode: string;
   peranNama: string;
   /** null = seluruh desa. */
-  kelompok: { nomor: number; nama: string } | null;
+  kelompok: { id: string; nomor: number; nama: string } | null;
 };
 
 export type AdminSaatIni = {
@@ -20,6 +20,11 @@ export type AdminSaatIni = {
    * hanya dari penugasan tanpa kelompok_id dan peran yang bukan hanya_generus.
    */
   izinGlobal: string[];
+  /**
+   * Izin yang berlaku hanya di kelompok tertentu (penugasan dengan
+   * kelompok_id, peran bukan hanya_generus): izin → daftar kelompok_id.
+   */
+  izinKelompok: Record<string, string[]>;
 };
 
 type BarisAdmin = {
@@ -33,7 +38,7 @@ type BarisAdmin = {
       hanya_generus: boolean;
       peran_izin: { izin_kode: string }[];
     } | null;
-    kelompok: { nomor: number; nama: string } | null;
+    kelompok: { id: string; nomor: number; nama: string } | null;
   }[];
 };
 
@@ -55,8 +60,11 @@ export async function wajibAdmin(): Promise<AdminSaatIni> {
   const admin = await getAdminSaatIni();
   if (!admin) {
     // Route handler /keluar menghapus sesi (Server Component tidak bisa
-    // menulis cookie), lalu kembali ke /login dengan pesan.
-    redirect("/keluar?galat=bukan-admin");
+    // menulis cookie), lalu kembali ke /login dengan pesan yang sesuai:
+    // sesi dicabut/kedaluwarsa, atau akun memang bukan admin aktif.
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    redirect(data.user ? "/keluar?galat=bukan-admin" : "/keluar?galat=sesi-berakhir");
   }
   return admin;
 }
@@ -68,22 +76,50 @@ export async function wajibIzin(izin: string, alihkanKe = "/pengaturan"): Promis
   return admin;
 }
 
+/**
+ * Boleh membuka Pengaturan → Admin & akses: akses.kelola (admin desa,
+ * pengembang) atau akses.kelola_generus di kelompok mana pun (admin
+ * kelompok, untuk akun admin generus kelompoknya). Detailnya dijaga RLS.
+ */
+export function bolehKelolaAkun(admin: AdminSaatIni): boolean {
+  return punyaIzin(admin, "akses.kelola") || punyaIzinDiManaPun(admin, "akses.kelola_generus");
+}
+
+export async function wajibKelolaAkun(alihkanKe = "/pengaturan"): Promise<AdminSaatIni> {
+  const admin = await wajibAdmin();
+  if (!bolehKelolaAkun(admin)) redirect(alihkanKe);
+  return admin;
+}
+
 export function punyaIzin(admin: AdminSaatIni, izin: string): boolean {
   return admin.izinGlobal.includes(izin);
+}
+
+/** Izin berlaku di kelompok ini (global atau lewat penugasan kelompok itu). */
+export function punyaIzinDi(admin: AdminSaatIni, izin: string, kelompokId: string): boolean {
+  return punyaIzin(admin, izin) || Boolean(admin.izinKelompok[izin]?.includes(kelompokId));
+}
+
+/** Izin berlaku di wilayah mana pun (global atau minimal satu kelompok). */
+export function punyaIzinDiManaPun(admin: AdminSaatIni, izin: string): boolean {
+  return punyaIzin(admin, izin) || (admin.izinKelompok[izin]?.length ?? 0) > 0;
 }
 
 /** Dipakai juga oleh action login, dengan client yang baru saja masuk. */
 export async function bacaAdmin(
   supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<AdminSaatIni | null> {
-  const { data: klaim } = await supabase.auth.getClaims();
-  const userId = klaim?.claims.sub;
+  // getUser (bukan getClaims): ditanyakan ke Supabase Auth, jadi sesi yang
+  // sudah dicabut (mis. "Keluar dari semua perangkat") langsung ditolak walau
+  // access token-nya belum kedaluwarsa.
+  const { data: dataUser } = await supabase.auth.getUser();
+  const userId = dataUser.user?.id;
   if (!userId) return null;
 
   const { data, error } = await supabase
     .from("admin")
     .select(
-      "nama, aktif, penugasan_peran(kelompok_id, peran(kode, nama, hanya_generus, peran_izin(izin_kode)), kelompok(nomor, nama))",
+      "nama, aktif, penugasan_peran(kelompok_id, peran(kode, nama, hanya_generus, peran_izin(izin_kode)), kelompok(id, nomor, nama))",
     )
     .eq("user_id", userId)
     .maybeSingle<BarisAdmin>();
@@ -94,22 +130,26 @@ export async function bacaAdmin(
   if (berlaku.length === 0) return null;
 
   const izinGlobal = new Set<string>();
+  const izinKelompok: Record<string, string[]> = {};
   for (const p of berlaku) {
-    if (p.kelompok_id === null && !p.peran!.hanya_generus) {
-      p.peran!.peran_izin.forEach((i) => izinGlobal.add(i.izin_kode));
+    if (p.peran!.hanya_generus) continue;
+    for (const { izin_kode } of p.peran!.peran_izin) {
+      if (p.kelompok_id === null) izinGlobal.add(izin_kode);
+      else (izinKelompok[izin_kode] ??= []).push(p.kelompok_id);
     }
   }
 
   return {
     userId,
     nama: data.nama,
-    email: typeof klaim.claims.email === "string" ? klaim.claims.email : null,
+    email: dataUser.user?.email ?? null,
     penugasan: berlaku.map((p) => ({
       peranKode: p.peran!.kode,
       peranNama: p.peran!.nama,
       kelompok: p.kelompok,
     })),
     izinGlobal: [...izinGlobal],
+    izinKelompok,
   };
 }
 

@@ -10,10 +10,10 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   // Baca request dulu supaya route ini dinamis (tidak di-prerender saat build).
   const url = request.nextUrl.clone();
-  const bukanAdmin = url.searchParams.get("galat") === "bukan-admin";
+  const galat = url.searchParams.get("galat");
   url.pathname = "/login";
   url.search = "";
-  if (bukanAdmin) url.searchParams.set("galat", "bukan-admin");
+  if (galat === "bukan-admin" || galat === "sesi-berakhir") url.searchParams.set("galat", galat);
 
   const supabase = await createClient();
   await supabase.auth.signOut();

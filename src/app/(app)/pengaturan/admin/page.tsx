@@ -11,7 +11,7 @@ import { TombolAturUlangSandi } from "@/components/pengaturan/tombol-atur-ulang-
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { punyaIzin, wajibIzin } from "@/lib/auth/admin";
+import { punyaIzin, punyaIzinDi, wajibKelolaAkun } from "@/lib/auth/admin";
 import {
   aturUlangKataSandi,
   hapusPenugasan,
@@ -33,12 +33,17 @@ type BarisAdmin = {
   aktif: boolean;
   penugasan_peran: {
     id: string;
+    peran_id: string;
+    kelompok_id: string | null;
     peran: { nama: string; peran_izin: { izin_kode: string }[] } | null;
     kelompok: { nama: string } | null;
   }[];
 };
 
-type BarisPeran = OpsiPeran & { peran_izin: { izin_kode: string }[] };
+type BarisPeran = Pick<OpsiPeran, "id" | "nama" | "wilayah"> & {
+  hanya_generus: boolean;
+  peran_izin: { izin_kode: string }[];
+};
 
 /** Peran tingkat sistem (pengembang) = memegang izin sistem.kelola. */
 const IZIN_SISTEM = "sistem.kelola";
@@ -51,7 +56,7 @@ export default function AdminPage() {
       <KembaliKePengaturan />
       <PageHeader
         title="Admin & akses"
-        description="Buat akun admin, aktifkan atau nonaktifkan, dan atur peran serta wilayahnya."
+        description="Buat akun admin, aktifkan atau nonaktifkan, dan atur peran serta wilayahnya. Yang tampil hanya akun yang menjadi wewenangmu."
       />
       <Suspense fallback={<Skeleton className="h-96" />}>
         <DaftarAdmin />
@@ -61,21 +66,21 @@ export default function AdminPage() {
 }
 
 async function DaftarAdmin() {
-  const saya = await wajibIzin("akses.kelola");
+  const saya = await wajibKelolaAkun();
   const supabase = await createClient();
 
   const [{ data: admin }, { data: peran }, { data: kelompok }] = await Promise.all([
     supabase
       .from("admin")
       .select(
-        "user_id, nama, aktif, penugasan_peran(id, peran(nama, peran_izin(izin_kode)), kelompok(nama))",
+        "user_id, nama, aktif, penugasan_peran(id, peran_id, kelompok_id, peran(nama, peran_izin(izin_kode)), kelompok(nama))",
       )
       .order("aktif", { ascending: false })
       .order("nama")
       .returns<BarisAdmin[]>(),
     supabase
       .from("peran")
-      .select("id, nama, wilayah, peran_izin(izin_kode)")
+      .select("id, nama, wilayah, hanya_generus, peran_izin(izin_kode)")
       .order("nama")
       .returns<BarisPeran[]>(),
     supabase.from("kelompok").select("id, nama").eq("aktif", true).order("nomor"),
@@ -85,12 +90,42 @@ async function DaftarAdmin() {
     return <Card className="text-sm text-danger">Gagal memuat daftar admin. Muat ulang halaman.</Card>;
   }
 
-  // Akun & peran tingkat sistem hanya dikelola pemegang sistem.kelola
-  // (dijaga RLS; di sini supaya tombolnya tidak ditawarkan).
+  // Peran + wilayah yang boleh diberikan, cerminan private.boleh_beri_peran:
+  // peran sistem → sistem.kelola; generus di kelompok → akses.kelola_generus
+  // di kelompok itu; selain itu → akses.kelola. RLS tetap penentunya.
   const sayaSistem = punyaIzin(saya, IZIN_SISTEM);
+  const sayaAkses = punyaIzin(saya, "akses.kelola");
   const pilihanPeran: OpsiPeran[] = peran
-    .filter((p) => sayaSistem || !tingkatSistem(p.peran_izin))
-    .map(({ id, nama, wilayah }) => ({ id, nama, wilayah }));
+    .map((p) => {
+      const sistem = tingkatSistem(p.peran_izin);
+      const bolehUmum = sistem ? sayaSistem : sayaAkses;
+      const bolehDesa = p.wilayah !== "kelompok" && bolehUmum;
+      const kelompokIds =
+        p.wilayah === "desa"
+          ? []
+          : kelompok
+              .map((k) => k.id)
+              .filter((id) =>
+                p.hanya_generus && !sistem
+                  ? punyaIzinDi(saya, "akses.kelola_generus", id)
+                  : bolehUmum,
+              );
+      return { id: p.id, nama: p.nama, wilayah: p.wilayah, bolehDesa, kelompokIds };
+    })
+    .filter((p) => p.bolehDesa || p.kelompokIds.length > 0);
+  const bolehBeri = (peranId: string, kelompokId: string | null) => {
+    const o = pilihanPeran.find((p) => p.id === peranId);
+    return Boolean(o && (kelompokId ? o.kelompokIds.includes(kelompokId) : o.bolehDesa));
+  };
+
+  // Akun yang boleh dikelola, menurut database. Cadangan sebelum migrasi
+  // kelola_admin_generus: aturan lama (bukan akun pengembang, atau saya pengembang).
+  const { data: dapatDikelola, error: galatDikelola } = await supabase.rpc("akun_dapat_dikelola");
+  const dikelola = new Set<string>(galatDikelola ? [] : (dapatDikelola as string[]));
+  const bisaKelola = (a: BarisAdmin) =>
+    galatDikelola
+      ? sayaAkses && (sayaSistem || !a.penugasan_peran.some((p) => tingkatSistem(p.peran?.peran_izin)))
+      : dikelola.has(a.user_id);
 
   // Secret key hanya dipakai di sini SETELAH wajibIzin("akses.kelola") di atas.
   const adminAuth = createAdminClient();
@@ -104,7 +139,13 @@ async function DaftarAdmin() {
 
   return (
     <div className="flex flex-col gap-4">
-      {adminAuth ? (
+      {!sayaAkses && (
+        <Card className="bg-primary-soft text-sm text-primary shadow-none">
+          Kamu bisa membuat dan mengelola akun <b>admin generus</b> untuk kelompokmu. Akun admin
+          lain dikelola admin desa.
+        </Card>
+      )}
+      {adminAuth && pilihanPeran.length > 0 ? (
         <Card>
           <h2 className="text-lg font-semibold">Tambah admin</h2>
           <p className="mt-1 mb-5 text-sm text-muted">
@@ -113,18 +154,18 @@ async function DaftarAdmin() {
           </p>
           <FormBuatAdmin peran={pilihanPeran} kelompok={kelompok} />
         </Card>
-      ) : (
+      ) : !adminAuth ? (
         <Card className="bg-primary-soft text-sm text-primary shadow-none">
           Pembuatan akun dari aplikasi belum aktif (SUPABASE_SECRET_KEY belum dipasang di
           server). Sementara, akun baru dibuat lewat Supabase lalu dihubungkan dengan SQL.
         </Card>
-      )}
+      ) : null}
 
       <ul className="flex flex-col gap-3">
         {admin.map((a) => {
           const diriSendiri = a.user_id === saya.userId;
           const akunSistem = a.penugasan_peran.some((p) => tingkatSistem(p.peran?.peran_izin));
-          const bolehKelola = sayaSistem || !akunSistem;
+          const bolehKelola = bisaKelola(a);
           return (
             <li key={a.user_id}>
               <Card className={a.aktif ? "" : "opacity-75"}>
@@ -143,9 +184,11 @@ async function DaftarAdmin() {
                     {akun.has(a.user_id) && (
                       <InfoAkun {...akun.get(a.user_id)!} />
                     )}
-                    {!bolehKelola && (
+                    {!bolehKelola && !diriSendiri && (
                       <p className="mt-1 text-xs text-muted">
-                        Akun pengembang: hanya bisa diubah oleh pengembang.
+                        {akunSistem
+                          ? "Akun pengembang: hanya bisa diubah oleh pengembang."
+                          : "Bukan wewenangmu: dikelola admin wilayahnya."}
                       </p>
                     )}
                   </div>
@@ -183,7 +226,7 @@ async function DaftarAdmin() {
                             {p.kelompok?.nama ?? "Seluruh desa"}
                           </span>
                         </span>
-                        {bolehKelola && (
+                        {bolehKelola && bolehBeri(p.peran_id, p.kelompok_id) && (
                           <TombolAksi
                             aksi={hapusPenugasan.bind(null, p.id)}
                             label="Cabut"
@@ -194,7 +237,7 @@ async function DaftarAdmin() {
                       </li>
                     ))}
                   </ul>
-                  {bolehKelola && (
+                  {bolehKelola && pilihanPeran.length > 0 && (
                     <div className="mt-2">
                       <FormTambahPenugasan
                         aksi={tambahPenugasan.bind(null, a.user_id)}

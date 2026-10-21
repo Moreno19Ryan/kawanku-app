@@ -4,7 +4,7 @@ import { randomInt } from "node:crypto";
 import { refresh } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { bacaAdmin, punyaIzin } from "@/lib/auth/admin";
+import { bacaAdmin, bolehKelolaAkun, punyaIzin } from "@/lib/auth/admin";
 
 export type StateAksi = {
   galat?: string;
@@ -29,7 +29,43 @@ async function konteks(izin?: string) {
   return { supabase, admin };
 }
 
+/** Konteks untuk mengelola akun admin (akses.kelola atau akses.kelola_generus). */
+async function konteksKelolaAkun() {
+  const ctx = await konteks();
+  return ctx && bolehKelolaAkun(ctx.admin) ? ctx : null;
+}
+
 type Supabase = Awaited<ReturnType<typeof createClient>>;
+type Konteks = NonNullable<Awaited<ReturnType<typeof konteks>>>;
+
+/**
+ * Apakah akun ini boleh dikelola pemanggil, menurut database
+ * (public.akun_dapat_dikelola → private.boleh_kelola_akun). WAJIB dicek
+ * sebelum memakai secret key, karena secret key melewati RLS.
+ * Cadangan bila fungsi belum ada (migrasi kelola_admin_generus belum
+ * diterapkan): aturan lama (akses.kelola + bukan akun pengembang).
+ */
+async function bolehKelolaAkunIni(ctx: Konteks, userId: string): Promise<boolean> {
+  const { data, error } = await ctx.supabase.rpc("akun_dapat_dikelola");
+  if (!error) return (data as string[]).includes(userId);
+  return punyaIzin(ctx.admin, "akses.kelola") && !(await terlindungSistem(ctx, { userId }));
+}
+
+/** Apakah pemanggil boleh memberi peran + wilayah ini (lihat private.boleh_beri_peran). */
+async function bolehBeriPeran(
+  ctx: Konteks,
+  peranId: string,
+  kelompokId: string | null,
+): Promise<boolean> {
+  const { data, error } = await ctx.supabase.rpc("boleh_beri_peran", {
+    p_peran_id: peranId,
+    p_kelompok_id: kelompokId,
+  });
+  if (!error) return data === true;
+  return punyaIzin(ctx.admin, "akses.kelola") && !(await terlindungSistem(ctx, { peranId }));
+}
+
+const TIDAK_DIKELOLA: StateAksi = { galat: "Akun ini tidak bisa kamu kelola." };
 
 /**
  * Jumlah admin aktif yang tetap bisa mengelola akses (izin global
@@ -100,7 +136,7 @@ function buatSandiSementara() {
  * sebelum memakai secret key (yang melewati RLS) dan memberi pesan jelas.
  */
 async function terlindungSistem(
-  ctx: NonNullable<Awaited<ReturnType<typeof konteks>>>,
+  ctx: Konteks,
   target: { userId?: string; peranId?: string },
 ): Promise<boolean> {
   if (punyaIzin(ctx.admin, "sistem.kelola")) return false;
@@ -123,7 +159,6 @@ async function terlindungSistem(
   return false;
 }
 
-const TERLINDUNG: StateAksi = { galat: "Akun dan peran pengembang hanya bisa diubah oleh pengembang." };
 
 const TANPA_SECRET: StateAksi = {
   galat: "Fitur ini belum aktif: SUPABASE_SECRET_KEY belum dipasang di server.",
@@ -176,14 +211,18 @@ export async function ubahStatusAdmin(
   userId: string,
   aktif: boolean,
 ): Promise<StateAksi> {
-  const ctx = await konteks("akses.kelola");
+  const ctx = await konteksKelolaAkun();
   if (!ctx) return TIDAK_BERHAK;
+  if (!(await bolehKelolaAkunIni(ctx, userId))) return TIDAK_DIKELOLA;
 
   if (!aktif) {
     if (userId === ctx.admin.userId) {
       return { galat: "Kamu tidak bisa menonaktifkan akunmu sendiri." };
     }
-    const sisa = await sisaPengelolaAkses(ctx.supabase, { userId });
+    // Hanya pemegang akses.kelola yang bisa menyentuh pengelola akses lain.
+    const sisa = punyaIzin(ctx.admin, "akses.kelola")
+      ? await sisaPengelolaAkses(ctx.supabase, { userId })
+      : 1;
     if (sisa === null) return GAGAL;
     if (sisa === 0) {
       return { galat: "Ini admin terakhir yang bisa mengelola akses. Tambah admin desa lain dulu." };
@@ -206,8 +245,9 @@ export async function ubahNamaAdmin(
   _prev: StateAksi,
   formData: FormData,
 ): Promise<StateAksi> {
-  const ctx = await konteks("akses.kelola");
+  const ctx = await konteksKelolaAkun();
   if (!ctx) return TIDAK_BERHAK;
+  if (!(await bolehKelolaAkunIni(ctx, userId))) return TIDAK_DIKELOLA;
 
   const nama = String(formData.get("nama") ?? "").trim().replace(/\s+/g, " ");
   if (!nama) return { galat: "Nama wajib diisi." };
@@ -229,11 +269,15 @@ export async function tambahPenugasan(
   _prev: StateAksi,
   formData: FormData,
 ): Promise<StateAksi> {
-  const ctx = await konteks("akses.kelola");
+  const ctx = await konteksKelolaAkun();
   if (!ctx) return TIDAK_BERHAK;
+  if (!(await bolehKelolaAkunIni(ctx, userId))) return TIDAK_DIKELOLA;
 
   const tujuan = await bacaPeranWilayah(ctx.supabase, formData);
   if ("galat" in tujuan) return tujuan;
+  if (!(await bolehBeriPeran(ctx, tujuan.peran_id, tujuan.kelompok_id))) {
+    return { galat: "Kamu tidak bisa memberi peran ini di wilayah itu." };
+  }
 
   const { error } = await ctx.supabase
     .from("penugasan_peran")
@@ -249,10 +293,12 @@ export async function tambahPenugasan(
 export async function hapusPenugasan(
   penugasanId: string,
 ): Promise<StateAksi> {
-  const ctx = await konteks("akses.kelola");
+  const ctx = await konteksKelolaAkun();
   if (!ctx) return TIDAK_BERHAK;
 
-  const sisa = await sisaPengelolaAkses(ctx.supabase, { penugasanId });
+  const sisa = punyaIzin(ctx.admin, "akses.kelola")
+    ? await sisaPengelolaAkses(ctx.supabase, { penugasanId })
+    : 1;
   if (sisa === null) return GAGAL;
   if (sisa === 0) {
     return { galat: "Ini peran terakhir yang bisa mengelola akses. Tambah admin desa lain dulu." };
@@ -324,7 +370,7 @@ export async function ubahStatusKelompok(
  * langkah kedua gagal, akun Auth dihapus lagi supaya tidak tertinggal.
  */
 export async function buatAdmin(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
-  const ctx = await konteks("akses.kelola");
+  const ctx = await konteksKelolaAkun();
   if (!ctx) return TIDAK_BERHAK;
   const adminAuth = createAdminClient();
   if (!adminAuth) return TANPA_SECRET;
@@ -337,7 +383,9 @@ export async function buatAdmin(_prev: StateAksi, formData: FormData): Promise<S
 
   const tujuan = await bacaPeranWilayah(ctx.supabase, formData);
   if ("galat" in tujuan) return tujuan;
-  if (await terlindungSistem(ctx, { peranId: tujuan.peran_id })) return TERLINDUNG;
+  if (!(await bolehBeriPeran(ctx, tujuan.peran_id, tujuan.kelompok_id))) {
+    return { galat: "Kamu tidak bisa memberi peran ini di wilayah itu." };
+  }
 
   const sandiSementara = buatSandiSementara();
   const { data: dibuat, error: galatAuth } = await adminAuth.auth.admin.createUser({
@@ -369,23 +417,16 @@ export async function buatAdmin(_prev: StateAksi, formData: FormData): Promise<S
 
 /** Mengganti kata sandi admin lain dengan kata sandi sementara baru. */
 export async function aturUlangKataSandi(userId: string): Promise<StateAksi> {
-  const ctx = await konteks("akses.kelola");
+  const ctx = await konteksKelolaAkun();
   if (!ctx) return TIDAK_BERHAK;
   if (userId === ctx.admin.userId) {
     return { galat: "Untuk akunmu sendiri, pakai Pengaturan → Akun saya." };
   }
   const adminAuth = createAdminClient();
   if (!adminAuth) return TANPA_SECRET;
-  if (await terlindungSistem(ctx, { userId })) return TERLINDUNG;
-
-  // Pastikan targetnya memang admin yang terlihat oleh pemanggil (lewat RLS),
-  // bukan akun lain (mis. akun generus nanti).
-  const { data: target } = await ctx.supabase
-    .from("admin")
-    .select("user_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (!target) return GAGAL;
+  // Sebelum secret key (yang melewati RLS): akun ini harus boleh dikelola
+  // pemanggil menurut database (wilayah, akun pengembang, dst.).
+  if (!(await bolehKelolaAkunIni(ctx, userId))) return TIDAK_DIKELOLA;
 
   const sandiSementara = buatSandiSementara();
   const { error } = await adminAuth.auth.admin.updateUserById(userId, { password: sandiSementara });

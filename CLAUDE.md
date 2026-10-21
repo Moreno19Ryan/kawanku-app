@@ -80,6 +80,15 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   hanya untuk Supabase Auth Admin API dan hanya setelah izin `akses.kelola`
   dicek; profil `admin` & `penugasan_peran` tetap ditulis dengan sesi
   pengguna (RLS). Kata sandi sementara ditampilkan sekali, tidak disimpan.
+- Akun admin generus **kelompok** dikelola admin kelompoknya (izin
+  `akses.kelola_generus` per wilayah), bukan admin desa; generus desa oleh
+  admin desa (`docs/kelola-admin-generus.md`). Sumber kebenaran:
+  `private.boleh_kelola_akun` / `boleh_beri_peran`; aplikasi memakai RPC
+  `akun_dapat_dikelola()` & `boleh_beri_peran()` (wajib sebelum secret key).
+  Izin per kelompok tersedia di DAL: `punyaIzinDi`, `punyaIzinDiManaPun`.
+- Pemeriksaan admin di server memakai `supabase.auth.getUser()` (bukan
+  `getClaims`), supaya sesi yang dicabut ("Keluar dari semua perangkat")
+  langsung ditolak.
 - Peran/akun "tingkat sistem" (memegang `sistem.kelola`, yaitu pengembang)
   hanya bisa diubah pemegang `sistem.kelola` (dijaga RLS). Sebelum memakai
   secret key untuk akun lain, cek dulu dengan `terlindungSistem()`.
@@ -106,7 +115,8 @@ src/
       layout.tsx
       dashboard/page.tsx
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
-                        # pengumuman, panel pengembang (sistem) (difilter izin)
+                        # pengumuman, panel pengembang, wewenang saya, kategori,
+                        # bantuan (difilter izin)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
       keluar/route.ts   # hapus sesi non-admin lalu ke /login (bukan untuk <Link>)
@@ -135,6 +145,7 @@ src/
       actions.ts        # Server Action panel pengembang & pengumuman
     tema.ts             # pilihan tema + skrip inline <head> (anti kedip)
     waktu.ts            # waktuRelatif / tanggalJam (Bahasa Indonesia, WIB)
+    label.ts            # label tampilan enum (status sekolah, pernikahan, wilayah)
     supabase/
       client.ts         # client untuk browser (Client Components)
       server.ts         # client untuk server (Server Components/Actions)

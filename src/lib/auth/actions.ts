@@ -50,3 +50,10 @@ export async function keluar() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+/** Keluar dari semua perangkat (mencabut semua sesi akun ini). */
+export async function keluarSemuaPerangkat() {
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "global" });
+  redirect("/login");
+}

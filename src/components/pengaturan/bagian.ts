@@ -1,5 +1,7 @@
 import {
+  BadgeCheck,
   Building2,
+  CircleHelp,
   KeyRound,
   Megaphone,
   Palette,
@@ -15,8 +17,10 @@ export type BagianPengaturan = {
   judul: string;
   keterangan: string;
   icon: LucideIcon;
-  /** Izin global yang dibutuhkan; kosong = semua admin. */
+  /** Izin global yang dibutuhkan; kosong (dan tanpa izinWilayah) = semua admin. */
   izin?: string;
+  /** Alternatif: izin yang cukup berlaku di wilayah mana pun (mis. per kelompok). */
+  izinWilayah?: string;
   segera?: boolean;
 };
 
@@ -25,8 +29,14 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
   {
     href: "/pengaturan/akun",
     judul: "Akun saya",
-    keterangan: "Profil, peran, dan kata sandi",
+    keterangan: "Profil, kata sandi, dan keamanan sesi",
     icon: UserRound,
+  },
+  {
+    href: "/pengaturan/wewenang",
+    judul: "Peran & wewenang saya",
+    keterangan: "Wilayah tugas dan apa saja yang boleh kamu lakukan",
+    icon: BadgeCheck,
   },
   {
     href: "/pengaturan/tampilan",
@@ -37,9 +47,10 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
   {
     href: "/pengaturan/admin",
     judul: "Admin & akses",
-    keterangan: "Aktifkan admin dan atur perannya",
+    keterangan: "Buat dan kelola akun admin sesuai wewenangmu",
     icon: ShieldCheck,
     izin: "akses.kelola",
+    izinWilayah: "akses.kelola_generus",
   },
   {
     href: "/pengaturan/kelompok",
@@ -56,6 +67,12 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     izin: "akses.kelola",
   },
   {
+    href: "/pengaturan/kategori",
+    judul: "Kategori jamaah",
+    keterangan: "Aturan pengelompokan jamaah",
+    icon: Tags,
+  },
+  {
     href: "/pengaturan/pengumuman",
     judul: "Pengumuman",
     keterangan: "Banner informasi untuk semua admin",
@@ -70,11 +87,9 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     izin: "sistem.kelola",
   },
   {
-    href: "/pengaturan/kategori",
-    judul: "Kategori jamaah",
-    keterangan: "Aturan pengelompokan jamaah",
-    icon: Tags,
-    izin: "pengaturan.kelola",
-    segera: true,
+    href: "/pengaturan/bantuan",
+    judul: "Bantuan",
+    keterangan: "Panduan singkat dan kontak",
+    icon: CircleHelp,
   },
 ];

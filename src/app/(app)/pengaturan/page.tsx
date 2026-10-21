@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { BAGIAN_PENGATURAN } from "@/components/pengaturan/bagian";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { punyaIzin, wajibAdmin } from "@/lib/auth/admin";
+import { punyaIzin, punyaIzinDiManaPun, wajibAdmin } from "@/lib/auth/admin";
 
 export const metadata: Metadata = {
   title: "Pengaturan",
@@ -25,7 +25,12 @@ export default function PengaturanPage() {
 
 async function DaftarBagian() {
   const admin = await wajibAdmin();
-  const bagian = BAGIAN_PENGATURAN.filter((b) => !b.izin || punyaIzin(admin, b.izin));
+  const bagian = BAGIAN_PENGATURAN.filter(
+    (b) =>
+      (!b.izin && !b.izinWilayah) ||
+      (b.izin !== undefined && punyaIzin(admin, b.izin)) ||
+      (b.izinWilayah !== undefined && punyaIzinDiManaPun(admin, b.izinWilayah)),
+  );
 
   return (
     <nav aria-label="Bagian pengaturan" className="overflow-hidden rounded-card bg-surface">
