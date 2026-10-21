@@ -27,6 +27,12 @@ export type AdminSaatIni = {
    * kelompok_id, peran bukan hanya_generus): izin → daftar kelompok_id.
    */
   izinKelompok: Record<string, string[]>;
+  /**
+   * Semua izin dari semua penugasan, TERMASUK peran hanya_generus:
+   * izin → daftar wilayah (null = seluruh desa). Untuk UX (menu, tombol);
+   * sasaran generus tetap dibatasi RLS per jamaah.
+   */
+  izinWilayah: Record<string, (string | null)[]>;
 };
 
 type BarisAdmin = {
@@ -133,7 +139,11 @@ export async function bacaAdmin(
 
   const izinGlobal = new Set<string>();
   const izinKelompok: Record<string, string[]> = {};
+  const izinWilayah: Record<string, (string | null)[]> = {};
   for (const p of berlaku) {
+    for (const { izin_kode } of p.peran!.peran_izin) {
+      (izinWilayah[izin_kode] ??= []).push(p.kelompok_id);
+    }
     if (p.peran!.hanya_generus) continue;
     for (const { izin_kode } of p.peran!.peran_izin) {
       if (p.kelompok_id === null) izinGlobal.add(izin_kode);
@@ -153,6 +163,7 @@ export async function bacaAdmin(
     })),
     izinGlobal: [...izinGlobal],
     izinKelompok,
+    izinWilayah,
   };
 }
 

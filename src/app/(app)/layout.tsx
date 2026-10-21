@@ -3,6 +3,7 @@ import { AkunAdmin } from "@/components/auth/akun-admin";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
+import { BottomNavTerbuka, SidebarTerbuka } from "@/components/layout/nav-terbuka";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { BannerPengumuman } from "@/components/sistem/banner-pengumuman";
@@ -17,15 +18,17 @@ import { Skeleton } from "@/components/ui/skeleton";
  * sendiri tidak boleh await sesi di level atas (cacheComponents).
  */
 export default function AppLayout({ children }: LayoutProps<"/">) {
+  const akunSidebar = (
+    <Suspense fallback={<div className="h-16 rounded-card bg-surface" />}>
+      <AkunAdmin />
+    </Suspense>
+  );
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <Sidebar
-        akun={
-          <Suspense fallback={<div className="h-16 rounded-card bg-surface" />}>
-            <AkunAdmin />
-          </Suspense>
-        }
-      />
+      <Suspense fallback={<Sidebar akun={akunSidebar} />}>
+        <SidebarTerbuka akun={akunSidebar} />
+      </Suspense>
 
       <div className="sticky top-0 z-10 flex items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg lg:hidden">
         <BrandMark height={24} />
@@ -50,7 +53,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         <AppFooter className="mt-12" />
       </main>
 
-      <BottomNav />
+      <Suspense fallback={<BottomNav />}>
+        <BottomNavTerbuka />
+      </Suspense>
     </div>
   );
 }
