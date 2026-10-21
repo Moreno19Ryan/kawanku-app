@@ -14,6 +14,7 @@ const PESAN: Record<HasilScan["hasil"], string> = {
   sudah: "Alhamdulillah, kamu sudah absen sebelumnya",
   tidak_dikenal: "Kode tidak dikenal",
   kartu_dicabut: "Kartu ini sudah dicabut (diganti kartu baru)",
+  pakai_akun: "Kartu tidak berlaku: generus absen lewat akunnya (scan QR layar)",
   sesi_ditutup: "Sesi sudah ditutup",
   bukan_peserta: "Bukan peserta sesi ini",
   jamaah_nonaktif: "Jamaah tidak aktif",
