@@ -11,9 +11,11 @@ Akun untuk pengembang aplikasi, terpisah dari pengurus desa:
   pengembang (mode perawatan, saklar fitur, pengumuman, info sistem).
 - **Memulihkan akses**: izin `akses.kelola`. Pengembang bisa mengaktifkan
   kembali atau membuatkan admin desa bila semuanya terkunci.
-- **Tidak otomatis melihat data jamaah**: tidak ada izin `jamaah.*`,
-  `keluarga.*`, `keringanan.*`, atau `janda_duda.*`. Bila perlu untuk
-  debugging, peran admin desa diberikan sementara lalu dicabut lagi.
+- **Data jamaah: hanya lihat** (migrasi
+  `20261021120000_pengembang_lihat_jamaah`, keputusan Reno): izin
+  `jamaah.lihat` untuk seluruh desa, supaya modul Jamaah bisa dipantau.
+  Tidak ada `jamaah.tambah/ubah/hapus`, `keluarga.*`, `keringanan.*`, atau
+  `janda_duda.*`; data terbatas tetap tersembunyi.
 
 ## Aturan baru (RLS)
 
@@ -29,7 +31,9 @@ peran seperti itu.
 | Menambah `sistem.kelola` ke peran lain | **Tidak** | Ya |
 | Mengubah/menghapus peran Pengembang atau izin `sistem.kelola` | **Tidak** | Ya |
 | Mengelola admin desa/kelompok/generus | Ya (seperti sebelumnya) | Ya |
-| Melihat atau mengubah data jamaah | Ya (seperti sebelumnya) | **Tidak** |
+| Melihat data jamaah | Ya | Ya (hanya lihat) |
+| Menambah / mengubah / menghapus jamaah | Ya | **Tidak** |
+| Keringanan & keterangan janda/duda | Ya | **Tidak** |
 
 Helper baru di skema `private` (security definer): `peran_sistem`,
 `akun_sistem`, `boleh_kelola_peran`, `boleh_kelola_akun`,

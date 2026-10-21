@@ -14,7 +14,7 @@ cakupannya satu desa.
 - **Istilah baku: Jamaah** (bukan "warga") di UI, kode, dan database.
 - **Peran**: admin desa (seluruh desa), admin kelompok (kelompoknya saja), admin
   generus (jamaah generus, di tingkat desa atau tingkat kelompok), dan
-  pengembang (sistem & pemulihan akses, tanpa data jamaah; lihat
+  pengembang (sistem & pemulihan akses; data jamaah hanya lihat; lihat
   `docs/peran-pengembang.md`). Peran dan
   hak akses disimpan sebagai **data** di database, bukan di-hardcode: wilayah
   (`penugasan_peran.kelompok_id`, kosong = seluruh desa) dan sasaran

@@ -1,7 +1,8 @@
 -- =====================================================================
 -- Tes peran Pengembang (migrasi 20261021071500_peran_pengembang).
 -- Admin desa (akses.kelola) tidak bisa menyentuh peran/izin/akun tingkat
--- sistem; pengembang bisa, tapi tidak otomatis melihat data jamaah.
+-- sistem; pengembang bisa. Data jamaah: pengembang hanya boleh melihat
+-- (migrasi 20261021120000_pengembang_lihat_jamaah).
 -- Satu transaksi, di-rollback.
 -- =====================================================================
 \set ON_ERROR_STOP 1
@@ -80,8 +81,10 @@ insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
 insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
   select '00000000-0000-0000-0000-0000000000a3', p.id, k.id from public.peran p, public.kelompok k
   where p.kode = 'admin_kelompok' and k.nomor = 1;
-insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin, kode)
-  select id, 'Jamaah Uji', 'L', 'KW-ABCDEF' from public.kelompok where nomor = 1;
+insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin, kode, status_pernikahan)
+  select id, 'Jamaah Uji', 'L', 'KW-ABCDEF', 'janda_duda' from public.kelompok where nomor = 1;
+insert into public.jamaah_keringanan (jamaah_id) select id from public.jamaah;
+insert into public.jamaah_janda_duda (jamaah_id, jenis) select id, 'cerai_mati' from public.jamaah;
 
 -- Seed peran pengembang
 select uji.cek('Seed: peran pengembang ada, tingkat desa, bukan hanya_generus',
@@ -90,10 +93,11 @@ select uji.cek('Seed: pengembang memegang sistem.kelola + akses.kelola',
   (select array_agg(pi.izin_kode) from public.peran_izin pi
    join public.peran p on p.id = pi.peran_id where p.kode = 'pengembang')
   @> array['akses.kelola', 'sistem.kelola']);
-select uji.cek('Seed: pengembang tidak memegang izin data (jamaah/keluarga/keringanan/janda_duda)',
-  not exists (select 1 from public.peran_izin pi join public.peran p on p.id = pi.peran_id
-              where p.kode = 'pengembang'
-                and split_part(pi.izin_kode, '.', 1) in ('jamaah', 'keluarga', 'keringanan', 'janda_duda')));
+select uji.cek('Seed: izin data pengembang hanya jamaah.lihat (tanpa ubah, keluarga, keringanan, janda_duda)',
+  (select array_agg(pi.izin_kode) from public.peran_izin pi join public.peran p on p.id = pi.peran_id
+   where p.kode = 'pengembang'
+     and split_part(pi.izin_kode, '.', 1) in ('jamaah', 'keluarga', 'keringanan', 'janda_duda'))
+  = array['jamaah.lihat']);
 select uji.cek('Seed: tidak ada peran lain yang memegang sistem.kelola',
   (select count(*) from public.peran_izin where izin_kode = 'sistem.kelola') = 1);
 
@@ -159,8 +163,20 @@ select uji.harus_berhasil('Admin desa: membuat profil admin baru tetap boleh',
 -- ---------------------------------------------------------------------
 select uji.sebagai('00000000-0000-0000-0000-0000000000a2');
 
-select uji.cek('Pengembang: tidak bisa melihat data jamaah',
-  not exists (select 1 from public.jamaah));
+select uji.cek('Pengembang: bisa melihat data jamaah (hanya lihat)',
+  (select count(*) from public.jamaah) = 1);
+select uji.cek('Pengembang: melihat jamaah lewat view kategori',
+  (select count(*) from public.jamaah_dengan_kategori) = 1);
+select uji.harus_ditolak('Pengembang: tidak bisa mengubah jamaah',
+  $q$ update public.jamaah set nama_lengkap = 'X' returning 1 $q$);
+select uji.harus_ditolak('Pengembang: tidak bisa menghapus jamaah',
+  $q$ delete from public.jamaah returning 1 $q$);
+select uji.cek('Pengembang: tidak bisa melihat penanda keringanan',
+  not exists (select 1 from public.jamaah_keringanan));
+select uji.cek('Pengembang: tidak bisa melihat keterangan janda/duda',
+  not exists (select 1 from public.jamaah_janda_duda));
+select uji.harus_ditolak('Pengembang: tidak bisa memberi penanda keringanan',
+  $q$ update public.jamaah_keringanan set aktif = false returning 1 $q$);
 select uji.harus_ditolak('Pengembang: tidak bisa menambah jamaah',
   $q$ insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin)
       select id, 'X', 'L' from public.kelompok where nomor = 1 returning 1 $q$);
