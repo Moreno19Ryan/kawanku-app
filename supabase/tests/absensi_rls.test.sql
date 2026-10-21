@@ -97,6 +97,8 @@ from (values
   ('00000000-0000-0000-0000-0000000000f4', 1, 'Nonaktif K1','lajang',  'smp',     2012, false)
 ) v(id, nomor, nama, nikah, sekolah, tahun, aktif)
 join public.kelompok k on k.nomor = v.nomor;
+-- Generus K1 memakai kartu fisik → berpenanda keringanan (migrasi 20261022010000).
+insert into public.jamaah_keringanan (jamaah_id) values ('00000000-0000-0000-0000-0000000000f1');
 -- Kode jamaah dibaca sebagai pemilik DB, supaya tes tidak bergantung pada RLS jamaah.
 create table uji.kode_j as select id, kode from public.jamaah;
 grant select on uji.kode_j to anon, authenticated;

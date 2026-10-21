@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 type Cari = { q?: string | string[]; kelompok?: string | string[] };
-type Baris = { id: string; kode: string; nama_lengkap: string; kelompok_id: string };
+type Baris = { id: string; kode: string; nama_lengkap: string; kelompok_id: string; termasuk_generus: boolean };
 type Kartu = { jamaah_id: string; created_at: string };
 
 const satu = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
@@ -52,22 +52,27 @@ async function DaftarKartu({ cari }: { cari: Promise<Cari> }) {
   const q = satu(param.q).trim().slice(0, 60).toLowerCase();
 
   const supabase = await createClient();
-  const [{ data: jamaah }, { data: kartu }] = await Promise.all([
+  const [{ data: jamaah }, { data: kartu }, { data: keringanan }] = await Promise.all([
     supabase
-      .from("jamaah")
-      .select("id, kode, nama_lengkap, kelompok_id")
+      .from("jamaah_dengan_kategori")
+      .select("id, kode, nama_lengkap, kelompok_id, termasuk_generus")
       .eq("kelompok_id", kelompok.id)
       .eq("aktif", true)
       .order("nama_lengkap")
       .returns<Baris[]>(),
     supabase.from("kartu_qr").select("jamaah_id, created_at").eq("aktif", true).returns<Kartu[]>(),
+    supabase.from("jamaah_keringanan").select("jamaah_id").eq("aktif", true).returns<{ jamaah_id: string }[]>(),
   ]);
   // RLS membatasi keduanya per jamaah (admin generus hanya melihat generus).
   const petaKartu = new Map((kartu ?? []).map((k) => [k.jamaah_id, k]));
   const daftar = (jamaah ?? []).filter(
     (j) => !q || j.nama_lengkap.toLowerCase().includes(q) || j.kode.toLowerCase().includes(q),
   );
-  const punya = (jamaah ?? []).filter((j) => petaKartu.has(j.id)).length;
+  // Generus absen lewat akun (jalur 2); kartu fisik hanya untuk yang berpenanda keringanan.
+  const adaKeringanan = new Set((keringanan ?? []).map((k) => k.jamaah_id));
+  const bolehKartu = (j: Baris) => !j.termasuk_generus || adaKeringanan.has(j.id);
+  const berhak = (jamaah ?? []).filter(bolehKartu);
+  const punya = berhak.filter((j) => petaKartu.has(j.id)).length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,14 +80,16 @@ async function DaftarKartu({ cari }: { cari: Promise<Cari> }) {
         <div className="flex-1">
           <p className="font-semibold">{kelompok.nama}</p>
           <p className="text-sm text-muted">
-            {punya} dari {jamaah?.length ?? 0} jamaah aktif sudah punya kartu.
+            {punya} dari {berhak.length} jamaah yang memakai kartu sudah punya kartu.
+            {berhak.length < (jamaah?.length ?? 0) &&
+              ` ${(jamaah?.length ?? 0) - berhak.length} generus absen lewat akunnya.`}
           </p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
           <TombolAksi
             aksi={buatKartuKelompok.bind(null, kelompok.id)}
             label="Buat kartu yang belum ada"
-          tampilkanPesan
+            tampilkanPesan
             varian="kedua"
           />
           <Link
@@ -128,6 +135,19 @@ async function DaftarKartu({ cari }: { cari: Promise<Cari> }) {
         <ul className="divide-y divide-border overflow-hidden rounded-card bg-surface">
           {daftar.map((j) => {
             const k = petaKartu.get(j.id);
+            if (!bolehKartu(j)) {
+              return (
+                <li key={j.id} className="flex flex-col gap-1 px-5 py-4">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{j.nama_lengkap}</span>
+                    <Badge>Pakai akun generus</Badge>
+                  </span>
+                  <span className="block text-sm text-muted">
+                    {j.kode} · absen dengan scan QR layar. Beri penanda keringanan bila tidak punya HP.
+                  </span>
+                </li>
+              );
+            }
             return (
               <li key={j.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
                 <span className="min-w-0 flex-1">
@@ -168,8 +188,9 @@ async function DaftarKartu({ cari }: { cari: Promise<Cari> }) {
         </ul>
       )}
       <p className="px-1 text-xs text-muted">
-        Kartu yang hilang atau rusak cukup diganti: kartu lama otomatis tidak berlaku. Penanda keringanan tidak
-        dicetak di kartu.
+        Kartu yang hilang atau rusak cukup diganti: kartu lama otomatis tidak berlaku. Generus memakai akun;
+        kartu fisik generus hanya untuk yang berpenanda keringanan (dicabut otomatis bila penandanya dicabut).
+        Penanda keringanan tidak dicetak di kartu.
       </p>
     </div>
   );
