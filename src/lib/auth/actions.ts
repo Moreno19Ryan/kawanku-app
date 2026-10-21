@@ -37,6 +37,8 @@ export async function masuk(_prev: StateMasuk, formData: FormData): Promise<Stat
   // Akun ada di Auth, tapi belum tentu admin aktif (mis. akun generus nanti).
   const admin = await bacaAdmin(supabase);
   if (!admin) {
+    const { data: generus } = await supabase.from("akun_generus").select("user_id").maybeSingle();
+    if (generus) redirect("/saya");
     await supabase.auth.signOut();
     return { galat: "Akun ini bukan admin aktif. Hubungi admin desa.", email };
   }

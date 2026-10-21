@@ -49,9 +49,19 @@ export async function updateSession(request: NextRequest) {
 
   if (!masuk && !publik) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    // Halaman generus (absen & riwayat) → halaman masuk generus.
+    url.pathname = AREA_GENERUS.some((r) => pathname === r || pathname.startsWith(`${r}/`))
+      ? "/masuk"
+      : "/login";
     url.search = "";
     url.searchParams.set("next", `${pathname}${search}`);
+    return alihkan(url, response);
+  }
+
+  if (masuk && pathname === "/masuk") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/saya";
+    url.search = "";
     return alihkan(url, response);
   }
 
@@ -66,7 +76,10 @@ export async function updateSession(request: NextRequest) {
 }
 
 /** Rute yang boleh dibuka tanpa sesi. */
-const RUTE_PUBLIK = ["/login", "/keluar"];
+const RUTE_PUBLIK = ["/login", "/masuk", "/keluar"];
+
+/** Rute khusus akun generus (tanpa sesi → /masuk, bukan /login). */
+const AREA_GENERUS = ["/saya", "/absen"];
 
 /** Redirect yang tetap membawa cookie sesi hasil refresh. */
 function alihkan(url: URL, dari: NextResponse) {

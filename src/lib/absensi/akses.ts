@@ -20,6 +20,8 @@ export type AksesAbsensi = {
   /** Wilayah sesi yang boleh dibuat; umum=false → hanya sesi generus. */
   targetSesi: TargetSesi[];
   bolehLihatKeringanan: boolean;
+  /** Kelompok (yang menyala) tempat admin boleh mengelola akun generus. */
+  kelompokAkun: KelompokRingkas[];
 };
 
 function wilayah(admin: AdminSaatIni, izin: string): string[] | null | undefined {
@@ -83,6 +85,7 @@ export const getAksesAbsensi = cache(async (): Promise<AksesAbsensi | null> => {
     bolehLihat: kelompokLihat.length > 0,
     targetSesi,
     bolehLihatKeringanan: Boolean(admin.izinWilayah["keringanan.lihat"]?.length),
+    kelompokAkun: saring(kelompokFitur, wilayah(admin, "akun_generus.kelola")),
   };
 });
 

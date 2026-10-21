@@ -47,7 +47,7 @@ cakupannya satu desa.
 | ---- | --- | ------ |
 | 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, logo, dokumen | Selesai |
 | 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Skema v2 disetujui; migrasi `supabase/migrations/20261020170513_*` diterapkan ke produksi + tes pgTAP. Login admin (email + kata sandi) aktif |
-| 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | 2a (sesi, kartu QR, scan, rekap) dikerjakan, `docs/absensi.md`; 2b (akun generus + QR layar) belum |
+| 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | 2a (sesi, kartu QR, scan, rekap) di produksi; 2b (akun generus + QR layar) dikerjakan, `docs/absensi.md` |
 | 3 | Monitoring kegiatan | Belum |
 
 ## Stack
@@ -117,6 +117,12 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   dan izin `absensi.lihat`/`absensi.kelola` (`getAksesAbsensi`). Pencatatan
   lewat RPC `catat_absensi_kode` (security invoker, batas tetap RLS). Lembar
   cetak kartu di `/cetak/kartu` (di luar layout admin).
+- Akun generus (Fase 2b): login di `/masuk` (username + PIN, dijalankan di
+  browser), area generus `/saya` & `/absen` (`getGenerusSaatIni` /
+  `wajibGenerus`, `src/lib/generus/`). Akun generus tidak punya baris
+  `admin`; `wajibAdmin()` mengarahkan akun generus ke `/saya`, dan
+  `wajibGenerus()` mengarahkan admin ke `/dashboard`. QR layar jalur 2 di
+  `/layar/[id]` (RPC `token_layar` / `absen_layar`).
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
   diketahui saat runtime.
@@ -137,19 +143,25 @@ src/
       jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah),
                         # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin),
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
-      absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR)
+      absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
+                        # akun/ (akun generus)
+    (generus)/          # area akun generus: saya/ (beranda, pin/, scan/), absen/ (hasil QR)
+    layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,
                         # bantuan (difilter izin)
     cetak/kartu/        # lembar cetak kartu QR (A4, tanpa navigasi)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
+      masuk/page.tsx    # login generus (username + PIN)
       keluar/route.ts   # hapus sesi non-admin lalu ke /login (bukan untuk <Link>)
     layout.tsx          # root layout, metadata, viewport
     globals.css         # design token
     favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
-    absensi/            # FormSesi, PanelScan (scanner USB), PilihStatus, TombolCetak
+    absensi/            # FormSesi, PanelScan (scanner USB), PilihStatus, TombolCetak,
+                        # LayarQr, form akun generus
+    generus/            # FormMasukGenerus, FormGantiPin, PemindaiQr (jsQR), HasilAbsen
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
     bantuan/            # KontakPengembang (WhatsApp/email; Bantuan, login, perawatan, galat)
     jamaah/             # FormJamaah (pratinjau kategori), FormJandaDuda, form data sensitif,
@@ -179,7 +191,13 @@ src/
       periksa.ts        # getPerluDicek: pemeriksaan kelengkapan data (server-only)
     absensi/
       akses.ts          # getAksesAbsensi: izin per wilayah ∩ saklar fitur `absensi` (server-only)
-      actions.ts        # Server Action sesi, catat kode/status, kartu QR
+      actions.ts        # Server Action sesi, catat kode/status, kartu QR, token layar
+      akun-actions.ts   # Server Action akun generus (buat, massal, PIN, username, aktif, hapus)
+      bunyi.ts          # pola beep hasil scan (berhasil / sudah / gagal)
+    generus/
+      akun.ts           # getGenerusSaatIni / wajibGenerus, PIN awal DDMMYY (server-only)
+      actions.ts        # Server Action ganti PIN, keluar, absen (QR layar)
+      tujuan.ts, username.ts  # ?next= aman untuk generus, usulan username
     wilayah/            # kode wilayah Kemendagri (data statis) + anakWilayah/namaLengkapWilayah
     sistem/
       data.ts           # status perawatan, pengumuman tayang, fitur (server-only, fail-open)

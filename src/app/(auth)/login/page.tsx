@@ -5,6 +5,7 @@ import { BrandMark } from "@/components/layout/brand-mark";
 import { Card } from "@/components/ui/card";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { FormMasuk } from "@/components/auth/form-masuk";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Masuk Admin",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 /**
  * Login admin (email + kata sandi, Supabase Auth). Login generus (username +
- * PIN) akan punya halaman terpisah di Fase 2.
+ * PIN) ada di /masuk.
  */
 export default function AdminLoginPage() {
   return (
@@ -35,6 +36,12 @@ export default function AdminLoginPage() {
         <div className="mt-5 flex flex-col gap-2 px-1 text-center">
           <p className="text-sm text-muted">
             Lupa kata sandi? Minta atur ulang ke admin yang mengelola akunmu.
+          </p>
+          <p className="text-sm text-muted">
+            Generus?{" "}
+            <Link href="/masuk" className="font-medium text-primary">
+              Masuk generus
+            </Link>
           </p>
           <BarisKontakPengembang awalan="Aplikasi bermasalah?" />
         </div>

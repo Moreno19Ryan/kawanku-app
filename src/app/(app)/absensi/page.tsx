@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronRight, IdCard } from "lucide-react";
+import { ChevronRight, IdCard, UserRound } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { FormSesi } from "@/components/absensi/form-sesi";
 import { PageHeader } from "@/components/layout/page-header";
@@ -25,10 +25,16 @@ export default function AbsensiPage() {
         title="Absensi"
         description="Sesi absensi, scan kartu QR, dan rekap kehadiran."
         actions={
-          <Link href="/absensi/kartu" className={buttonClass("kedua")}>
-            <IdCard className="size-4" aria-hidden />
-            Kartu QR
-          </Link>
+          <>
+            <Link href="/absensi/akun" className={buttonClass("kedua")}>
+              <UserRound className="size-4" aria-hidden />
+              Akun generus
+            </Link>
+            <Link href="/absensi/kartu" className={buttonClass("kedua")}>
+              <IdCard className="size-4" aria-hidden />
+              Kartu QR
+            </Link>
+          </>
         }
       />
       <Suspense fallback={<Skeleton className="h-96" />}>

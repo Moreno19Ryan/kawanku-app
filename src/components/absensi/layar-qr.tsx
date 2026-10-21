@@ -1,0 +1,86 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
+import { Maximize } from "lucide-react";
+import { buttonClass } from "@/components/ui/button";
+import type { tokenLayar } from "@/lib/absensi/actions";
+
+const GANTI_DETIK = 60;
+
+/**
+ * QR absen jalur 2 untuk ditampilkan di layar/proyektor. Berganti tiap 60
+ * detik (token berlaku 90 detik, jadi yang sedang scan saat pergantian
+ * tetap tercatat). Isi QR = URL /absen?t=... (bisa dibuka kamera HP).
+ */
+export function LayarQr({ ambil }: { ambil: () => ReturnType<typeof tokenLayar> }) {
+  const [svg, setSvg] = useState<string>();
+  const [status, setStatus] = useState<"memuat" | "ok" | "ditutup" | "galat">("memuat");
+  const [hadir, setHadir] = useState(0);
+  const [sisa, setSisa] = useState(GANTI_DETIK);
+
+  useEffect(() => {
+    let batal = false;
+    let detik = 0;
+
+    async function muat() {
+      try {
+        const r = await ambil();
+        if (batal) return;
+        if (!r) return setStatus("galat");
+        setHadir(r.hadir);
+        if (!r.token) return setStatus("ditutup");
+        const url = `${window.location.origin}/absen?t=${encodeURIComponent(r.token)}`;
+        setSvg(await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M" }));
+        setStatus("ok");
+      } catch {
+        if (!batal) setStatus("galat");
+      }
+    }
+
+    void muat();
+    const timer = setInterval(() => {
+      detik += 1;
+      setSisa(GANTI_DETIK - (detik % GANTI_DETIK));
+      if (detik % GANTI_DETIK === 0) void muat();
+    }, 1000);
+    return () => {
+      batal = true;
+      clearInterval(timer);
+    };
+  }, [ambil]);
+
+  return (
+    <div className="flex flex-col items-center gap-5">
+      <div className="flex aspect-square w-[min(80vw,62vh)] items-center justify-center rounded-card bg-paper p-4 text-paper-fg">
+        {status === "ok" && svg ? (
+          // SVG dibuat di browser dari token server (bukan input pengguna).
+          <span className="block size-full [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: svg }} />
+        ) : (
+          <p className="px-6 text-center text-lg">
+            {status === "memuat"
+              ? "Menyiapkan QR…"
+              : status === "ditutup"
+                ? "Sesi sudah ditutup. QR tidak ditampilkan."
+                : "Gagal memuat QR. Periksa internet; dicoba lagi otomatis."}
+          </p>
+        )}
+      </div>
+      <p className="text-center text-lg">
+        Buka <span className="font-semibold">KawanKu</span> di HP → <span className="font-semibold">Scan QR absen</span>
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-muted">
+        <span>QR berganti dalam {sisa} detik</span>
+        <span className="font-semibold text-success">{hadir} hadir</span>
+        <button
+          type="button"
+          onClick={() => void document.documentElement.requestFullscreen?.()}
+          className={buttonClass("netral", "h-9 px-4")}
+        >
+          <Maximize className="size-4" aria-hidden />
+          Layar penuh
+        </button>
+      </div>
+    </div>
+  );
+}
