@@ -121,7 +121,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   browser), area generus `/saya` & `/absen` (`getGenerusSaatIni` /
   `wajibGenerus`, `src/lib/generus/`). Akun generus tidak punya baris
   `admin`; `wajibAdmin()` mengarahkan akun generus ke `/saya`, dan
-  `wajibGenerus()` mengarahkan admin ke `/dashboard`. QR layar jalur 2 di
+  `wajibGenerus()` mengarahkan admin ke `/dashboard`. Generus bisa mengubah
+  alamatnya sendiri di `/saya/alamat` (RPC `ubah_alamat_saya`, hanya kolom
+  alamat miliknya; nama orang tua tetap lewat admin). QR layar jalur 2 di
   `/layar/[id]` (RPC `token_layar` / `absen_layar`).
 - Kegiatan (`/kegiatan`, `docs/kegiatan.md`): saklar fitur `kegiatan`, izin
   `kegiatan.lihat`/`kegiatan.kelola` (`getAksesKegiatan`). Kalender rutin
@@ -152,7 +154,7 @@ src/
                         # akun/ (akun generus), rekap/ (pratinjau rekap bulanan/per kegiatan)
       kegiatan/         # agenda/kalender, pertemuan/ (pemateri, materi, batal, absensi),
                         # kelola/ & kelola/[id]/ (kegiatan & jadwal)
-    (generus)/          # area akun generus: saya/ (beranda, pin/, scan/), absen/ (hasil QR)
+    (generus)/          # area akun generus: saya/ (beranda, pin/, scan/, alamat/), absen/ (hasil QR)
     layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,
