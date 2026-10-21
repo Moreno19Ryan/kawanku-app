@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { CircleAlert, CircleCheck } from "lucide-react";
 import { FormJamaah } from "@/components/jamaah/form-jamaah";
@@ -10,6 +11,7 @@ import {
   type NilaiPribadi,
 } from "@/components/jamaah/form-data-sensitif";
 import { FormJandaDuda } from "@/components/jamaah/form-janda-duda";
+import { FormHubungkan } from "@/components/jamaah/form-keluarga";
 import { JamaahBelumMenyala } from "@/components/jamaah/belum-menyala";
 import { KembaliKeJamaah } from "@/components/jamaah/kembali";
 import { PageHeader } from "@/components/layout/page-header";
@@ -29,8 +31,10 @@ import {
 } from "@/lib/jamaah/actions";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { formatNoHp } from "@/lib/jamaah/format";
+import { buatKeluargaDariJamaah, hubungkanKeKeluarga } from "@/lib/jamaah/keluarga-actions";
 import { cariPemeriksaan, getPerluDicek } from "@/lib/jamaah/periksa";
 import {
+  LABEL_HUBUNGAN,
   LABEL_PENDIDIKAN,
   LABEL_STATUS_PERNIKAHAN,
   LABEL_STATUS_SEKOLAH,
@@ -67,6 +71,8 @@ type DetailJamaah = {
   muballigh: boolean;
   jenis_muballigh: string | null;
   paket_caberawit: string | null;
+  keluarga_id: string | null;
+  hubungan_keluarga: string | null;
 };
 
 type DataPribadi = NilaiPribadi & { ktp_wilayah: string | null; dom_wilayah: string | null };
@@ -156,7 +162,7 @@ async function Detail({
     ? await supabase
         .from("jamaah_dengan_kategori")
         .select(
-          "id, kode, nama_lengkap, nama_panggilan, jenis_kelamin, tanggal_lahir, tahun_lahir, usia, status_pernikahan, status_sekolah, status_sekolah_diperbarui, kelompok_id, kategori_jamaah_nama, termasuk_generus, aktif, updated_at, tempat_lahir, pendidikan_terakhir, kegiatan, muballigh, jenis_muballigh, paket_caberawit",
+          "id, kode, nama_lengkap, nama_panggilan, jenis_kelamin, tanggal_lahir, tahun_lahir, usia, status_pernikahan, status_sekolah, status_sekolah_diperbarui, kelompok_id, kategori_jamaah_nama, termasuk_generus, aktif, updated_at, tempat_lahir, pendidikan_terakhir, kegiatan, muballigh, jenis_muballigh, paket_caberawit, keluarga_id, hubungan_keluarga",
         )
         .eq("id", id)
         .maybeSingle<DetailJamaah>()
@@ -202,6 +208,26 @@ async function Detail({
   const bolehUbah = akses.kelompokUbah.some((k) => k.id === j.kelompok_id);
   const keringananAktif = Boolean(keringanan?.aktif);
   const baru = cari.baru === "1";
+
+  // Keluarga: hanya untuk pemegang keluarga.lihat di kelompok jamaah ini.
+  const lihatKeluarga = akses.kelompokKeluargaLihat.some((k) => k.id === j.kelompok_id);
+  const kelolaKeluarga = akses.kelompokKeluargaKelola.some((k) => k.id === j.kelompok_id);
+  const [{ data: keluarga }, { data: serumah }, { data: pilihanKeluarga }] = await Promise.all([
+    lihatKeluarga && j.keluarga_id
+      ? supabase.from("keluarga").select("id, nama").eq("id", j.keluarga_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    lihatKeluarga && j.keluarga_id
+      ? supabase
+          .from("jamaah")
+          .select("id, nama_lengkap, hubungan_keluarga")
+          .eq("keluarga_id", j.keluarga_id)
+          .neq("id", j.id)
+          .order("nama_lengkap")
+      : Promise.resolve({ data: [] as { id: string; nama_lengkap: string; hubungan_keluarga: string | null }[] }),
+    kelolaKeluarga && !j.keluarga_id
+      ? supabase.from("keluarga").select("id, nama").eq("kelompok_id", j.kelompok_id).order("nama")
+      : Promise.resolve({ data: [] as { id: string; nama: string }[] }),
+  ]);
   const perluDicek = ((await getPerluDicek())?.perJamaah.get(j.id) ?? [])
     .map(cariPemeriksaan)
     .filter((p) => p !== undefined);
@@ -313,6 +339,53 @@ async function Detail({
                 />
               </div>
             </details>
+          </Card>
+        )}
+
+        {lihatKeluarga && (
+          <Card>
+            <h2 className="text-lg font-semibold">Keluarga</h2>
+            {keluarga ? (
+              <>
+                <p className="mt-2">
+                  <Link href={`/jamaah/keluarga/${keluarga.id}`} className="font-medium text-primary hover:underline">
+                    {keluarga.nama}
+                  </Link>
+                  <span className="text-muted">
+                    {" "}
+                    · {j.hubungan_keluarga ? LABEL_HUBUNGAN[j.hubungan_keluarga] : "hubungan belum diisi"}
+                  </span>
+                </p>
+                {serumah && serumah.length > 0 && (
+                  <ul className="mt-3 flex flex-col gap-1 text-sm">
+                    {serumah.map((a) => (
+                      <li key={a.id}>
+                        <Link href={`/jamaah/${a.id}`} className="hover:text-primary">
+                          {a.nama_lengkap}
+                        </Link>
+                        <span className="text-muted">
+                          {" "}
+                          · {a.hubungan_keluarga ? LABEL_HUBUNGAN[a.hubungan_keluarga] : "–"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-muted">Belum masuk keluarga mana pun.</p>
+            )}
+            {kelolaKeluarga && !j.keluarga_id && (
+              <div className="mt-4 flex flex-col gap-4 border-t border-border pt-4">
+                {pilihanKeluarga && pilihanKeluarga.length > 0 && (
+                  <FormHubungkan aksi={hubungkanKeKeluarga.bind(null, j.id)} keluarga={pilihanKeluarga} />
+                )}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted">Belum ada keluarganya? Buat baru dengan jamaah ini sebagai kepala keluarga.</p>
+                  <TombolAksi aksi={buatKeluargaDariJamaah.bind(null, j.id)} label="Buat keluarga" />
+                </div>
+              </div>
+            )}
           </Card>
         )}
 

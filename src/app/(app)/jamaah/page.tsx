@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronRight, CircleAlert, Plus, Search, X } from "lucide-react";
+import { ChevronRight, CircleAlert, Home, Plus, Search, X } from "lucide-react";
 import { JamaahBelumMenyala } from "@/components/jamaah/belum-menyala";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -154,6 +154,12 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
         }
         actions={
           <>
+            {akses.kelompokKeluargaLihat.length > 0 && (
+              <Link href="/jamaah/keluarga" className={buttonClass("netral")}>
+                <Home className="size-4" aria-hidden />
+                Keluarga
+              </Link>
+            )}
             {jumlahPerluDicek > 0 && (
               <Link href="/jamaah/periksa" className={buttonClass("kedua")}>
                 <CircleAlert className="size-4" aria-hidden />

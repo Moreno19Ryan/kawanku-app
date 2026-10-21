@@ -45,3 +45,11 @@ export function labelJenisMuballigh(jenis: string, jenisKelamin: string): string
   const dasar = labelMuballigh(jenisKelamin);
   return jenis === "tugasan" ? `${dasar} Tugasan (MT)` : `${dasar} Setempat (MS)`;
 }
+
+export const LABEL_HUBUNGAN: Record<string, string> = {
+  kepala_keluarga: "Kepala keluarga",
+  pasangan: "Pasangan (suami/istri)",
+  anak: "Anak",
+  orang_tua: "Orang tua",
+  lainnya: "Lainnya",
+};
