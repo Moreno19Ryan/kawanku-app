@@ -48,7 +48,7 @@ cakupannya satu desa.
 | 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, logo, dokumen | Selesai |
 | 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Skema v2 disetujui; migrasi `supabase/migrations/20261020170513_*` diterapkan ke produksi + tes pgTAP. Login admin (email + kata sandi) aktif |
 | 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | 2a (sesi, kartu QR, scan, rekap) di produksi; 2b (akun generus + QR layar) dikerjakan, `docs/absensi.md` |
-| 3 | Monitoring kegiatan | Belum |
+| 3 | Monitoring kegiatan | 3a (jadwal rutin, agenda, pertemuan) dikerjakan, `docs/kegiatan.md`; 3b laporan & 3c target hafalan belum |
 
 ## Stack
 
@@ -123,6 +123,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `admin`; `wajibAdmin()` mengarahkan akun generus ke `/saya`, dan
   `wajibGenerus()` mengarahkan admin ke `/dashboard`. QR layar jalur 2 di
   `/layar/[id]` (RPC `token_layar` / `absen_layar`).
+- Kegiatan (`/kegiatan`, `docs/kegiatan.md`): saklar fitur `kegiatan`, izin
+  `kegiatan.lihat`/`kegiatan.kelola` (`getAksesKegiatan`). Kalender rutin
+  dihitung dari `kegiatan_jadwal` (`src/lib/kegiatan/jadwal.ts`, murni);
+  baris `pertemuan` hanya untuk isian (pemateri, materi, batal, pindah,
+  absensi). Absensi pertemuan lewat RPC `buka_absensi_pertemuan`.
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
   diketahui saat runtime.
@@ -145,6 +150,8 @@ src/
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
       absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
                         # akun/ (akun generus)
+      kegiatan/         # agenda/kalender, pertemuan/ (pemateri, materi, batal, absensi),
+                        # kelola/ & kelola/[id]/ (kegiatan & jadwal)
     (generus)/          # area akun generus: saya/ (beranda, pin/, scan/), absen/ (hasil QR)
     layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
@@ -161,6 +168,7 @@ src/
   components/
     absensi/            # FormSesi, PanelScan (scanner USB), PilihStatus, TombolCetak,
                         # LayarQr, form akun generus
+    kegiatan/           # DaftarKejadian, EditorJadwal, form kegiatan & pertemuan
     generus/            # FormMasukGenerus, FormGantiPin, PemindaiQr (jsQR), HasilAbsen
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
     bantuan/            # KontakPengembang (WhatsApp/email; Bantuan, login, perawatan, galat)
@@ -194,6 +202,11 @@ src/
       actions.ts        # Server Action sesi, catat kode/status, kartu QR, token layar
       akun-actions.ts   # Server Action akun generus (buat, massal, PIN, username, aktif, hapus)
       bunyi.ts          # pola beep hasil scan (berhasil / sudah / gagal)
+    kegiatan/
+      akses.ts          # getAksesKegiatan (server-only)
+      jadwal.ts         # hitungKalender: jadwal rutin → pertemuan (murni)
+      data.ts           # getKalender (server-only)
+      actions.ts        # Server Action kegiatan, jadwal, pertemuan, buka absensi
     generus/
       akun.ts           # getGenerusSaatIni / wajibGenerus, PIN awal DDMMYY (server-only)
       actions.ts        # Server Action ganti PIN, keluar, absen (QR layar)
