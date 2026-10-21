@@ -21,9 +21,9 @@ const KOLOM_ALAMAT =
 export default function AlamatSayaPage() {
   return (
     <>
-      <Link href="/saya" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+      <Link href="/saya/profil" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
         <ArrowLeft className="size-4" aria-hidden />
-        Beranda
+        Profil saya
       </Link>
       <Suspense fallback={<Skeleton className="mt-4 h-96" />}>
         <AlamatSaya />
