@@ -1,13 +1,18 @@
 import type { ReactNode } from "react";
 import { menuAbsensiTerbuka } from "@/lib/absensi/akses";
 import { menuJamaahTerbuka } from "@/lib/jamaah/akses";
+import { menuKegiatanTerbuka } from "@/lib/kegiatan/akses";
 import { BottomNav } from "./bottom-nav";
 import { Sidebar } from "./sidebar";
 
 /** Menu bersyarat yang terbuka untuk admin ini (dihitung di server). */
 async function menuTerbuka(): Promise<string[]> {
-  const [jamaah, absensi] = await Promise.all([menuJamaahTerbuka(), menuAbsensiTerbuka()]);
-  return [jamaah && "/jamaah", absensi && "/absensi"].filter((x): x is string => Boolean(x));
+  const [jamaah, kegiatan, absensi] = await Promise.all([
+    menuJamaahTerbuka(),
+    menuKegiatanTerbuka(),
+    menuAbsensiTerbuka(),
+  ]);
+  return [jamaah && "/jamaah", kegiatan && "/kegiatan", absensi && "/absensi"].filter((x): x is string => Boolean(x));
 }
 
 /**
