@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChartColumn, ChevronRight, IdCard, UserRound } from "lucide-react";
+import { ChartColumn, ChevronRight, IdCard, MailQuestion, UserRound } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { FormSesi } from "@/components/absensi/form-sesi";
 import { PageHeader } from "@/components/layout/page-header";
@@ -10,6 +10,7 @@ import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesAbsensi, KOLOM_SESI, type Sesi } from "@/lib/absensi/akses";
+import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { buatSesi } from "@/lib/absensi/actions";
 import { createClient } from "@/lib/supabase/server";
 import { keInputWib, tanggalJam } from "@/lib/waktu";
@@ -78,11 +79,26 @@ async function DaftarSesi() {
   const hadir = new Map<string, number>();
   for (const c of catatan ?? []) hadir.set(c.sesi_id, (hadir.get(c.sesi_id) ?? 0) + 1);
 
+  const izinMenunggu = (await getPengajuanIzin({ menunggu: true })).filter((p) => p.bolehTangani).length;
   const berjalan = daftar.filter((s) => !s.ditutup);
   const selesai = daftar.filter((s) => s.ditutup);
 
   return (
     <div className="flex flex-col gap-6">
+      <Link
+        href="/absensi/izin"
+        className="flex items-center gap-3 rounded-card bg-surface p-5 transition-colors duration-200 ease-oneui hover:bg-surface-muted"
+      >
+        <MailQuestion className={`size-5 shrink-0 ${izinMenunggu ? "text-warning" : "text-muted"}`} aria-hidden />
+        <span className="min-w-0 flex-1 text-sm">
+          <span className="block font-medium">Pengajuan izin dari generus</span>
+          <span className="block text-muted">
+            {izinMenunggu ? `${izinMenunggu} menunggu persetujuanmu` : "Tidak ada yang menunggu"}
+          </span>
+        </span>
+        <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
+      </Link>
+
       {akses.targetSesi.length > 0 && (
         <Card>
           <h2 className="mb-4 font-semibold">Buat sesi baru</h2>

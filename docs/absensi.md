@@ -217,6 +217,31 @@ atau alasan izin).
   bisa melihat, sesuai keputusan "pengembang tidak bisa menarik data".
 - Penanda keringanan tidak dicetak.
 
+## Pengajuan izin dari HP generus
+
+Keputusan Reno (21 Okt 2026): generus bisa mengajukan izin/sakit dari HP
+sebelum pengajian, dan admin yang menyetujui. Migrasi
+`20261022030000_pengajuan_izin`.
+
+- Tabel `pengajuan_izin`: satu kejadian kalender (kegiatan, kelompok
+  pelaksana, tanggal; kunci yang sama dengan `pertemuan`), jadi bisa diajukan
+  walau absensinya belum dibuka. `jenis` izin (alasan kuliah/kerja/lainnya +
+  catatan opsional ≤150) atau sakit (tanpa keterangan: data kesehatan tidak
+  disimpan). Satu pengajuan aktif per jamaah per pertemuan.
+- Validasi (trigger `atur_pengajuan_izin`): hanya untuk dirinya sendiri,
+  kegiatan di wilayahnya, hari ini s.d. 60 hari ke depan, ada jadwal pada
+  tanggal itu, pertemuan tidak dibatalkan, absensinya belum ditutup.
+- RLS: generus mengajukan/melihat/membatalkan (selama menunggu) miliknya;
+  admin `absensi.lihat` melihat, admin `absensi.kelola` jamaahnya
+  menyetujui/menolak (+ tanggapan, `ditangani_by/at` otomatis).
+- Disetujui → tercatat di `absensi` (status izin/sakit, jalur manual):
+  langsung bila sesi pertemuannya sudah ada, atau otomatis saat absensi
+  pertemuan dibuka (trigger pada `pertemuan.sesi_id`). Catatan **hadir tidak
+  ditimpa**.
+- Aplikasi: generus di `/saya/izin` (pilih pertemuan 14 hari ke depan);
+  admin di `/absensi/izin` (kartu di halaman Absensi menampilkan jumlah yang
+  menunggu) dan di halaman pertemuan kegiatan.
+
 ## Belum (berikutnya)
 
 - Keterangan telat (toleransi per sesi).
