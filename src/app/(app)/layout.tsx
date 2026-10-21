@@ -5,6 +5,9 @@ import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TombolTema } from "@/components/tema/tombol-tema";
+import { BannerPengumuman } from "@/components/sistem/banner-pengumuman";
+import { GerbangPerawatan } from "@/components/sistem/gerbang-perawatan";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Kerangka area admin: sidebar di desktop, bottom nav di HP.
@@ -36,7 +39,14 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 
       {/* Konten flex-1 mendorong footer ke paling bawah walau isi halaman pendek. */}
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-gutter pb-[calc(var(--spacing-bottomnav)+env(safe-area-inset-bottom)+1.5rem)] lg:ml-sidebar lg:mr-0 lg:w-auto lg:px-10 lg:pb-8">
-        <div className="flex-1">{children}</div>
+        <Suspense fallback={null}>
+          <BannerPengumuman />
+        </Suspense>
+        <div className="flex-1">
+          <Suspense fallback={<Skeleton className="mt-10 h-64" />}>
+            <GerbangPerawatan>{children}</GerbangPerawatan>
+          </Suspense>
+        </div>
         <AppFooter className="mt-12" />
       </main>
 

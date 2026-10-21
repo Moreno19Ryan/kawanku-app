@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { PesanAksi } from "./pesan-aksi";
+import { useFormAksi } from "./use-form-aksi";
 
 /** Satu input nama + tombol Simpan (nama kelompok, nama admin). */
 export function FormUbahNama({
@@ -18,10 +18,10 @@ export function FormUbahNama({
   label: string;
   maxLength?: number;
 }) {
-  const [state, action, pending] = useActionState(aksi, {});
+  const [state, onSubmit, pending] = useFormAksi(aksi);
 
   return (
-    <form action={action} className="flex flex-col gap-1.5">
+    <form onSubmit={onSubmit} className="flex flex-col gap-1.5">
       <div className="flex gap-2">
         <input
           name="nama"

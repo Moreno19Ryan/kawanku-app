@@ -86,10 +86,14 @@ insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin, kode)
 -- Seed peran pengembang
 select uji.cek('Seed: peran pengembang ada, tingkat desa, bukan hanya_generus',
   exists (select 1 from public.peran where kode = 'pengembang' and wilayah = 'desa' and not hanya_generus));
-select uji.cek('Seed: pengembang = sistem.kelola + akses.kelola saja',
-  (select array_agg(pi.izin_kode order by pi.izin_kode) from public.peran_izin pi
+select uji.cek('Seed: pengembang memegang sistem.kelola + akses.kelola',
+  (select array_agg(pi.izin_kode) from public.peran_izin pi
    join public.peran p on p.id = pi.peran_id where p.kode = 'pengembang')
-  = array['akses.kelola', 'sistem.kelola']);
+  @> array['akses.kelola', 'sistem.kelola']);
+select uji.cek('Seed: pengembang tidak memegang izin data (jamaah/keluarga/keringanan/janda_duda)',
+  not exists (select 1 from public.peran_izin pi join public.peran p on p.id = pi.peran_id
+              where p.kode = 'pengembang'
+                and split_part(pi.izin_kode, '.', 1) in ('jamaah', 'keluarga', 'keringanan', 'janda_duda')));
 select uji.cek('Seed: tidak ada peran lain yang memegang sistem.kelola',
   (select count(*) from public.peran_izin where izin_kode = 'sistem.kelola') = 1);
 

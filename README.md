@@ -29,6 +29,7 @@ Perintah lain:
 | `NEXT_PUBLIC_SUPABASE_URL` | URL project Supabase (Project Settings → API) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon/publishable key (Project Settings → API) |
 | `SUPABASE_SECRET_KEY` | **Secret** key `sb_secret_...` (Project Settings → API Keys). Khusus server, untuk membuat akun admin dan mengatur ulang kata sandi dari aplikasi. Opsional: tanpa ini fitur tersebut nonaktif. |
+| `MODE_PERAWATAN` | Opsional, darurat. Isi `1` lalu redeploy untuk memaksa mode perawatan walau database bermasalah. Normalnya mode perawatan diatur dari Panel pengembang. |
 
 **Jangan pernah** mengomit `.env.local`, secret/service role key, atau token
 apa pun. Di Vercel, isi variabel lewat Project Settings → Environment

@@ -1,21 +1,21 @@
 "use client";
 
-import { useActionState } from "react";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { buatAdmin, type StateAksi } from "@/lib/pengaturan/actions";
+import { buatAdmin } from "@/lib/pengaturan/actions";
 import { KotakSandiSementara } from "./kotak-sandi-sementara";
 import { PesanAksi } from "./pesan-aksi";
+import { useFormAksi } from "./use-form-aksi";
 import { PilihPeranWilayah, type OpsiKelompok, type OpsiPeran } from "./pilih-peran-wilayah";
 
 /** Membuat akun admin baru: email, nama, peran + wilayah. */
 export function FormBuatAdmin({ peran, kelompok }: { peran: OpsiPeran[]; kelompok: OpsiKelompok[] }) {
-  const [state, action, pending] = useActionState<StateAksi, FormData>(buatAdmin, {});
+  const [state, onSubmit, pending] = useFormAksi(buatAdmin);
 
   return (
     <div className="flex flex-col gap-4">
       {/* key: kosongkan form setelah berhasil. */}
-      <form key={state.sandiSementara} action={action} className="flex flex-col gap-3">
+      <form key={state.sandiSementara} onSubmit={onSubmit} className="flex flex-col gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium">Email</span>

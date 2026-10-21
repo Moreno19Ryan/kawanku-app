@@ -1,10 +1,12 @@
 import {
   Building2,
   KeyRound,
+  Megaphone,
   Palette,
   ShieldCheck,
   Tags,
   UserRound,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 
@@ -52,6 +54,20 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     keterangan: "Apa saja yang boleh dilakukan tiap peran",
     icon: KeyRound,
     izin: "akses.kelola",
+  },
+  {
+    href: "/pengaturan/pengumuman",
+    judul: "Pengumuman",
+    keterangan: "Banner informasi untuk semua admin",
+    icon: Megaphone,
+    izin: "pengumuman.kelola",
+  },
+  {
+    href: "/pengaturan/sistem",
+    judul: "Panel pengembang",
+    keterangan: "Mode perawatan, saklar fitur, info sistem",
+    icon: Wrench,
+    izin: "sistem.kelola",
   },
   {
     href: "/pengaturan/kategori",
