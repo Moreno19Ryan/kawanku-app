@@ -106,7 +106,64 @@ Modul dibuka per kelompok lewat saklar `absensi` di panel pengembang, sama
 seperti modul Jamaah. Setelah migrasi diterapkan, nyalakan saklar itu (mis.
 Kelompok 1 dulu).
 
+## Fase 2b: akun generus + QR layar (jalur 2)
+
+Migrasi: `supabase/migrations/20261021200000_akun_generus_qr_layar.sql`.
+Tes: `supabase/tests/akun_generus_rls.test.sql`.
+
+### Keputusan (Reno, 21 Okt 2026)
+
+| Hal | Keputusan |
+| --- | --- |
+| Username | Dari nama lengkap atau nama panggilan. Sistem mengusulkan (`nadia`, `nadia.putri`), admin boleh mengubah. |
+| PIN awal | Tanggal lahir **DDMMYY**. Wajib diganti saat login pertama, dan tidak boleh tanggal lahir lagi. Tanpa tanggal lahir lengkap → admin mengetik PIN 6 angka. |
+| Pengelola | Pengelola absensi wilayahnya (izin `akun_generus.kelola`): admin desa, admin kelompok, admin generus. |
+| Isi akun | Absen (scan QR) + riwayat kehadiran sendiri + ganti PIN. |
+
+### Akun
+
+- **`akun_generus`**: satu akun per jamaah generus.
+  - `user_id` (Supabase Auth), `username` unik, `aktif`, `pin_awal`.
+  - Penghitung salah PIN dan `terkunci_sampai`.
+- **Email Auth sintetis** `kw-xxxxxx@generus.kawanku.invalid`. Email ini tidak
+  pernah dipakai mengirim email. Akun dibuat lewat Auth Admin API (secret key)
+  setelah `boleh_kelola_akun_generus()` lolos.
+- **Akun generus tidak punya baris `admin`.** Trigger mencegah satu akun
+  menjadi admin sekaligus generus.
+- **Login di `/masuk`**, dijalankan di browser supaya batas percobaan Supabase
+  dihitung per perangkat:
+  1. `mulai_login_generus(username)`.
+  2. `signInWithPassword`.
+  3. Bila PIN salah: `gagal_login_generus`. Setelah **5x salah**, akun dikunci
+     **15 menit**.
+  4. Bila berhasil: `login_generus_berhasil()`.
+- **Admin bisa**:
+  - membuat akun massal per kelompok (yang tanggal lahirnya lengkap);
+  - mengubah username;
+  - mengatur ulang PIN (kembali ke DDMMYY, sekaligus membuka kunci);
+  - menonaktifkan akun;
+  - menghapus akun (riwayat absen tetap ada).
+- **Generus hanya bisa membaca** profilnya sendiri, catatan absensinya
+  sendiri, dan sesi yang ia ikuti. Kebijakan select yang ada diperluas lewat
+  `private.jamaah_saya()`.
+
+### QR layar
+
+- `/layar/[id]` (di luar layout admin) menampilkan QR berisi URL
+  `/absen?t=<sesi>.<detik>.<tanda>`.
+- Tanda = HMAC-SHA256 dengan rahasia per sesi (`sesi_layar`, tertutup untuk
+  API).
+- QR berganti tiap **60 detik** dan berlaku **90 detik**.
+- Generus bisa membuka QR dengan:
+  - menu **Scan QR absen** (kamera di aplikasi, jsQR); atau
+  - aplikasi kamera HP.
+- `absen_layar(token)` memeriksa tanda dan umur token, lalu mencatat dengan
+  `jalur = layar`. Pesan dan bunyinya sama dengan scan kartu; scan ulang
+  hanya menampilkan "sudah absen".
+- Belum login → `/masuk?next=/absen?t=…`. Bila login memakan waktu lebih dari
+  90 detik, generus cukup scan ulang.
+
 ## Belum (berikutnya)
 
-- 2b: akun generus + QR layar berputar (jalur 2).
+- Keterangan telat (toleransi per sesi).
 - Cetak/ekspor rekap absensi (wajib `KopDokumen`).

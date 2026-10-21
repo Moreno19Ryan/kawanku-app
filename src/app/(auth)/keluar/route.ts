@@ -11,9 +11,12 @@ export async function GET(request: NextRequest) {
   // Baca request dulu supaya route ini dinamis (tidak di-prerender saat build).
   const url = request.nextUrl.clone();
   const galat = url.searchParams.get("galat");
-  url.pathname = "/login";
+  // Akun generus yang nonaktif / bukan generus kembali ke halaman masuk generus.
+  url.pathname = galat === "bukan-generus" ? "/masuk" : "/login";
   url.search = "";
-  if (galat === "bukan-admin" || galat === "sesi-berakhir") url.searchParams.set("galat", galat);
+  if (galat === "bukan-admin" || galat === "sesi-berakhir" || galat === "bukan-generus") {
+    url.searchParams.set("galat", galat);
+  }
 
   const supabase = await createClient();
   await supabase.auth.signOut();

@@ -72,6 +72,15 @@ export async function wajibAdmin(): Promise<AdminSaatIni> {
     // sesi dicabut/kedaluwarsa, atau akun memang bukan admin aktif.
     const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      // Akun generus yang membuka area admin diarahkan ke halamannya sendiri.
+      const { data: generus } = await supabase
+        .from("akun_generus")
+        .select("user_id")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+      if (generus) redirect("/saya");
+    }
     redirect(data.user ? "/keluar?galat=bukan-admin" : "/keluar?galat=sesi-berakhir");
   }
   return admin;

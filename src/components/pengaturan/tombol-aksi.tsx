@@ -16,11 +16,14 @@ export function TombolAksi({
   label,
   varian = "netral",
   konfirmasi,
+  tampilkanPesan = false,
 }: {
   aksi: Aksi;
   label: string;
   varian?: VarianTombol;
   konfirmasi?: string;
+  /** Tampilkan juga pesan berhasil (mis. jumlah yang dibuat). */
+  tampilkanPesan?: boolean;
 }) {
   const [state, action, pending] = useActionState(aksi, {});
 
@@ -35,7 +38,9 @@ export function TombolAksi({
       <button type="submit" disabled={pending} className={buttonClass(varian, "h-9 px-4")}>
         {pending ? "Memproses…" : label}
       </button>
-      {state.galat && <PesanAksi state={{ galat: state.galat }} className="max-w-64 text-right" />}
+      {(state.galat || (tampilkanPesan && state.pesan)) && (
+        <PesanAksi state={state} className="max-w-64 text-right" />
+      )}
     </form>
   );
 }

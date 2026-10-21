@@ -82,6 +82,7 @@ async function DaftarKartu({ cari }: { cari: Promise<Cari> }) {
           <TombolAksi
             aksi={buatKartuKelompok.bind(null, kelompok.id)}
             label="Buat kartu yang belum ada"
+          tampilkanPesan
             varian="kedua"
           />
           <Link

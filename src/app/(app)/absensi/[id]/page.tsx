@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, QrCode, Search } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { FormSesi } from "@/components/absensi/form-sesi";
 import { PanelScan } from "@/components/absensi/panel-scan";
@@ -160,7 +160,13 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
 
       {bolehCatat && !sesi.ditutup && (
         <Card>
-          <h2 className="mb-3 font-semibold">Scan kehadiran</h2>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-semibold">Scan kehadiran</h2>
+            <Link href={`/layar/${sesi.id}`} target="_blank" className={buttonClass("kedua", "h-9 px-4")}>
+              <QrCode className="size-4" aria-hidden />
+              Tampilkan QR layar (generus)
+            </Link>
+          </div>
           <PanelScan catat={catatKode.bind(null, sesi.id)} bolehLihatKeringanan={akses.bolehLihatKeringanan} />
         </Card>
       )}

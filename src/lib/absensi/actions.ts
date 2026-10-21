@@ -240,3 +240,20 @@ export async function gantiKartu(jamaahId: string): Promise<StateAksi> {
   refresh();
   return { pesan: "Kartu baru dibuat. Kartu lama tidak berlaku lagi." };
 }
+
+/** Token QR layar terbaru (berganti tiap 60 detik, berlaku 90 detik) + jumlah hadir. */
+export async function tokenLayar(sesiId: string): Promise<{ token: string | null; hadir: number } | null> {
+  const akses = await getAksesAbsensi();
+  if (!akses || akses.kelompokKelola.length === 0) return null;
+  const supabase = await createClient();
+  const [{ data: token, error }, { count }] = await Promise.all([
+    supabase.rpc("token_layar", { p_sesi_id: sesiId }),
+    supabase
+      .from("absensi")
+      .select("id", { count: "exact", head: true })
+      .eq("sesi_id", sesiId)
+      .eq("status", "hadir"),
+  ]);
+  if (error) return null;
+  return { token: (token as string | null) ?? null, hadir: count ?? 0 };
+}
