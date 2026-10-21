@@ -144,31 +144,26 @@ revoke all on function public.terapkan_kenaikan_kelas(uuid, jsonb) from public, 
 grant execute on function public.terapkan_kenaikan_kelas(uuid, jsonb) to authenticated;
 
 -- ---------------------------------------------------------------------
--- View jamaah memakai j.* (kolom dibekukan saat dibuat) → buat ulang supaya
--- kelas & kelas_tahun ikut. Definisi lain tidak berubah.
+-- View jamaah: kolomnya dibekukan saat dibuat, jadi kelas & kelas_tahun
+-- ditambahkan di akhir lewat create or replace (tanpa drop; kolom lama dan
+-- urutannya tetap). jamaah_tanpa_kategori tidak perlu kolom ini.
 -- ---------------------------------------------------------------------
-drop view public.jamaah_tanpa_kategori;
-drop view public.jamaah_dengan_kategori;
-
-create view public.jamaah_dengan_kategori
+create or replace view public.jamaah_dengan_kategori
 with (security_invoker = true) as
 select
-  j.*,
+  j.id, j.kode, j.kelompok_id, j.keluarga_id, j.hubungan_keluarga, j.nama_lengkap,
+  j.nama_panggilan, j.tanggal_lahir, j.tahun_lahir, j.jenis_kelamin, j.status_pernikahan,
+  j.status_sekolah, j.status_sekolah_diperbarui, j.aktif, j.created_at, j.updated_at,
+  j.created_by, j.updated_by, j.tempat_lahir, j.pendidikan_terakhir, j.kegiatan,
+  j.muballigh, j.jenis_muballigh, j.paket_caberawit,
   private.usia(j.tanggal_lahir, j.tahun_lahir) as usia,
   k.id               as kategori_jamaah_id,
   k.kode             as kategori_jamaah_kode,
   k.nama             as kategori_jamaah_nama,
-  coalesce(k.termasuk_generus, false) as termasuk_generus
+  coalesce(k.termasuk_generus, false) as termasuk_generus,
+  j.kelas,
+  j.kelas_tahun
 from public.jamaah j
 left join public.kategori_jamaah k
   on k.id = private.kategori_jamaah_id(
        j.tanggal_lahir, j.tahun_lahir, j.status_pernikahan, j.status_sekolah);
-
-create view public.jamaah_tanpa_kategori
-with (security_invoker = true) as
-select *
-from public.jamaah_dengan_kategori
-where aktif and kategori_jamaah_id is null;
-
-revoke all on public.jamaah_dengan_kategori, public.jamaah_tanpa_kategori from anon, authenticated;
-grant select on public.jamaah_dengan_kategori, public.jamaah_tanpa_kategori to authenticated;
