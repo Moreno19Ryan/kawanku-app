@@ -23,6 +23,12 @@
   --kk-success: #1f9d55;
   --kk-warning: #d98a00;
   --kk-danger: #d93a3a;
+  /* Grafik: warna seri (per kelompok), urutan tetap, divalidasi untuk buta
+     warna (skill dataviz). Kontras < 3:1 di terang → selalu ada label/tabel. */
+  --kk-grafik-1: #2a78d6;
+  --kk-grafik-2: #eb6834;
+  --kk-grafik-3: #1baf7a;
+  --kk-grafik-4: #eda100;
 }
 
 /*
@@ -53,6 +59,10 @@
     --kk-success: #3cc47c;
     --kk-warning: #f0a92b;
     --kk-danger: #f06363;
+    --kk-grafik-1: #3987e5;
+    --kk-grafik-2: #d95926;
+    --kk-grafik-3: #199e70;
+    --kk-grafik-4: #c98500;
   }
 }
 
@@ -71,6 +81,10 @@
   --kk-success: #3cc47c;
   --kk-warning: #f0a92b;
   --kk-danger: #f06363;
+  --kk-grafik-1: #3987e5;
+  --kk-grafik-2: #d95926;
+  --kk-grafik-3: #199e70;
+  --kk-grafik-4: #c98500;
 }
 
 /* Varian dark: ikut tema aplikasi, bukan hanya media query perangkat. */

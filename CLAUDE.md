@@ -49,7 +49,7 @@ cakupannya satu desa.
 | 0 | Fondasi: scaffold, Supabase client, kerangka UI, PWA, logo, dokumen | Selesai |
 | 1 | Database jamaah: kelompok, keluarga, jamaah, status pernikahan & sekolah, kategori jamaah, kode jamaah, peran sebagai data, RLS | Skema v2 disetujui; migrasi `supabase/migrations/20261020170513_*` diterapkan ke produksi + tes pgTAP. Login admin (email + kata sandi) aktif |
 | 2 | Absensi (QR kartu, QR berputar, jalur keringanan) | 2a (sesi, kartu QR, scan, rekap) di produksi; 2b (akun generus + QR layar) dikerjakan, `docs/absensi.md` |
-| 3 | Monitoring kegiatan | 3a (jadwal rutin, agenda, pertemuan) dikerjakan, `docs/kegiatan.md`; 3b laporan & 3c target hafalan belum |
+| 3 | Monitoring kegiatan | 3a (jadwal rutin, agenda, pertemuan) dikerjakan, `docs/kegiatan.md`; 3b laporan kehadiran (`/absensi/laporan`) dikerjakan; 3c target hafalan ditunda |
 
 ## Stack
 
@@ -163,6 +163,7 @@ src/
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
       absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
                         # akun/ (akun generus), rekap/ (pratinjau rekap bulanan/per kegiatan),
+                        # laporan/ (tren, per kelompok/kegiatan/kategori, perlu disapa),
                         # izin/ (pengajuan izin generus)
       kegiatan/         # agenda/kalender, pertemuan/ (pemateri, materi, batal, absensi),
                         # kelola/ & kelola/[id]/ (kegiatan & jadwal), pengumuman/ (untuk generus)
@@ -221,6 +222,8 @@ src/
       bunyi.ts          # pola beep hasil scan (berhasil / sudah / gagal)
       rekap.ts          # getRekap: matriks kehadiran + catatan otomatis (server-only)
       rekap-csv.ts      # rekap → CSV (titik koma + BOM, kop di baris atas)
+      laporan-hitung.ts # hitungLaporan: tren, status jamaah, sorotan (murni)
+      laporan.ts        # getLaporan: ambil data laporan kehadiran (server-only)
     kegiatan/
       akses.ts          # getAksesKegiatan (server-only)
       jadwal.ts         # hitungKalender: jadwal rutin → pertemuan (murni)
