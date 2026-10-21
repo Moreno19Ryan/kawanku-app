@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { FormKataSandi } from "@/components/pengaturan/form-kata-sandi";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
+import { TombolKeluarSemua } from "@/components/pengaturan/tombol-keluar-semua";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +30,15 @@ export default function AkunPage() {
             Masukkan kata sandi lama untuk memastikan ini memang kamu.
           </p>
           <FormKataSandi />
+        </Card>
+
+        <Card>
+          <h2 className="text-lg font-semibold">Keamanan sesi</h2>
+          <p className="mt-1 mb-5 text-sm text-muted">
+            Pernah login di perangkat orang lain, atau HP hilang? Keluarkan akunmu dari semua
+            perangkat sekaligus, lalu login lagi di perangkat ini.
+          </p>
+          <TombolKeluarSemua />
         </Card>
       </div>
     </>

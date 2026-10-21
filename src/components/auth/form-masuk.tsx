@@ -8,6 +8,7 @@ import { INPUT_CLASS } from "@/components/ui/input";
 
 const PESAN_PARAM: Record<string, string> = {
   "bukan-admin": "Akun ini bukan admin aktif. Hubungi admin desa.",
+  "sesi-berakhir": "Sesimu sudah berakhir. Silakan masuk lagi.",
 };
 
 /**
