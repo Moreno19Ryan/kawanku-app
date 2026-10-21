@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { bacaAlamat } from "@/lib/jamaah/alamat";
+import { bacaNoHp } from "@/lib/jamaah/format";
 import { getAksesJamaah } from "@/lib/jamaah/akses";
 import {
   LABEL_PENDIDIKAN,
@@ -209,6 +210,27 @@ export async function aturKeringanan(id: string, aktif: boolean): Promise<StateA
   return { pesan: aktif ? "Ditandai jalur keringanan." : "Penanda keringanan dicabut." };
 }
 
+/** Tangani laporan data salah dari generus: selesai (sudah dibetulkan) atau ditolak. */
+export async function tanganiUsulanKoreksi(id: string, _prev: StateAksi, formData: FormData): Promise<StateAksi> {
+  const akses = await getAksesJamaah();
+  if (!akses?.kelompokUbah.length) return TIDAK_BERHAK;
+  const status = formData.get("status");
+  if (status !== "selesai" && status !== "ditolak") return GAGAL;
+  const tanggapan = String(formData.get("tanggapan") ?? "").trim().replace(/\s+/g, " ");
+  if (tanggapan.length > 300) return { galat: "Tanggapan maksimal 300 karakter." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("usulan_koreksi")
+    .update({ status, tanggapan: tanggapan || null })
+    .eq("id", id)
+    .eq("status", "menunggu")
+    .select("id");
+  if (error || !data?.length) return { galat: "Laporan ini sudah ditangani atau di luar wewenangmu." };
+  refresh();
+  return { pesan: status === "selesai" ? "Ditandai sudah dibetulkan." : "Laporan ditolak." };
+}
+
 /** Keterangan janda/duda (izin janda_duda.kelola). Kosong = belum diketahui. */
 export async function aturJandaDuda(
   id: string,
@@ -242,13 +264,6 @@ export async function aturJandaDuda(
 // ---------------------------------------------------------------------
 
 /** "0812-3456-7890", "+62 812…", "62812…" → "081234567890". Null bila kosong. */
-function bacaNoHp(nilai: FormDataEntryValue | null): string | null | undefined {
-  const angka = String(nilai ?? "").replace(/[\s\-().]/g, "");
-  if (!angka) return null;
-  const normal = angka.replace(/^\+?62/, "0");
-  return /^08\d{8,12}$/.test(normal) ? normal : undefined;
-}
-
 /** Simpan satu baris per jamaah: kosong semua → baris dihapus. */
 async function simpanBaris(
   tabel: "jamaah_kontak" | "jamaah_pribadi" | "jamaah_identitas",

@@ -54,3 +54,10 @@ export function dariInputWib(nilai: string): string | null {
   const waktu = new Date(`${nilai}:00+07:00`);
   return Number.isNaN(waktu.getTime()) ? null : waktu.toISOString();
 }
+
+/** Tanggal (YYYY-MM-DD, tanpa jam) → "5 Maret 2008". */
+export function tanggalPanjang(iso: string): string {
+  return new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeZone: "UTC" }).format(
+    new Date(`${iso}T00:00:00Z`),
+  );
+}

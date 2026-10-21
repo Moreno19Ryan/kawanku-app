@@ -10,6 +10,7 @@ import {
   NomorTersamar,
   type NilaiPribadi,
 } from "@/components/jamaah/form-data-sensitif";
+import { DaftarUsulan } from "@/components/jamaah/daftar-usulan";
 import { FormJandaDuda } from "@/components/jamaah/form-janda-duda";
 import { FormHubungkan } from "@/components/jamaah/form-keluarga";
 import { JamaahBelumMenyala } from "@/components/jamaah/belum-menyala";
@@ -33,6 +34,7 @@ import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { formatNoHp } from "@/lib/jamaah/format";
 import { buatKeluargaDariJamaah, hubungkanKeKeluarga } from "@/lib/jamaah/keluarga-actions";
 import { cariPemeriksaan, getPerluDicek } from "@/lib/jamaah/periksa";
+import { getUsulanMenunggu } from "@/lib/jamaah/usulan";
 import {
   dokumenIdentitas,
   LABEL_HUBUNGAN,
@@ -43,7 +45,7 @@ import {
   labelMuballigh,
 } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
-import { waktuRelatif } from "@/lib/waktu";
+import { tanggalPanjang, waktuRelatif } from "@/lib/waktu";
 
 export const metadata: Metadata = {
   title: "Detail jamaah",
@@ -125,12 +127,6 @@ export default function DetailJamaahPage({ params, searchParams }: PageProps<"/j
         <Detail params={params} searchParams={searchParams} />
       </Suspense>
     </>
-  );
-}
-
-function tanggalPanjang(iso: string): string {
-  return new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeZone: "UTC" }).format(
-    new Date(`${iso}T00:00:00Z`),
   );
 }
 
@@ -229,6 +225,7 @@ async function Detail({
       ? supabase.from("keluarga").select("id, nama").eq("kelompok_id", j.kelompok_id).order("nama")
       : Promise.resolve({ data: [] as { id: string; nama: string }[] }),
   ]);
+  const usulan = bolehUbah ? await getUsulanMenunggu(j.id) : [];
   const perluDicek = ((await getPerluDicek())?.perJamaah.get(j.id) ?? [])
     .map(cariPemeriksaan)
     .filter((p) => p !== undefined);
@@ -254,6 +251,12 @@ async function Detail({
             </ul>
           </div>
         </Card>
+      )}
+
+      {usulan.length > 0 && (
+        <div className="mb-4 sm:mb-6">
+          <DaftarUsulan usulan={usulan} tampilkanNama={false} />
+        </div>
       )}
 
       {baru && (
