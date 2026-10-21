@@ -27,6 +27,11 @@ export function tanggalJam(iso: string): string {
   }).format(new Date(iso))} WIB`;
 }
 
+/** "19.02" — jam dan menit WIB. */
+export function jam(iso: string): string {
+  return new Intl.DateTimeFormat("id-ID", { timeStyle: "short", timeZone: ZONA }).format(new Date(iso));
+}
+
 /** ISO → nilai <input type="datetime-local"> dalam WIB ("2026-10-21T08:15"). */
 export function keInputWib(iso: string | null): string {
   if (!iso) return "";

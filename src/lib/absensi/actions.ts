@@ -123,6 +123,8 @@ export type HasilScan = {
   kelompok?: string;
   /** Penanda keringanan (hanya bila admin boleh melihatnya). */
   keringanan?: boolean;
+  /** Waktu tercatat (scan pertama); untuk hasil "sudah". */
+  dicatatAt?: string;
 };
 
 /** Catat kehadiran dari hasil scan kartu (token) atau ketikan kode KW-. */
@@ -138,7 +140,7 @@ export async function catatKode(sesiId: string, kode: string): Promise<HasilScan
   const hasil: HasilScan = { hasil: r.hasil };
 
   if (r.jamaah_id) {
-    const [{ data: j }, { data: k }] = await Promise.all([
+    const [{ data: j }, { data: k }, { data: a }] = await Promise.all([
       ctx.supabase
         .from("jamaah")
         .select("nama_lengkap, kode, kelompok:kelompok_id(nama)")
@@ -147,6 +149,14 @@ export async function catatKode(sesiId: string, kode: string): Promise<HasilScan
       ctx.akses.bolehLihatKeringanan
         ? ctx.supabase.from("jamaah_keringanan").select("aktif").eq("jamaah_id", r.jamaah_id).maybeSingle()
         : Promise.resolve({ data: null }),
+      r.hasil === "sudah"
+        ? ctx.supabase
+            .from("absensi")
+            .select("dicatat_at")
+            .eq("sesi_id", sesiId)
+            .eq("jamaah_id", r.jamaah_id)
+            .maybeSingle<{ dicatat_at: string }>()
+        : Promise.resolve({ data: null }),
     ]);
     if (j) {
       hasil.nama = j.nama_lengkap;
@@ -154,6 +164,7 @@ export async function catatKode(sesiId: string, kode: string): Promise<HasilScan
       hasil.kelompok = j.kelompok?.nama;
     }
     hasil.keringanan = Boolean(k?.aktif);
+    if (a) hasil.dicatatAt = a.dicatat_at;
   }
   if (hasil.hasil === "tercatat") refresh();
   return hasil;

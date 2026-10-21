@@ -5,10 +5,12 @@ import { CircleAlert, CircleCheck, ScanLine } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
 import type { HasilScan } from "@/lib/absensi/actions";
+import { jam } from "@/lib/waktu";
 
+/** Teks besar di layar setelah scan. */
 const PESAN: Record<HasilScan["hasil"], string> = {
-  tercatat: "Hadir, tercatat",
-  sudah: "Sudah tercatat sebelumnya",
+  tercatat: "Alhamdulillah, kamu sudah tercatat hadir",
+  sudah: "Alhamdulillah, kamu sudah absen sebelumnya",
   tidak_dikenal: "Kode tidak dikenal",
   kartu_dicabut: "Kartu ini sudah dicabut (diganti kartu baru)",
   sesi_ditutup: "Sesi sudah ditutup",
@@ -18,20 +20,38 @@ const PESAN: Record<HasilScan["hasil"], string> = {
   galat: "Gagal mencatat. Coba lagi.",
 };
 
-type Riwayat = HasilScan & { no: number; kodeAsal: string };
+/** Label singkat untuk riwayat scan. */
+const RINGKAS: Partial<Record<HasilScan["hasil"], string>> = {
+  tercatat: "Hadir, tercatat",
+  sudah: "Sudah absen",
+};
 
-/** Bunyi pendek: nada tinggi = berhasil, nada rendah = perlu perhatian. */
-function bunyi(berhasil: boolean) {
+type Riwayat = HasilScan & { no: number; kodeAsal: string };
+type Jenis = "berhasil" | "sudah" | "gagal";
+
+function jenis(h: HasilScan["hasil"]): Jenis {
+  return h === "tercatat" ? "berhasil" : h === "sudah" ? "sudah" : "gagal";
+}
+
+/**
+ * Bunyi (nada tinggi): berhasil = 1 beep pendek, sudah absen = 2 beep
+ * pendek, gagal = 1 beep panjang.
+ */
+function bunyi(j: Jenis) {
   try {
     const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.frequency.value = berhasil ? 880 : 220;
-    gain.gain.value = 0.08;
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + (berhasil ? 0.12 : 0.3));
-    osc.onended = () => void ctx.close();
+    const pola: [number, number][] =
+      j === "berhasil" ? [[0, 0.12]] : j === "sudah" ? [[0, 0.1], [0.18, 0.1]] : [[0, 0.6]];
+    for (const [mulai, lama] of pola) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.value = 0.08;
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + mulai);
+      osc.stop(ctx.currentTime + mulai + lama);
+    }
+    setTimeout(() => void ctx.close(), 1000);
   } catch {
     // Browser tanpa Web Audio: abaikan.
   }
@@ -62,21 +82,19 @@ export function PanelScan({
     el.value = "";
     startTransition(async () => {
       const hasil = await catat(kode);
-      const berhasil = hasil.hasil === "tercatat";
-      if (suara) bunyi(berhasil || hasil.hasil === "sudah");
+      if (suara) bunyi(jenis(hasil.hasil));
       setRiwayat((r) => [{ ...hasil, no: (r[0]?.no ?? 0) + 1, kodeAsal: kode }, ...r].slice(0, 8));
       el.focus();
     });
   }
 
-  const nadaTerakhir =
-    !terakhir
-      ? ""
-      : terakhir.hasil === "tercatat"
-        ? "bg-success/10 text-success"
-        : terakhir.hasil === "sudah"
-          ? "bg-primary-soft text-primary"
-          : "bg-danger/10 text-danger";
+  const nadaTerakhir = !terakhir
+    ? ""
+    : {
+        berhasil: "bg-success/10 text-success",
+        sudah: "bg-primary-soft text-primary",
+        gagal: "bg-danger/10 text-danger",
+      }[jenis(terakhir.hasil)];
 
   return (
     <div className="flex flex-col gap-4">
@@ -116,13 +134,16 @@ export function PanelScan({
               <CircleAlert className="size-8 shrink-0" aria-hidden />
             )}
             <span className="min-w-0">
-              <span className="block truncate text-lg font-semibold">
-                {terakhir.nama ?? PESAN[terakhir.hasil]}
-              </span>
+              <span className="block text-lg font-semibold">{PESAN[terakhir.hasil]}</span>
               <span className="block text-sm">
-                {terakhir.nama ? PESAN[terakhir.hasil] : terakhir.kodeAsal}
-                {terakhir.kelompok ? ` · ${terakhir.kelompok}` : ""}
-                {bolehLihatKeringanan && terakhir.keringanan ? " · Keringanan (tanpa HP)" : ""}
+                {[
+                  terakhir.nama ?? terakhir.kodeAsal,
+                  terakhir.kelompok,
+                  terakhir.dicatatAt ? `tercatat pukul ${jam(terakhir.dicatatAt)}` : null,
+                  bolehLihatKeringanan && terakhir.keringanan ? "Keringanan (tanpa HP)" : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </span>
           </>
@@ -138,8 +159,8 @@ export function PanelScan({
           {riwayat.slice(1).map((r) => (
             <li key={r.no} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1 text-muted">
               <span className="truncate">{r.nama ?? r.kodeAsal}</span>
-              <span className={r.hasil === "tercatat" ? "text-success" : r.hasil === "sudah" ? "" : "text-danger"}>
-                {PESAN[r.hasil]}
+              <span className={{ berhasil: "text-success", sudah: "text-primary", gagal: "text-danger" }[jenis(r.hasil)]}>
+                {RINGKAS[r.hasil] ?? PESAN[r.hasil]}
               </span>
             </li>
           ))}
