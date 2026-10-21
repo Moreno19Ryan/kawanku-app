@@ -1,8 +1,10 @@
-# Pembaruan status sekolah tahunan (USULAN)
+# Pembaruan status sekolah tahunan
 
 Keputusan Reno (21 Okt 2026): yang bertanggung jawab memperbarui status
 sekolah tiap tahun ajaran baru (sekitar Juli) adalah **admin kelompok**
-untuk jamaah kelompoknya. Usulan Claude di bawah menunggu persetujuan.
+untuk jamaah kelompoknya. Usulan di bawah **disetujui Reno (21 Okt 2026)**
+dan dikerjakan lewat migrasi `20261022060000_kenaikan_kelas` (lihat
+"Implementasi" di akhir).
 
 ## Masalahnya sekarang
 
@@ -30,3 +32,23 @@ terlewat, dan kategori (termasuk siapa yang dianggap generus) jadi salah.
 
 Perubahan: satu migrasi kecil (kolom `kelas` + catatan kenaikan per tahun
 per kelompok), halaman baru, dan isian kelas di form jamaah.
+
+## Implementasi
+
+- **Database**: `jamaah.kelas` (1–12, dijaga sesuai jenjang) dan
+  `jamaah.kelas_tahun` (tahun ajaran yang dirujuk kelas itu; tahun Juli-nya).
+  Trigger `atur_kelas` mengosongkan kelas bila bukan lagi SD/SMP/SMA dan
+  mengisi `kelas_tahun` otomatis saat kelas diubah. `private.tahun_ajaran`
+  sama dengan `tahunAjaran()` di aplikasi.
+- **RPC `terapkan_kenaikan_kelas(kelompok, perubahan)`**: security invoker
+  (tetap RLS `jamaah_update`), satu transaksi, hanya jamaah yang kelasnya
+  belum untuk tahun ajaran berjalan, jadi **tidak pernah naik dua kali**
+  kapan pun datanya diisi. Dicatat di `kenaikan_kelas` (kelompok, tahun,
+  jumlah, siapa, kapan).
+- **Aplikasi**: isian Kelas di form jamaah (muncul untuk SD/SMP/SMA);
+  halaman **Jamaah → Kenaikan kelas** (`/jamaah/kenaikan-kelas`, izin
+  `jamaah.ubah` per kelompok); pengingat di Beranda Juli–September bila
+  masih ada yang belum dinaikkan. Logika pilihan di `src/lib/jamaah/kenaikan.ts`
+  (murni), data di `kenaikan-data.ts`, aksi di `kenaikan-actions.ts`.
+- Belum: generus melaporkan kelas lewat "Lapor data salah" tetap berupa
+  laporan teks biasa (admin yang mengisi kelasnya).

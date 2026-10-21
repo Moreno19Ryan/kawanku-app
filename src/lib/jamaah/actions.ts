@@ -10,6 +10,7 @@ import {
   LABEL_STATUS_PERNIKAHAN,
   LABEL_STATUS_SEKOLAH,
   PAKET_CABERAWIT,
+  RENTANG_KELAS,
 } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -29,6 +30,7 @@ type IsiJamaah = {
   tahun_lahir: number | null;
   status_pernikahan: string;
   status_sekolah: string;
+  kelas: number | null;
   kelompok_id: string;
   tempat_lahir: string | null;
   pendidikan_terakhir: string | null;
@@ -79,6 +81,12 @@ function bacaIsian(formData: FormData): IsiJamaah | string {
   if (!(pernikahan in LABEL_STATUS_PERNIKAHAN)) return "Pilih status pernikahan.";
   const sekolah = teks("status_sekolah");
   if (!(sekolah in LABEL_STATUS_SEKOLAH)) return "Pilih status sekolah/kegiatan.";
+  const rentang = RENTANG_KELAS[sekolah];
+  const kelasTeks = rentang ? teks("kelas") : "";
+  const kelas = kelasTeks ? Number(kelasTeks) : null;
+  if (kelas !== null && (!Number.isInteger(kelas) || kelas < rentang[0] || kelas > rentang[1])) {
+    return `Kelas ${LABEL_STATUS_SEKOLAH[sekolah]} antara ${rentang[0]} dan ${rentang[1]}.`;
+  }
 
   const tempatLahir = teks("tempat_lahir");
   if (tempatLahir.length > 80) return "Tempat lahir maksimal 80 karakter.";
@@ -105,6 +113,7 @@ function bacaIsian(formData: FormData): IsiJamaah | string {
     tahun_lahir: tahun,
     status_pernikahan: pernikahan,
     status_sekolah: sekolah,
+    kelas,
     kelompok_id: kelompok,
     tempat_lahir: tempatLahir || null,
     pendidikan_terakhir: pendidikan || null,
