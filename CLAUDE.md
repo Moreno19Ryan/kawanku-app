@@ -149,7 +149,7 @@ src/
                         # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin),
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
       absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
-                        # akun/ (akun generus)
+                        # akun/ (akun generus), rekap/ (pratinjau rekap bulanan/per kegiatan)
       kegiatan/         # agenda/kalender, pertemuan/ (pemateri, materi, batal, absensi),
                         # kelola/ & kelola/[id]/ (kegiatan & jadwal)
     (generus)/          # area akun generus: saya/ (beranda, pin/, scan/), absen/ (hasil QR)
@@ -158,6 +158,8 @@ src/
                         # pengumuman, panel pengembang, wewenang saya, kategori,
                         # bantuan (difilter izin)
     cetak/kartu/        # lembar cetak kartu QR (A4, tanpa navigasi)
+    cetak/rekap/        # lembar cetak rekap absensi (KopDokumen, A4)
+    api/rekap/          # GET ekspor rekap absensi (CSV)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
       masuk/page.tsx    # login generus (username + PIN)
@@ -202,6 +204,8 @@ src/
       actions.ts        # Server Action sesi, catat kode/status, kartu QR, token layar
       akun-actions.ts   # Server Action akun generus (buat, massal, PIN, username, aktif, hapus)
       bunyi.ts          # pola beep hasil scan (berhasil / sudah / gagal)
+      rekap.ts          # getRekap: matriks kehadiran + catatan otomatis (server-only)
+      rekap-csv.ts      # rekap → CSV (titik koma + BOM, kop di baris atas)
     kegiatan/
       akses.ts          # getAksesKegiatan (server-only)
       jadwal.ts         # hitungKalender: jadwal rutin → pertemuan (murni)
