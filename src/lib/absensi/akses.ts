@@ -17,6 +17,8 @@ export type AksesAbsensi = {
   kelompokKelola: KelompokRingkas[];
   /** Boleh melihat sesi tingkat desa (wilayah absensi.lihat apa pun). */
   bolehLihat: boolean;
+  /** absensi.lihat untuk seluruh desa (rekap lintas kelompok). */
+  lihatSeluruhDesa: boolean;
   /** Wilayah sesi yang boleh dibuat; umum=false → hanya sesi generus. */
   targetSesi: TargetSesi[];
   bolehLihatKeringanan: boolean;
@@ -83,6 +85,7 @@ export const getAksesAbsensi = cache(async (): Promise<AksesAbsensi | null> => {
     kelompokLihat,
     kelompokKelola,
     bolehLihat: kelompokLihat.length > 0,
+    lihatSeluruhDesa: wilayah(admin, "absensi.lihat") === null && kelompokLihat.length > 0,
     targetSesi,
     bolehLihatKeringanan: Boolean(admin.izinWilayah["keringanan.lihat"]?.length),
     kelompokAkun: saring(kelompokFitur, wilayah(admin, "akun_generus.kelola")),
