@@ -503,8 +503,8 @@ async function Detail({
             <div>
               <h2 className="text-lg font-semibold">Jalur keringanan absensi</h2>
               <p className="mt-1 text-sm text-muted">
-                Untuk generus tanpa HP: absen memakai kartu QR fisik. Penanda ini hanya terlihat
-                admin. Status: <span className="font-medium text-fg">{keringananAktif ? "Ya" : "Tidak"}</span>
+                Untuk generus tanpa HP: absen memakai kartu QR fisik (generus lain absen lewat akunnya).
+                Mencabut penanda ikut mencabut kartu fisiknya. Penanda ini hanya terlihat admin. Status: <span className="font-medium text-fg">{keringananAktif ? "Ya" : "Tidak"}</span>
               </p>
             </div>
             {akses.bolehKelolaKeringanan && (

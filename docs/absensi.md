@@ -59,6 +59,13 @@ sudah punya catatan.
 - Penanda keringanan tetap di `jamaah_keringanan` (izin `keringanan.lihat`).
   Penanda ini ditampilkan di hasil scan dan rekap, tetapi **tidak dicetak di
   kartu**.
+- **Kartu fisik generus hanya untuk keringanan** (keputusan Reno, 21 Okt 2026;
+  migrasi `20261022010000_kartu_fisik_keringanan`). Generus absen lewat akunnya
+  (jalur 2). `private.boleh_kartu_fisik(jamaah)` = bukan generus, atau generus
+  dengan keringanan aktif. Kartu baru di luar itu ditolak (trigger, hint
+  `pakai_akun`), buat massal melewatinya, mencabut keringanan ikut mencabut
+  kartu, dan scan kartu lama generus tanpa keringanan menghasilkan
+  `pakai_akun`. Mengetik kode `KW-` oleh admin tetap bisa.
 
 ## Alur di aplikasi
 

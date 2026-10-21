@@ -29,7 +29,8 @@ cakupannya satu desa.
   - Jalur 2: generus login, lalu scan QR di layar laptop admin yang berganti
     tiap 1 menit (berlaku ±90 detik).
   - Jalur keringanan: generus tanpa HP memakai kartu fisik (jalur 1), ditandai
-    khusus yang hanya terlihat admin.
+    khusus yang hanya terlihat admin. Generus tanpa penanda keringanan tidak
+    bisa punya kartu fisik (dijaga database, `private.boleh_kartu_fisik`).
 - **UI**: gaya One UI (halus, interaktif, intuitif). Laptop sebagai tampilan
   utama, tapi tetap nyaman di HP. PWA.
 - **Data sensitif bersifat opsional dan disimpan di tabel terpisah dengan izin

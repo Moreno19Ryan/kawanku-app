@@ -113,6 +113,7 @@ export type HasilScan = {
     | "sudah"
     | "tidak_dikenal"
     | "kartu_dicabut"
+    | "pakai_akun"
     | "sesi_ditutup"
     | "bukan_peserta"
     | "jamaah_nonaktif"
@@ -236,6 +237,9 @@ export async function gantiKartu(jamaahId: string): Promise<StateAksi> {
   const ctx = await konteks();
   if (!ctx) return TIDAK_BERHAK;
   const { error } = await ctx.supabase.rpc("ganti_kartu_qr", { p_jamaah_id: jamaahId });
+  if (error?.hint === "pakai_akun") {
+    return { galat: "Generus absen lewat akunnya (scan QR layar). Kartu fisik hanya untuk yang berpenanda keringanan." };
+  }
   if (error) return GAGAL;
   refresh();
   return { pesan: "Kartu baru dibuat. Kartu lama tidak berlaku lagi." };
