@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BarisKontakPengembang } from "@/components/bantuan/kontak-pengembang";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { Card } from "@/components/ui/card";
@@ -30,6 +31,13 @@ export default function AdminLoginPage() {
 
           <FormMasuk />
         </Card>
+
+        <div className="mt-5 flex flex-col gap-2 px-1 text-center">
+          <p className="text-sm text-muted">
+            Lupa kata sandi? Minta atur ulang ke admin yang mengelola akunmu.
+          </p>
+          <BarisKontakPengembang awalan="Aplikasi bermasalah?" />
+        </div>
       </div>
 
       {/* Identitas desa cukup di footer. */}
