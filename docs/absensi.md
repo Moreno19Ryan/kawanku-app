@@ -249,6 +249,36 @@ sebelum pengajian, dan admin yang menyetujui. Migrasi
   admin di `/absensi/izin` (kartu di halaman Absensi menampilkan jumlah yang
   menunggu) dan di halaman pertemuan kegiatan.
 
+## Laporan & monitoring kehadiran (Fase 3b)
+
+Absensi → **Laporan** (`/absensi/laporan`). Tanpa migrasi: semua dihitung dari
+`sesi_absensi`, `absensi`, `jamaah_dengan_kategori`, dan `pertemuan` (nama
+kegiatan) dengan sesi admin, jadi batas data tetap RLS (admin generus hanya
+generus, admin kelompok hanya kelompoknya). Hak akses: `absensi.lihat`.
+
+- Filter (GET): wilayah (seluruh desa / kelompok), peserta (semua / generus
+  saja), rentang 3, 6, atau 12 bulan terakhir (WIB).
+- Sesi dinilai bila sudah ditutup atau sudah lewat (selesai, atau 3 jam setelah
+  mulai). Peserta sesi sama dengan rekap (wilayah & sasaran cocok, atau punya
+  catatan); sesi sebelum profil jamaah dibuat (−1 hari) tidak dihitung.
+- Isi: sorotan otomatis (rata-rata, naik/turun dibanding bulan lalu, kelompok
+  & kegiatan tertinggi/terendah, kategori terendah, siapa yang perlu disapa),
+  ubin angka, grafik tren per bulan (per kelompok bila lebih dari satu; sentuh
+  untuk melihat angka, tersedia juga sebagai tabel), batang per kegiatan &
+  per kategori, dan tabel pemantauan jamaah (tautan ke detail jamaah).
+- Status jamaah (urutan prioritas):
+  - **Perlu disapa**: tidak hadir (tanpa izin/sakit) di 3 pertemuan terakhir
+    yang diikutinya.
+  - **Menurun**: % hadir paruh akhir periode turun ≥25 poin dibanding paruh
+    awal (minimal 4 pertemuan).
+  - **Jarang hadir**: < 40% (minimal 4 pertemuan).
+  - **Rajin**: ≥ 85% (minimal 4 pertemuan).
+- Kode: `src/lib/absensi/laporan-hitung.ts` (murni) dan
+  `src/lib/absensi/laporan.ts` (ambil data, dipotong per 100 sesi + paginasi
+  1000 baris). Warna grafik: token `--kk-grafik-1..4` (palet kategori yang
+  sudah divalidasi untuk buta warna; label langsung + tabel sebagai cadangan).
+- Laporan tidak dicetak/diekspor; untuk dokumen resmi pakai Rekap.
+
 ## Belum (berikutnya)
 
 - Keterangan telat (toleransi per sesi).
