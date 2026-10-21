@@ -102,6 +102,14 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Pengaman "jangan sampai tidak ada admin pengelola akses" (tidak bisa
   menonaktifkan diri sendiri / mencabut peran pengelola terakhir) saat ini
   dicek di Server Action, belum di database.
+- Modul Jamaah (`/jamaah`) dibuka per kelompok lewat saklar fitur `jamaah`
+  (panel pengembang) dan izin `jamaah.lihat` (termasuk peran generus, lewat
+  `admin.izinWilayah`). Menu bersyarat dihitung di server (`nav-terbuka.tsx`);
+  daftar hanya memuat kelompok yang menyala. Batas data tetap RLS: admin
+  generus hanya melihat/menyimpan jamaah berkategori generus.
+- `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
+  bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
+  diketahui saat runtime.
 - Dengan `cacheComponents`, apa pun yang membaca sesi (`createClient()` dari
   `@/lib/supabase/server`) harus di dalam `<Suspense>`; jangan `await` sesi di
   level atas layout.
@@ -114,6 +122,7 @@ src/
     (app)/              # area admin, memakai layout sidebar + bottom nav
       layout.tsx
       dashboard/page.tsx
+      jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,
                         # bantuan (difilter izin)
@@ -125,6 +134,7 @@ src/
     favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
+    jamaah/             # FormJamaah (pratinjau kategori), FormJandaDuda
     pengaturan/         # form & tombol aksi halaman Pengaturan, daftar bagian
     tema/               # TombolTema (cepat), PilihTema (terang/gelap/ikut perangkat)
     sistem/             # GerbangPerawatan, BannerPengumuman, form panel pengembang
@@ -141,6 +151,10 @@ src/
     pengaturan/
       actions.ts        # Server Action Pengaturan (kata sandi, admin, peran, kelompok)
       kategori-actions.ts # Server Action kategori jamaah (ubah, tambah, urutan, hapus)
+    jamaah/
+      akses.ts          # getAksesJamaah: izin per wilayah ∩ saklar fitur `jamaah` (server-only)
+      actions.ts        # Server Action tambah/ubah/status/hapus, keringanan, janda/duda
+      kategori.ts       # hitungUsia/cariKategori: pratinjau di form (sama dengan DB)
     sistem/
       data.ts           # status perawatan, pengumuman tayang, fitur (server-only, fail-open)
       actions.ts        # Server Action panel pengembang & pengumuman
