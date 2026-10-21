@@ -93,10 +93,11 @@ select uji.cek('Seed: pengembang memegang sistem.kelola + akses.kelola',
   (select array_agg(pi.izin_kode) from public.peran_izin pi
    join public.peran p on p.id = pi.peran_id where p.kode = 'pengembang')
   @> array['akses.kelola', 'sistem.kelola']);
-select uji.cek('Seed: izin data pengembang hanya jamaah.lihat (tanpa ubah, keluarga, keringanan, janda_duda)',
+select uji.cek('Seed: izin data pengembang hanya jamaah.lihat (tanpa ubah, keluarga, keringanan, janda_duda, kontak, pribadi, identitas)',
   (select array_agg(pi.izin_kode) from public.peran_izin pi join public.peran p on p.id = pi.peran_id
    where p.kode = 'pengembang'
-     and split_part(pi.izin_kode, '.', 1) in ('jamaah', 'keluarga', 'keringanan', 'janda_duda'))
+     and split_part(pi.izin_kode, '.', 1) in ('jamaah', 'keluarga', 'keringanan', 'janda_duda',
+                                              'kontak', 'pribadi', 'identitas'))
   = array['jamaah.lihat']);
 select uji.cek('Seed: tidak ada peran lain yang memegang sistem.kelola',
   (select count(*) from public.peran_izin where izin_kode = 'sistem.kelola') = 1);

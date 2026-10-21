@@ -32,12 +32,14 @@ cakupannya satu desa.
     khusus yang hanya terlihat admin.
 - **UI**: gaya One UI (halus, interaktif, intuitif). Laptop sebagai tampilan
   utama, tapi tetap nyaman di HP. PWA.
-- **Tidak ada NIK atau data sensitif lain** sampai pengurus memutuskan aturannya.
-  Status pernikahan hanya `lajang`/`menikah`/`janda_duda`; untuk janda/duda
-  hanya keterangan `cerai_hidup`/`cerai_mati` di tabel terbatas
-  (`jamaah_janda_duda`, default hanya admin desa), tanpa alasan atau detail
-  lain. Data yang lebih sensitif dari profil biasa disimpan di tabel terpisah
-  dengan izin sendiri, bukan sebagai kolom di `jamaah`.
+- **Data sensitif bersifat opsional dan disimpan di tabel terpisah dengan izin
+  sendiri**, bukan kolom di `jamaah` (`docs/data-pribadi-jamaah.md`):
+  `jamaah_kontak` (no. HP, HP wali, email), `jamaah_pribadi` (nama orang tua,
+  alamat KTP & domisili), `jamaah_identitas` (NIK & No. KK, hanya admin desa;
+  bukan ID, ID tetap kode `KW-`). Status pernikahan hanya
+  `lajang`/`menikah`/`janda_duda`; untuk janda/duda hanya keterangan
+  `cerai_hidup`/`cerai_mati` di `jamaah_janda_duda` (default hanya admin desa).
+  Tidak disimpan: tinggi/berat badan dan data kesehatan.
 
 ### Fase
 
@@ -122,6 +124,7 @@ src/
     (app)/              # area admin, memakai layout sidebar + bottom nav
       layout.tsx
       error.tsx         # galat tak terduga: coba lagi + kontak pengembang
+    api/wilayah/        # GET daftar wilayah di bawah kode induk (untuk PilihWilayah)
       dashboard/page.tsx
       jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
@@ -136,7 +139,8 @@ src/
   components/
     auth/               # FormMasuk (login), AkunAdmin (info admin + keluar + penjaga)
     bantuan/            # KontakPengembang (WhatsApp/email; Bantuan, login, perawatan, galat)
-    jamaah/             # FormJamaah (pratinjau kategori), FormJandaDuda
+    jamaah/             # FormJamaah (pratinjau kategori), FormJandaDuda, form data sensitif,
+                        # PilihWilayah (provinsi → desa)
     pengaturan/         # form & tombol aksi halaman Pengaturan, daftar bagian
     tema/               # TombolTema (cepat), PilihTema (terang/gelap/ikut perangkat)
     sistem/             # GerbangPerawatan, BannerPengumuman, form panel pengembang
@@ -157,6 +161,8 @@ src/
       akses.ts          # getAksesJamaah: izin per wilayah ∩ saklar fitur `jamaah` (server-only)
       actions.ts        # Server Action tambah/ubah/status/hapus, keringanan, janda/duda
       kategori.ts       # hitungUsia/cariKategori: pratinjau di form (sama dengan DB)
+      format.ts         # formatNoHp, samarkan (server & klien)
+    wilayah/            # kode wilayah Kemendagri (data statis) + anakWilayah/namaLengkapWilayah
     sistem/
       data.ts           # status perawatan, pengumuman tayang, fitur (server-only, fail-open)
       actions.ts        # Server Action panel pengembang & pengumuman
@@ -236,9 +242,9 @@ supabase/
 ## Keputusan yang masih menunggu pengurus
 
 1. **Data awal jamaah**: sumber, format, dan siapa yang mengimpor.
-2. **Data sensitif**: apakah NIK/alamat/no. HP disimpan, siapa yang boleh
-   melihat, dan berapa lama disimpan. Sampai diputuskan, **jangan buat kolom
-   data sensitif apa pun**.
+2. **Data sensitif**: sudah diputuskan Reno (21 Okt 2026), lihat
+   `docs/data-pribadi-jamaah.md`. Yang masih menunggu: kegunaan NIK & No. KK
+   (kolomnya opsional) dan lama penyimpanan data.
 3. **Detail hak akses**: apa saja yang boleh dilihat/diubah tiap peran (admin
    desa, admin kelompok, admin generus).
 4. **Kategori jamaah**: aturan dan angka seed (DRAF di
