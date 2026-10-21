@@ -6,7 +6,7 @@ import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { wajibAdmin } from "@/lib/auth/admin";
+import { pengelolaAkun, wajibAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -42,13 +42,17 @@ export default function WewenangPage() {
 async function DaftarWewenang() {
   const admin = await wajibAdmin();
   const supabase = await createClient();
-  const { data: penugasan } = await supabase
-    .from("penugasan_peran")
-    .select(
-      "id, peran(nama, deskripsi, hanya_generus, peran_izin(izin_kode, izin(deskripsi))), kelompok(nama)",
-    )
-    .eq("user_id", admin.userId)
-    .returns<BarisPenugasan[]>();
+  const [{ data: penugasan }, { data: kategoriGenerus }] = await Promise.all([
+    supabase
+      .from("penugasan_peran")
+      .select(
+        "id, peran(nama, deskripsi, hanya_generus, peran_izin(izin_kode, izin(deskripsi))), kelompok(nama)",
+      )
+      .eq("user_id", admin.userId)
+      .returns<BarisPenugasan[]>(),
+    supabase.from("kategori_jamaah").select("nama").eq("termasuk_generus", true).order("urutan"),
+  ]);
+  const pengelola = pengelolaAkun(admin);
 
   if (!penugasan) {
     return <Card className="text-sm text-danger">Gagal memuat wewenang. Muat ulang halaman.</Card>;
@@ -64,6 +68,13 @@ async function DaftarWewenang() {
             {p.peran?.hanya_generus && <Badge>Khusus jamaah generus</Badge>}
           </div>
           {p.peran?.deskripsi && <p className="mt-1 text-sm text-muted">{p.peran.deskripsi}</p>}
+          {p.peran?.hanya_generus && (
+            <p className="mt-3 rounded-control bg-surface-muted p-3 text-sm">
+              Berlaku hanya untuk jamaah berkategori generus
+              {kategoriGenerus?.length ? ` (${kategoriGenerus.map((k) => k.nama).join(", ")})` : ""}{" "}
+              di {p.kelompok?.nama ?? "seluruh desa"}. Jamaah lain tidak terlihat olehmu.
+            </p>
+          )}
 
           <p className="mt-5 mb-2 text-sm font-medium">Yang boleh kamu lakukan</p>
           {p.peran && p.peran.peran_izin.length > 0 ? (
@@ -87,8 +98,8 @@ async function DaftarWewenang() {
         </Card>
       ))}
       <p className="text-sm text-muted">
-        Peran dan hak akses diatur oleh admin desa. Hubungi admin desa kalau kamu butuh akses
-        tambahan.
+        Akunmu dikelola oleh <span className="font-medium text-fg">{pengelola}</span>. Hubungi
+        mereka kalau kamu butuh akses tambahan atau perubahan peran.
       </p>
     </div>
   );

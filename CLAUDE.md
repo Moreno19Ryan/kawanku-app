@@ -140,6 +140,7 @@ src/
       tujuan.ts         # validasi ?next= (cegah open redirect)
     pengaturan/
       actions.ts        # Server Action Pengaturan (kata sandi, admin, peran, kelompok)
+      kategori-actions.ts # Server Action kategori jamaah (ubah, tambah, urutan, hapus)
     sistem/
       data.ts           # status perawatan, pengumuman tayang, fitur (server-only, fail-open)
       actions.ts        # Server Action panel pengembang & pengumuman
@@ -226,7 +227,9 @@ supabase/
 4. **Kategori jamaah**: aturan dan angka seed (DRAF di
    `docs/schema-proposal.md` §4.4). Kategori dihitung otomatis dari aturan
    data (status sekolah, status pernikahan, dan usia untuk lansia); bisa diubah
-   lewat data tanpa migrasi. Sudah diputuskan: remaja dewasa tanpa batas atas
+   lewat data tanpa migrasi, dari Pengaturan → Kategori jamaah (izin
+   `pengaturan.kelola`, yaitu admin desa). Saklar "Termasuk generus" langsung
+   mengubah jamaah yang terlihat admin generus. Sudah diputuskan: remaja dewasa tanpa batas atas
    umur.
 5. **Pembaruan status sekolah tahunan**: status sekolah diperbarui manual
    tiap tahun ajaran baru (sekitar Juli); siapa penanggung jawabnya, dan
