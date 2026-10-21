@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { labelPenugasan } from "@/lib/auth/admin";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { getPerluDicek } from "@/lib/jamaah/periksa";
+import { getUsulanMenunggu } from "@/lib/jamaah/usulan";
 import { createClient } from "@/lib/supabase/server";
 import { waktuRelatif } from "@/lib/waktu";
 
@@ -204,7 +205,7 @@ async function Ringkasan() {
   const generus = aktif.filter((j) => j.termasuk_generus).length;
   const laki = aktif.filter((j) => j.jenis_kelamin === "L").length;
   const nonaktif = data.length - aktif.length;
-  const periksa = await getPerluDicek();
+  const [periksa, usulan] = await Promise.all([getPerluDicek(), getUsulanMenunggu()]);
   const jumlahPerluDicek = periksa?.perJamaah.size ?? 0;
   const ringkasPerluDicek = (periksa?.daftar ?? [])
     .filter((p) => periksa!.hasil[p.kode].length > 0)
@@ -264,7 +265,7 @@ async function Ringkasan() {
         <Angka label="Perempuan" nilai={aktif.length - laki} />
       </section>
 
-      {jumlahPerluDicek > 0 && (
+      {(jumlahPerluDicek > 0 || usulan.length > 0) && (
         <Link
           href="/jamaah/periksa"
           className="mt-4 flex items-center gap-3 rounded-card bg-surface p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-colors duration-200 ease-oneui hover:bg-surface-muted sm:mt-6 sm:p-6"
@@ -273,7 +274,12 @@ async function Ringkasan() {
           <span className="min-w-0 flex-1 text-sm">
             <span className="block font-medium">Data perlu dicek</span>
             <span className="block text-muted">
-              {jumlahPerluDicek} jamaah: {ringkasPerluDicek}
+              {[
+                usulan.length > 0 && `${usulan.length} laporan data salah dari jamaah`,
+                jumlahPerluDicek > 0 && `${jumlahPerluDicek} jamaah: ${ringkasPerluDicek}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </span>
           <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />

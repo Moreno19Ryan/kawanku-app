@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getGenerusSaatIni, pinDariTanggalLahir } from "@/lib/generus/akun";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
 import { bacaAlamat } from "@/lib/jamaah/alamat";
+import { bacaNoHp } from "@/lib/jamaah/format";
+import { LABEL_BAGIAN_USULAN } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -66,6 +68,67 @@ export async function simpanAlamatSaya(_prev: StateAksi, formData: FormData): Pr
   if (error) return { galat: "Gagal menyimpan alamat. Coba lagi." };
   refresh();
   return { pesan: "Alamat tersimpan. Jazaakallahu khoiro!" };
+}
+
+/** Generus mengubah nama panggilan, no. HP/WA, dan email sendiri. */
+export async function simpanProfilSaya(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
+  const generus = await getGenerusSaatIni();
+  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
+  if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu." };
+
+  const panggilan = String(formData.get("nama_panggilan") ?? "").trim().replace(/\s+/g, " ");
+  if (panggilan.length > 40) return { galat: "Nama panggilan maksimal 40 karakter." };
+  const noHp = bacaNoHp(formData.get("no_hp"));
+  if (noHp === undefined) return { galat: "No. HP harus nomor Indonesia yang valid, mis. 0812-3456-7890." };
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (email && (email.length > 120 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))) {
+    return { galat: "Format email tidak valid." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("ubah_profil_saya", {
+    p_nama_panggilan: panggilan,
+    p_no_hp: noHp ?? "",
+    p_email: email,
+  });
+  if (error) return { galat: "Gagal menyimpan. Coba lagi." };
+  refresh();
+  return { pesan: "Profil tersimpan." };
+}
+
+/** Generus melaporkan data yang salah; admin yang membetulkan. */
+export async function kirimUsulanKoreksi(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
+  const generus = await getGenerusSaatIni();
+  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
+  if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu." };
+
+  const bagian = String(formData.get("bagian") ?? "");
+  if (!(bagian in LABEL_BAGIAN_USULAN)) return { galat: "Pilih data yang salah." };
+  const isi = String(formData.get("isi") ?? "").trim().replace(/\s+/g, " ");
+  if (!isi) return { galat: "Tulis data yang benar." };
+  if (isi.length > 300) return { galat: "Maksimal 300 karakter." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("usulan_koreksi")
+    .insert({ jamaah_id: generus.jamaah.id, bagian, isi });
+  if (error?.code === "23505") {
+    return { galat: `Laporan "${LABEL_BAGIAN_USULAN[bagian]}" sebelumnya masih menunggu dicek admin.` };
+  }
+  if (error) return { galat: "Gagal mengirim. Coba lagi." };
+  refresh();
+  return { pesan: "Terkirim. Admin kelompokmu akan mengeceknya." };
+}
+
+/** Batalkan laporan yang masih menunggu. */
+export async function batalkanUsulanKoreksi(id: string): Promise<StateAksi> {
+  const generus = await getGenerusSaatIni();
+  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("usulan_koreksi").delete().eq("id", id).select("id");
+  if (error || !data?.length) return { galat: "Laporan tidak bisa dibatalkan (mungkin sudah dicek admin)." };
+  refresh();
+  return { pesan: "Laporan dibatalkan." };
 }
 
 export async function keluarGenerus() {

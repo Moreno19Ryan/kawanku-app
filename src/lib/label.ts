@@ -73,3 +73,16 @@ export const LABEL_ALASAN_IZIN: Record<string, string> = {
 export function dokumenIdentitas(usia: number | null): "KIA" | "KTP" {
   return usia !== null && usia < 17 ? "KIA" : "KTP";
 }
+
+/** Bagian data yang bisa diusulkan koreksinya oleh generus (usulan_koreksi.bagian). */
+export const LABEL_BAGIAN_USULAN: Record<string, string> = {
+  nama_lengkap: "Nama lengkap",
+  tanggal_lahir: "Tanggal lahir",
+  jenis_kelamin: "Jenis kelamin",
+  status_sekolah: "Status sekolah",
+  pendidikan_terakhir: "Pendidikan terakhir",
+  status_pernikahan: "Status pernikahan",
+  kelompok: "Kelompok",
+  keluarga: "Keluarga",
+  lainnya: "Lainnya",
+};
