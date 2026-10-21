@@ -245,6 +245,25 @@ export async function gantiKartu(jamaahId: string): Promise<StateAksi> {
   return { pesan: "Kartu baru dibuat. Kartu lama tidak berlaku lagi." };
 }
 
+/** Setujui / tolak pengajuan izin generus (status dari tombol yang ditekan). */
+export async function tanganiPengajuanIzin(id: string, _prev: StateAksi, formData: FormData): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const status = formData.get("status");
+  if (status !== "disetujui" && status !== "ditolak") return GAGAL;
+  const tanggapan = String(formData.get("tanggapan") ?? "").trim().replace(/\s+/g, " ");
+  if (tanggapan.length > 200) return { galat: "Tanggapan maksimal 200 karakter." };
+  const { data, error } = await ctx.supabase
+    .from("pengajuan_izin")
+    .update({ status, tanggapan: tanggapan || null })
+    .eq("id", id)
+    .eq("status", "menunggu")
+    .select("id");
+  if (error || !data?.length) return { galat: "Pengajuan ini sudah ditangani atau di luar wewenangmu." };
+  refresh();
+  return { pesan: status === "disetujui" ? "Disetujui." : "Ditolak." };
+}
+
 /** Token QR layar terbaru (berganti tiap 60 detik, berlaku 90 detik) + jumlah hadir. */
 export async function tokenLayar(sesiId: string): Promise<{ token: string | null; hadir: number } | null> {
   const akses = await getAksesAbsensi();

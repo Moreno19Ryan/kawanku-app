@@ -126,7 +126,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `/saya/profil`: nama panggilan, no. HP & email diubah sendiri (RPC
   `ubah_profil_saya`), alamat di `/saya/alamat` (RPC `ubah_alamat_saya`); data
   lain lewat laporan `usulan_koreksi` yang ditangani admin di Perlu dicek &
-  detail jamaah. Semua RPC ini hanya menulis baris `jamaah_saya()`. QR layar jalur 2 di
+  detail jamaah. Semua RPC ini hanya menulis baris `jamaah_saya()`. Izin/sakit
+  diajukan generus di `/saya/izin` (`pengajuan_izin`, per kejadian kalender),
+  disetujui admin di `/absensi/izin` atau halaman pertemuan, lalu otomatis
+  tercatat di absensi (trigger, hadir tidak ditimpa). QR layar jalur 2 di
   `/layar/[id]` (RPC `token_layar` / `absen_layar`).
 - Kegiatan (`/kegiatan`, `docs/kegiatan.md`): saklar fitur `kegiatan`, izin
   `kegiatan.lihat`/`kegiatan.kelola` (`getAksesKegiatan`). Kalender rutin
@@ -154,10 +157,11 @@ src/
                         # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin),
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
       absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
-                        # akun/ (akun generus), rekap/ (pratinjau rekap bulanan/per kegiatan)
+                        # akun/ (akun generus), rekap/ (pratinjau rekap bulanan/per kegiatan),
+                        # izin/ (pengajuan izin generus)
       kegiatan/         # agenda/kalender, pertemuan/ (pemateri, materi, batal, absensi),
                         # kelola/ & kelola/[id]/ (kegiatan & jadwal)
-    (generus)/          # area akun generus: saya/ (beranda, pin/, scan/, profil/, alamat/), absen/ (hasil QR)
+    (generus)/          # area akun generus: saya/ (beranda, pin/, scan/, profil/, alamat/, izin/), absen/ (hasil QR)
     layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,

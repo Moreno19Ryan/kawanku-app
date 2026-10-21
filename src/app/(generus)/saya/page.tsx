@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { KeyRound, ScanLine, UserRound } from "lucide-react";
+import { CalendarX, KeyRound, ScanLine, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -67,7 +67,13 @@ async function BerandaGenerus() {
       </p>
 
       <section className="flex flex-col gap-2">
-        <h2 className="px-1 text-sm font-semibold text-muted">Jadwal 7 hari ke depan</h2>
+        <div className="flex items-center justify-between gap-3 px-1">
+          <h2 className="text-sm font-semibold text-muted">Jadwal 7 hari ke depan</h2>
+          <Link href="/saya/izin" className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+            <CalendarX className="size-4" aria-hidden />
+            Ajukan izin
+          </Link>
+        </div>
         <DaftarKejadian
           kejadian={jadwal}
           namaKelompok={new Map([[generus.jamaah.kelompokId, generus.jamaah.kelompok ?? "Kelompok"]])}

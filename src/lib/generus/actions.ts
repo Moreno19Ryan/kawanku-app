@@ -6,7 +6,7 @@ import { getGenerusSaatIni, pinDariTanggalLahir } from "@/lib/generus/akun";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
 import { bacaAlamat } from "@/lib/jamaah/alamat";
 import { bacaNoHp } from "@/lib/jamaah/format";
-import { LABEL_BAGIAN_USULAN } from "@/lib/label";
+import { LABEL_ALASAN_IZIN, LABEL_BAGIAN_USULAN } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -129,6 +129,57 @@ export async function batalkanUsulanKoreksi(id: string): Promise<StateAksi> {
   if (error || !data?.length) return { galat: "Laporan tidak bisa dibatalkan (mungkin sudah dicek admin)." };
   refresh();
   return { pesan: "Laporan dibatalkan." };
+}
+
+const PESAN_IZIN: Record<string, string> = {
+  bukan_wilayah: "Kegiatan ini bukan untuk kelompokmu.",
+  tanggal: "Izin hanya bisa diajukan untuk hari ini sampai 60 hari ke depan.",
+  tidak_ada_jadwal: "Tidak ada jadwal kegiatan itu pada tanggal tersebut.",
+  dibatalkan: "Pertemuan ini dibatalkan, tidak perlu izin.",
+  ditutup: "Absensi pertemuan ini sudah ditutup.",
+};
+
+/** Generus mengajukan izin/sakit untuk satu pertemuan; admin yang menyetujui. */
+export async function ajukanIzin(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
+  const generus = await getGenerusSaatIni();
+  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
+  if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu." };
+
+  const [kegiatanId, tanggal] = String(formData.get("kejadian") ?? "").split("|");
+  if (!/^[0-9a-f-]{36}$/.test(kegiatanId ?? "") || !/^\d{4}-\d{2}-\d{2}$/.test(tanggal ?? "")) {
+    return { galat: "Pilih pertemuan yang mau diizinkan." };
+  }
+  const jenis = formData.get("jenis");
+  if (jenis !== "izin" && jenis !== "sakit") return { galat: "Pilih izin atau sakit." };
+  const alasan = String(formData.get("alasan_izin") ?? "");
+  if (jenis === "izin" && !(alasan in LABEL_ALASAN_IZIN)) return { galat: "Pilih alasan izin." };
+  const keterangan = String(formData.get("keterangan") ?? "").trim().replace(/\s+/g, " ");
+  if (keterangan.length > 150) return { galat: "Keterangan maksimal 150 karakter." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("pengajuan_izin").insert({
+    jamaah_id: generus.jamaah.id,
+    kegiatan_id: kegiatanId,
+    tanggal,
+    jenis,
+    alasan_izin: jenis === "izin" ? alasan : null,
+    keterangan: jenis === "izin" && keterangan ? keterangan : null,
+  });
+  if (error?.code === "23505") return { galat: "Kamu sudah mengajukan izin untuk pertemuan ini." };
+  if (error) return { galat: PESAN_IZIN[error.hint ?? ""] ?? "Gagal mengirim. Coba lagi." };
+  refresh();
+  return { pesan: "Terkirim. Tunggu persetujuan admin, ya." };
+}
+
+/** Batalkan pengajuan izin yang masih menunggu. */
+export async function batalkanIzin(id: string): Promise<StateAksi> {
+  const generus = await getGenerusSaatIni();
+  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("pengajuan_izin").delete().eq("id", id).select("id");
+  if (error || !data?.length) return { galat: "Tidak bisa dibatalkan (mungkin sudah ditanggapi admin)." };
+  refresh();
+  return { pesan: "Pengajuan dibatalkan." };
 }
 
 export async function keluarGenerus() {

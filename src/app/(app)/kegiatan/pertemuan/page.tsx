@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DaftarPengajuan } from "@/components/absensi/daftar-pengajuan";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
+import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { bolehKelolaPertemuan, getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { aktifkanPertemuan, batalkanPertemuan, bukaAbsensiPertemuan, simpanPertemuan } from "@/lib/kegiatan/actions";
 import { getKalender } from "@/lib/kegiatan/data";
@@ -59,7 +61,7 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
 
   const supabase = await createClient();
   const kelola = bolehKelolaPertemuan(akses, k.kelompokId, k.kegiatan.hanya_generus);
-  const [{ data: muballigh }, ringkas] = await Promise.all([
+  const [{ data: muballigh }, ringkas, pengajuan] = await Promise.all([
     kelola
       ? supabase
           .from("jamaah")
@@ -72,6 +74,7 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
     k.sesiId
       ? supabase.from("absensi").select("status").eq("sesi_id", k.sesiId).returns<{ status: string }[]>()
       : Promise.resolve({ data: null }),
+    getPengajuanIzin({ kejadian: { kegiatanId, kelompokId: k.kelompokId, tanggal } }),
   ]);
   const namaKelompok = new Map(akses.kelompokFitur.map((x) => [x.id, x.nama]));
   const kunci = { kegiatanId, kelompokId: k.kelompokId, tanggal, mulaiJadwal: k.mulaiJadwal };
@@ -125,6 +128,15 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
             <TombolAksi aksi={bukaAbsensiPertemuan.bind(null, { ...kunci, mulai: k.mulai })} label="Buka absensi" varian="utama" />
           ) : null}
         </Card>
+      )}
+
+      {pengajuan.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="px-1 text-sm font-semibold text-muted">
+            Izin dari generus · {pengajuan.filter((p) => p.status === "menunggu").length} menunggu
+          </h2>
+          <DaftarPengajuan pengajuan={pengajuan} tampilkanKegiatan={false} />
+        </section>
       )}
 
       {kelola ? (
