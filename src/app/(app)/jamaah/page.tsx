@@ -139,6 +139,8 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
               <Plus className="size-4" aria-hidden />
               Tambah jamaah
             </Link>
+          ) : akses.kelompokUbah.length === 0 ? (
+            <Badge>Hanya lihat</Badge>
           ) : null
         }
       />
