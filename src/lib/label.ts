@@ -10,6 +10,20 @@ export const LABEL_STATUS_SEKOLAH: Record<string, string> = {
   lainnya: "Lainnya",
 };
 
+/** Rentang kelas per jenjang (SD 1–6, SMP 7–9, SMA/SMK 10–12). */
+export const RENTANG_KELAS: Record<string, [number, number]> = {
+  sd: [1, 6],
+  smp: [7, 9],
+  sma_smk: [10, 12],
+};
+
+/** "SD kelas 4", "SMA/SMK kelas 12", atau label status saja. */
+export function labelSekolah(status: string | null, kelas: number | null): string {
+  if (!status) return "Belum diisi";
+  const label = LABEL_STATUS_SEKOLAH[status] ?? status;
+  return kelas ? `${label} kelas ${kelas}` : label;
+}
+
 export const LABEL_STATUS_PERNIKAHAN: Record<string, string> = {
   lajang: "Lajang",
   menikah: "Menikah",

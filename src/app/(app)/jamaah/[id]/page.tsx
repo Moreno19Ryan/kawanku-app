@@ -40,7 +40,7 @@ import {
   LABEL_HUBUNGAN,
   LABEL_PENDIDIKAN,
   LABEL_STATUS_PERNIKAHAN,
-  LABEL_STATUS_SEKOLAH,
+  labelSekolah,
   labelJenisMuballigh,
   labelMuballigh,
 } from "@/lib/label";
@@ -63,6 +63,7 @@ type DetailJamaah = {
   status_pernikahan: string | null;
   status_sekolah: string | null;
   status_sekolah_diperbarui: string | null;
+  kelas: number | null;
   kelompok_id: string;
   kategori_jamaah_nama: string | null;
   termasuk_generus: boolean;
@@ -159,7 +160,7 @@ async function Detail({
     ? await supabase
         .from("jamaah_dengan_kategori")
         .select(
-          "id, kode, nama_lengkap, nama_panggilan, jenis_kelamin, tanggal_lahir, tahun_lahir, usia, status_pernikahan, status_sekolah, status_sekolah_diperbarui, kelompok_id, kategori_jamaah_nama, termasuk_generus, aktif, updated_at, tempat_lahir, pendidikan_terakhir, kegiatan, muballigh, jenis_muballigh, paket_caberawit, keluarga_id, hubungan_keluarga",
+          "id, kode, nama_lengkap, nama_panggilan, jenis_kelamin, tanggal_lahir, tahun_lahir, usia, status_pernikahan, status_sekolah, status_sekolah_diperbarui, kelas, kelompok_id, kategori_jamaah_nama, termasuk_generus, aktif, updated_at, tempat_lahir, pendidikan_terakhir, kegiatan, muballigh, jenis_muballigh, paket_caberawit, keluarga_id, hubungan_keluarga",
         )
         .eq("id", id)
         .maybeSingle<DetailJamaah>()
@@ -295,7 +296,7 @@ async function Detail({
             </Baris>
             <Baris label="Usia">{j.usia !== null ? `${j.usia} tahun` : "–"}</Baris>
             <Baris label="Status sekolah">
-              {j.status_sekolah ? LABEL_STATUS_SEKOLAH[j.status_sekolah] : "Belum diisi"}
+              {labelSekolah(j.status_sekolah, j.kelas)}
               {j.status_sekolah_diperbarui && (
                 <span className="block text-xs font-normal text-muted">
                   Diperbarui {tanggalPanjang(j.status_sekolah_diperbarui)}

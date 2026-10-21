@@ -13,6 +13,7 @@ import {
   LABEL_STATUS_PERNIKAHAN,
   LABEL_STATUS_SEKOLAH,
   PAKET_CABERAWIT,
+  RENTANG_KELAS,
   labelJenisMuballigh,
   labelMuballigh,
 } from "@/lib/label";
@@ -26,6 +27,7 @@ export type NilaiJamaah = {
   tahun_lahir: number | null;
   status_pernikahan: string | null;
   status_sekolah: string | null;
+  kelas: number | null;
   kelompok_id: string;
   tempat_lahir: string | null;
   pendidikan_terakhir: string | null;
@@ -213,6 +215,26 @@ export function FormJamaah({
             ))}
           </select>
         </Kolom>
+        {RENTANG_KELAS[p.status_sekolah ?? ""] && (
+          <Kolom label="Kelas" bantuan="Dinaikkan otomatis tiap tahun ajaran lewat Kenaikan kelas.">
+            <select
+              key={p.status_sekolah}
+              name="kelas"
+              defaultValue={nilai?.status_sekolah === p.status_sekolah ? (nilai?.kelas ?? "") : ""}
+              className={INPUT_CLASS}
+            >
+              <option value="">Belum tahu</option>
+              {Array.from(
+                { length: RENTANG_KELAS[p.status_sekolah!][1] - RENTANG_KELAS[p.status_sekolah!][0] + 1 },
+                (_, i) => RENTANG_KELAS[p.status_sekolah!][0] + i,
+              ).map((k) => (
+                <option key={k} value={k}>
+                  Kelas {k}
+                </option>
+              ))}
+            </select>
+          </Kolom>
+        )}
         <Kolom label="Status pernikahan" wajib>
           <select
             name="status_pernikahan"

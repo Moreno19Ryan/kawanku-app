@@ -57,7 +57,7 @@ async function Isi({ cari }: { cari: Promise<Record<string, string | string[] | 
     <div className="flex flex-col gap-5">
       <FilterLaporan param={param} wilayah={wilayah} />
 
-      <Card className="bg-primary-soft">
+      <section className="rounded-card bg-primary-soft p-5 sm:p-6">
         <h2 className="flex items-center gap-2 font-semibold text-primary">
           <Sparkles className="size-4" aria-hidden />
           Sorotan · {namaWilayah}
@@ -67,7 +67,7 @@ async function Isi({ cari }: { cari: Promise<Record<string, string | string[] | 
             <li key={s}>{s}</li>
           ))}
         </ul>
-      </Card>
+      </section>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Ubin

@@ -160,6 +160,7 @@ src/
       dashboard/page.tsx
       jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah),
                         # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin),
+                        # kenaikan-kelas/ (naik kelas tahunan per kelompok),
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
       absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
                         # akun/ (akun generus), rekap/ (pratinjau rekap bulanan/per kegiatan),
@@ -215,6 +216,7 @@ src/
       kategori.ts       # hitungUsia/cariKategori: pratinjau di form (sama dengan DB)
       format.ts         # formatNoHp, samarkan (server & klien)
       periksa.ts        # getPerluDicek: pemeriksaan kelengkapan data (server-only)
+      kenaikan.ts       # tahun ajaran & pilihan kenaikan kelas (murni); -data.ts, -actions.ts
     absensi/
       akses.ts          # getAksesAbsensi: izin per wilayah ∩ saklar fitur `absensi` (server-only)
       actions.ts        # Server Action sesi, catat kode/status, kartu QR, token layar
@@ -322,7 +324,9 @@ Sudah diputuskan Reno (21 Okt 2026):
   lansia) dan diubah admin desa lewat Pengaturan → Kategori jamaah (izin
   `pengaturan.kelola`) tanpa migrasi. Remaja dewasa tanpa batas atas umur.
 - **Pembaruan status sekolah tahunan** (sekitar Juli): tanggung jawab
-  **admin kelompok** untuk jamaah kelompoknya.
+  **admin kelompok** untuk jamaah kelompoknya, lewat kolom `kelas` + halaman
+  Jamaah → Kenaikan kelas (`docs/status-sekolah-tahunan.md`; jamaah naik
+  paling banyak sekali per tahun ajaran, dijaga `kelas_tahun`).
 - **Admin generus**: ada di tingkat desa **dan** per kelompok (skema dan
   akun produksi sudah mendukung keduanya).
 - **Alasan izin**: sekolah, kuliah, kerja, lainnya.
@@ -331,5 +335,3 @@ Sudah diputuskan Reno (21 Okt 2026):
 Masih dirangkai bersama (lalu dicocokkan dengan pengurus):
 
 1. **Detail hak akses** tiap peran: draf di `docs/hak-akses.md`.
-2. **Kolom `kelas`** + halaman kenaikan kelas tahunan untuk admin kelompok:
-   usulan di `docs/status-sekolah-tahunan.md`.
