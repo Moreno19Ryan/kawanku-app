@@ -72,7 +72,17 @@ sudah punya catatan.
    barcode USB (scanner mengetik token lalu Enter).
    - Kode jamaah `KW-XXXXXX` yang tercetak di kartu bisa diketik bila scan
      gagal.
-   - Hasilnya tampil besar, berwarna, dan berbunyi.
+   - Hasilnya tampil besar, berwarna, dan berbunyi (nada tinggi; bisa
+     dimatikan):
+
+     | Hasil | Bunyi | Layar |
+     | --- | --- | --- |
+     | Tercatat | 1 beep pendek | Hijau: "Alhamdulillah, kamu sudah tercatat hadir" |
+     | Sudah absen | 2 beep pendek | Biru: "Alhamdulillah, kamu sudah absen sebelumnya" + jam scan pertama |
+     | Gagal | 1 beep panjang | Merah, beserta alasannya |
+
+   - Scan ulang tidak mengubah catatan: yang tersimpan tetap waktu scan
+     pertama. Keterangan telat ditunda.
 4. **Daftar peserta**: ubah status (hadir / izin: kuliah, kerja, lainnya /
    sakit / belum tercatat).
 5. **Tutup sesi** setelah selesai.
