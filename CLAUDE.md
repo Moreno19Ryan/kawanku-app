@@ -13,7 +13,9 @@ cakupannya satu desa.
   Kelompok 1 (±100 orang).
 - **Istilah baku: Jamaah** (bukan "warga") di UI, kode, dan database.
 - **Peran**: admin desa (seluruh desa), admin kelompok (kelompoknya saja), admin
-  generus (jamaah generus, di tingkat desa atau tingkat kelompok). Peran dan
+  generus (jamaah generus, di tingkat desa atau tingkat kelompok), dan
+  pengembang (sistem & pemulihan akses, tanpa data jamaah; lihat
+  `docs/peran-pengembang.md`). Peran dan
   hak akses disimpan sebagai **data** di database, bukan di-hardcode: wilayah
   (`penugasan_peran.kelompok_id`, kosong = seluruh desa) dan sasaran
   (`peran.hanya_generus`) adalah dua sumbu terpisah.
@@ -78,6 +80,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   hanya untuk Supabase Auth Admin API dan hanya setelah izin `akses.kelola`
   dicek; profil `admin` & `penugasan_peran` tetap ditulis dengan sesi
   pengguna (RLS). Kata sandi sementara ditampilkan sekali, tidak disimpan.
+- Peran/akun "tingkat sistem" (memegang `sistem.kelola`, yaitu pengembang)
+  hanya bisa diubah pemegang `sistem.kelola` (dijaga RLS). Sebelum memakai
+  secret key untuk akun lain, cek dulu dengan `terlindungSistem()`.
 - Pengaman "jangan sampai tidak ada admin pengelola akses" (tidak bisa
   menonaktifkan diri sendiri / mencabut peran pengelola terakhir) saat ini
   dicek di Server Action, belum di database.

@@ -11,7 +11,7 @@ import { TombolAturUlangSandi } from "@/components/pengaturan/tombol-atur-ulang-
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { wajibIzin } from "@/lib/auth/admin";
+import { punyaIzin, wajibIzin } from "@/lib/auth/admin";
 import {
   aturUlangKataSandi,
   hapusPenugasan,
@@ -33,10 +33,17 @@ type BarisAdmin = {
   aktif: boolean;
   penugasan_peran: {
     id: string;
-    peran: { nama: string } | null;
+    peran: { nama: string; peran_izin: { izin_kode: string }[] } | null;
     kelompok: { nama: string } | null;
   }[];
 };
+
+type BarisPeran = OpsiPeran & { peran_izin: { izin_kode: string }[] };
+
+/** Peran tingkat sistem (pengembang) = memegang izin sistem.kelola. */
+const IZIN_SISTEM = "sistem.kelola";
+const tingkatSistem = (izin: { izin_kode: string }[] | undefined) =>
+  Boolean(izin?.some((i) => i.izin_kode === IZIN_SISTEM));
 
 export default function AdminPage() {
   return (
@@ -60,17 +67,30 @@ async function DaftarAdmin() {
   const [{ data: admin }, { data: peran }, { data: kelompok }] = await Promise.all([
     supabase
       .from("admin")
-      .select("user_id, nama, aktif, penugasan_peran(id, peran(nama), kelompok(nama))")
+      .select(
+        "user_id, nama, aktif, penugasan_peran(id, peran(nama, peran_izin(izin_kode)), kelompok(nama))",
+      )
       .order("aktif", { ascending: false })
       .order("nama")
       .returns<BarisAdmin[]>(),
-    supabase.from("peran").select("id, nama, wilayah").order("nama").returns<OpsiPeran[]>(),
+    supabase
+      .from("peran")
+      .select("id, nama, wilayah, peran_izin(izin_kode)")
+      .order("nama")
+      .returns<BarisPeran[]>(),
     supabase.from("kelompok").select("id, nama").eq("aktif", true).order("nomor"),
   ]);
 
   if (!admin || !peran || !kelompok) {
     return <Card className="text-sm text-danger">Gagal memuat daftar admin. Muat ulang halaman.</Card>;
   }
+
+  // Akun & peran tingkat sistem hanya dikelola pemegang sistem.kelola
+  // (dijaga RLS; di sini supaya tombolnya tidak ditawarkan).
+  const sayaSistem = punyaIzin(saya, IZIN_SISTEM);
+  const pilihanPeran: OpsiPeran[] = peran
+    .filter((p) => sayaSistem || !tingkatSistem(p.peran_izin))
+    .map(({ id, nama, wilayah }) => ({ id, nama, wilayah }));
 
   // Secret key hanya dipakai di sini SETELAH wajibIzin("akses.kelola") di atas.
   const adminAuth = createAdminClient();
@@ -91,7 +111,7 @@ async function DaftarAdmin() {
             Aplikasi membuat kata sandi sementara. Sampaikan ke pemiliknya, lalu ia menggantinya
             sendiri setelah login.
           </p>
-          <FormBuatAdmin peran={peran} kelompok={kelompok} />
+          <FormBuatAdmin peran={pilihanPeran} kelompok={kelompok} />
         </Card>
       ) : (
         <Card className="bg-primary-soft text-sm text-primary shadow-none">
@@ -103,6 +123,8 @@ async function DaftarAdmin() {
       <ul className="flex flex-col gap-3">
         {admin.map((a) => {
           const diriSendiri = a.user_id === saya.userId;
+          const akunSistem = a.penugasan_peran.some((p) => tingkatSistem(p.peran?.peran_izin));
+          const bolehKelola = sayaSistem || !akunSistem;
           return (
             <li key={a.user_id}>
               <Card className={a.aktif ? "" : "opacity-75"}>
@@ -121,8 +143,13 @@ async function DaftarAdmin() {
                     {akun.has(a.user_id) && (
                       <InfoAkun {...akun.get(a.user_id)!} />
                     )}
+                    {!bolehKelola && (
+                      <p className="mt-1 text-xs text-muted">
+                        Akun pengembang: hanya bisa diubah oleh pengembang.
+                      </p>
+                    )}
                   </div>
-                  {!diriSendiri && (
+                  {!diriSendiri && bolehKelola && (
                     <TombolAksi
                       aksi={ubahStatusAdmin.bind(null, a.user_id, !a.aktif)}
                       label={a.aktif ? "Nonaktifkan" : "Aktifkan"}
@@ -156,45 +183,51 @@ async function DaftarAdmin() {
                             {p.kelompok?.nama ?? "Seluruh desa"}
                           </span>
                         </span>
-                        <TombolAksi
-                          aksi={hapusPenugasan.bind(null, p.id)}
-                          label="Cabut"
-                          varian="netral"
-                          konfirmasi={`Cabut peran ${p.peran?.nama ?? ""} dari ${a.nama}?`}
-                        />
+                        {bolehKelola && (
+                          <TombolAksi
+                            aksi={hapusPenugasan.bind(null, p.id)}
+                            label="Cabut"
+                            varian="netral"
+                            konfirmasi={`Cabut peran ${p.peran?.nama ?? ""} dari ${a.nama}?`}
+                          />
+                        )}
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-2">
-                    <FormTambahPenugasan
-                      aksi={tambahPenugasan.bind(null, a.user_id)}
-                      peran={peran}
-                      kelompok={kelompok}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
-                  <details>
-                    <summary className="w-fit cursor-pointer list-none rounded-pill text-sm font-medium text-primary hover:underline">
-                      Ubah nama
-                    </summary>
-                    <div className="mt-2 max-w-md">
-                      <FormUbahNama
-                        aksi={ubahNamaAdmin.bind(null, a.user_id)}
-                        nama={a.nama}
-                        label={`Nama ${a.nama}`}
-                        maxLength={80}
+                  {bolehKelola && (
+                    <div className="mt-2">
+                      <FormTambahPenugasan
+                        aksi={tambahPenugasan.bind(null, a.user_id)}
+                        peran={pilihanPeran}
+                        kelompok={kelompok}
                       />
                     </div>
-                  </details>
-                  {adminAuth && !diriSendiri && (
-                    <TombolAturUlangSandi
-                      aksi={aturUlangKataSandi.bind(null, a.user_id)}
-                      nama={a.nama}
-                    />
                   )}
                 </div>
+
+                {bolehKelola && (
+                  <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
+                    <details>
+                      <summary className="w-fit cursor-pointer list-none rounded-pill text-sm font-medium text-primary hover:underline">
+                        Ubah nama
+                      </summary>
+                      <div className="mt-2 max-w-md">
+                        <FormUbahNama
+                          aksi={ubahNamaAdmin.bind(null, a.user_id)}
+                          nama={a.nama}
+                          label={`Nama ${a.nama}`}
+                          maxLength={80}
+                        />
+                      </div>
+                    </details>
+                    {adminAuth && !diriSendiri && (
+                      <TombolAturUlangSandi
+                        aksi={aturUlangKataSandi.bind(null, a.user_id)}
+                        nama={a.nama}
+                      />
+                    )}
+                  </div>
+                )}
               </Card>
             </li>
           );
