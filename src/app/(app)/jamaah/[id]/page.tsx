@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { CircleCheck } from "lucide-react";
+import { CircleAlert, CircleCheck } from "lucide-react";
 import { FormJamaah } from "@/components/jamaah/form-jamaah";
 import {
   FormIdentitas,
@@ -29,6 +29,7 @@ import {
 } from "@/lib/jamaah/actions";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { formatNoHp } from "@/lib/jamaah/format";
+import { cariPemeriksaan, getPerluDicek } from "@/lib/jamaah/periksa";
 import {
   LABEL_PENDIDIKAN,
   LABEL_STATUS_PERNIKAHAN,
@@ -201,6 +202,9 @@ async function Detail({
   const bolehUbah = akses.kelompokUbah.some((k) => k.id === j.kelompok_id);
   const keringananAktif = Boolean(keringanan?.aktif);
   const baru = cari.baru === "1";
+  const perluDicek = ((await getPerluDicek())?.perJamaah.get(j.id) ?? [])
+    .map(cariPemeriksaan)
+    .filter((p) => p !== undefined);
 
   return (
     <>
@@ -208,6 +212,22 @@ async function Detail({
         title={j.nama_lengkap}
         description={j.nama_panggilan ? `Dipanggil ${j.nama_panggilan}` : undefined}
       />
+
+      {perluDicek.length > 0 && (
+        <Card className="mb-4 flex items-start gap-3 bg-warning/10 sm:mb-6">
+          <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
+          <div className="text-sm">
+            <p className="font-semibold">Perlu dicek</p>
+            <ul className="mt-1 list-disc pl-4 text-muted">
+              {perluDicek.map((p) => (
+                <li key={p.kode}>
+                  <span className="font-medium text-fg">{p.judul}.</span> {p.saran}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+      )}
 
       {baru && (
         <Card className="mb-4 flex items-center gap-3 bg-success/10 text-sm sm:mb-6">

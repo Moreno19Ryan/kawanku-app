@@ -126,7 +126,8 @@ src/
       error.tsx         # galat tak terduga: coba lagi + kontak pengembang
     api/wilayah/        # GET daftar wilayah di bawah kode induk (untuk PilihWilayah)
       dashboard/page.tsx
-      jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah)
+      jamaah/           # daftar + cari/filter, baru/ (tambah), [id]/ (detail & ubah),
+                        # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,
                         # bantuan (difilter izin)
@@ -162,6 +163,7 @@ src/
       actions.ts        # Server Action tambah/ubah/status/hapus, keringanan, janda/duda
       kategori.ts       # hitungUsia/cariKategori: pratinjau di form (sama dengan DB)
       format.ts         # formatNoHp, samarkan (server & klien)
+      periksa.ts        # getPerluDicek: pemeriksaan kelengkapan data (server-only)
     wilayah/            # kode wilayah Kemendagri (data statis) + anakWilayah/namaLengkapWilayah
     sistem/
       data.ts           # status perawatan, pengumuman tayang, fitur (server-only, fail-open)
