@@ -105,6 +105,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Pengaman "jangan sampai tidak ada admin pengelola akses" (tidak bisa
   menonaktifkan diri sendiri / mencabut peran pengelola terakhir) saat ini
   dicek di Server Action, belum di database.
+- Pengaman pengembang dijaga database (migrasi `20261022110000_jaga_pengembang`):
+  peran tingkat sistem milik sendiri tidak bisa dicabut, dan pemegang
+  `sistem.kelola` aktif terakhir tidak bisa dicabut/dipindah/dinonaktifkan
+  (trigger `jaga_penugasan_sistem` / `jaga_admin_sistem`, hint
+  `pengembang_sendiri`/`pengembang_terakhir`).
 - Modul Jamaah (`/jamaah`) dibuka per kelompok lewat saklar fitur `jamaah`
   (panel pengembang) dan izin `jamaah.lihat` (termasuk peran generus, lewat
   `admin.izinWilayah`). Menu bersyarat dihitung di server (`nav-terbuka.tsx`);

@@ -226,13 +226,23 @@ async function DaftarAdmin() {
                             {p.kelompok?.nama ?? "Seluruh desa"}
                           </span>
                         </span>
-                        {bolehKelola && bolehBeri(p.peran_id, p.kelompok_id) && (
-                          <TombolAksi
-                            aksi={hapusPenugasan.bind(null, p.id)}
-                            label="Cabut"
-                            varian="netral"
-                            konfirmasi={`Cabut peran ${p.peran?.nama ?? ""} dari ${a.nama}?`}
-                          />
+                        {diriSendiri && tingkatSistem(p.peran?.peran_izin) ? (
+                          // Dijaga juga di database (jaga_penugasan_sistem).
+                          <span className="pr-2.5 text-xs text-muted">Tidak bisa dicabut sendiri</span>
+                        ) : (
+                          bolehKelola &&
+                          bolehBeri(p.peran_id, p.kelompok_id) && (
+                            <TombolAksi
+                              aksi={hapusPenugasan.bind(null, p.id)}
+                              label="Cabut"
+                              varian="netral"
+                              konfirmasi={
+                                tingkatSistem(p.peran?.peran_izin)
+                                  ? `Cabut peran ${p.peran?.nama ?? ""} dari ${a.nama}? Ia tidak bisa lagi mengelola sistem KawanKu.`
+                                  : `Cabut peran ${p.peran?.nama ?? ""} dari ${a.nama}?`
+                              }
+                            />
+                          )
                         )}
                       </li>
                     ))}
