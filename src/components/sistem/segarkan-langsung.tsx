@@ -23,6 +23,8 @@ const TABEL = [
   "kegiatan",
   "kegiatan_jadwal",
   "pertemuan",
+  "pertemuan_materi",
+  "pengajar",
   "pengumuman",
   "pengajuan_izin",
   "usulan_koreksi",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { useFormAksi } from "@/components/pengaturan/use-form-aksi";
 import { buttonClass } from "@/components/ui/button";
@@ -10,50 +11,119 @@ import type { StateAksi } from "@/lib/pengaturan/actions";
 type Aksi = (prev: StateAksi, formData: FormData) => Promise<StateAksi>;
 const LABEL = "text-sm font-medium";
 
-/** Pemateri (muballigh dari data jamaah, atau ketik), materi, catatan, pindah waktu. */
+export type PilihanPemateri = { nilai: string; label: string };
+export type SesiAwal = { pilih: string; nama: string; materi: string };
+type Sesi = SesiAwal & { kunci: number };
+
+const MAKS_SESI = 10;
+
+/**
+ * Sesi-sesi pertemuan (pemateri dari daftar pengajar rutin / muballigh data
+ * jamaah / ketik nama, beserta materinya), catatan, dan pindah waktu.
+ */
 export function FormPertemuan({
   aksi,
+  pengajar,
   muballigh,
   awal,
 }: {
   aksi: Aksi;
-  muballigh: { id: string; label: string }[];
-  awal: { pemateriId: string | null; pemateri: string | null; materi: string | null; catatan: string | null; mulai: string };
+  pengajar: PilihanPemateri[];
+  muballigh: PilihanPemateri[];
+  awal: { sesi: SesiAwal[]; catatan: string | null; mulai: string };
 }) {
   const [state, onSubmit, pending] = useFormAksi(aksi);
-  const [pilih, setPilih] = useState(awal.pemateriId ?? (awal.pemateri ? "lain" : ""));
+  const [sesi, setSesi] = useState<Sesi[]>(() =>
+    (awal.sesi.length ? awal.sesi : [{ pilih: "", nama: "", materi: "" }]).map((x, i) => ({ ...x, kunci: i })),
+  );
+  const ubah = (kunci: number, isi: Partial<SesiAwal>) =>
+    setSesi((d) => d.map((x) => (x.kunci === kunci ? { ...x, ...isi } : x)));
+  const banyak = sesi.length > 1;
+
   return (
     <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
-      <label className="flex flex-col gap-1.5">
-        <span className={LABEL}>Pemateri</span>
-        <select name="pemateri_id" value={pilih} onChange={(e) => setPilih(e.target.value)} className={INPUT_CLASS}>
-          <option value="">Belum ditentukan</option>
-          {muballigh.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-          <option value="lain">Lainnya (ketik nama)…</option>
-        </select>
-      </label>
-      {pilih === "lain" ? (
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL}>Nama pemateri</span>
-          <input name="pemateri_nama" required maxLength={120} defaultValue={awal.pemateri ?? ""} className={INPUT_CLASS} />
-        </label>
-      ) : (
-        <div className="hidden sm:block" />
+      <input type="hidden" name="sesi" value={JSON.stringify(sesi.map(({ pilih, nama, materi }) => ({ pilih, nama, materi })))} />
+      <ol className="flex flex-col gap-3 sm:col-span-2">
+        {sesi.map((x, i) => (
+          <li key={x.kunci} className="flex flex-col gap-3 rounded-card bg-surface-muted p-4">
+            {banyak && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-muted">Sesi {i + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => setSesi((d) => d.filter((y) => y.kunci !== x.kunci))}
+                  className="text-sm font-medium text-danger"
+                >
+                  Hapus sesi
+                </button>
+              </div>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className={LABEL}>Pemateri</span>
+                <select value={x.pilih} onChange={(e) => ubah(x.kunci, { pilih: e.target.value })} className={INPUT_CLASS}>
+                  <option value="">Belum ditentukan</option>
+                  {pengajar.length > 0 && (
+                    <optgroup label="Pengajar rutin">
+                      {pengajar.map((m) => (
+                        <option key={m.nilai} value={m.nilai}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {muballigh.length > 0 && (
+                    <optgroup label="Muballigh (data jamaah)">
+                      {muballigh.map((m) => (
+                        <option key={m.nilai} value={m.nilai}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <option value="lain">Lainnya (ketik nama)…</option>
+                </select>
+              </label>
+              {x.pilih === "lain" ? (
+                <label className="flex flex-col gap-1.5">
+                  <span className={LABEL}>Nama pemateri</span>
+                  <input
+                    required
+                    maxLength={120}
+                    value={x.nama}
+                    onChange={(e) => ubah(x.kunci, { nama: e.target.value })}
+                    className={INPUT_CLASS}
+                  />
+                </label>
+              ) : (
+                <div className="hidden sm:block" />
+              )}
+              <label className="flex flex-col gap-1.5 sm:col-span-2">
+                <span className={LABEL}>Materi</span>
+                <input
+                  maxLength={300}
+                  value={x.materi}
+                  onChange={(e) => ubah(x.kunci, { materi: e.target.value })}
+                  placeholder="mis. Hadits Bab Sholat, Makna Quran Juz 3"
+                  className={INPUT_CLASS}
+                />
+              </label>
+            </div>
+          </li>
+        ))}
+      </ol>
+      {sesi.length < MAKS_SESI && (
+        <button
+          type="button"
+          onClick={() =>
+            setSesi((d) => [...d, { pilih: "", nama: "", materi: "", kunci: Math.max(...d.map((y) => y.kunci), 0) + 1 }])
+          }
+          className={buttonClass("kedua", "justify-self-start sm:col-span-2")}
+        >
+          <Plus className="size-4" aria-hidden />
+          Tambah pemateri / sesi
+        </button>
       )}
-      <label className="flex flex-col gap-1.5 sm:col-span-2">
-        <span className={LABEL}>Materi</span>
-        <input
-          name="materi"
-          maxLength={300}
-          defaultValue={awal.materi ?? ""}
-          placeholder="mis. Hadits Bab Sholat, Makna Quran Juz 3"
-          className={INPUT_CLASS}
-        />
-      </label>
       <label className="flex flex-col gap-1.5 sm:col-span-2">
         <span className={LABEL}>
           Catatan <span className="font-normal text-muted">(opsional)</span>

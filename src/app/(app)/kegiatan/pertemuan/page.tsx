@@ -61,7 +61,8 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
 
   const supabase = await createClient();
   const kelola = bolehKelolaPertemuan(akses, k.kelompokId, k.kegiatan.hanya_generus);
-  const [{ data: muballigh }, ringkas, pengajuan] = await Promise.all([
+  const idPertemuan = k.tersimpan?.id ?? null;
+  const [{ data: muballigh }, ringkas, pengajuan, { data: pengajar }, { data: sesiTersimpan }] = await Promise.all([
     kelola
       ? supabase
           .from("jamaah")
@@ -75,7 +76,47 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
       ? supabase.from("absensi").select("status").eq("sesi_id", k.sesiId).returns<{ status: string }[]>()
       : Promise.resolve({ data: null }),
     getPengajuanIzin({ kejadian: { kegiatanId, kelompokId: k.kelompokId, tanggal } }),
+    kelola
+      ? (k.kelompokId
+          ? supabase.from("pengajar").select("id, nama, keterangan").or(`kelompok_id.is.null,kelompok_id.eq.${k.kelompokId}`)
+          : supabase.from("pengajar").select("id, nama, keterangan")
+        )
+          .eq("aktif", true)
+          .order("nama")
+          .returns<{ id: string; nama: string; keterangan: string | null }[]>()
+      : Promise.resolve({ data: [] }),
+    idPertemuan
+      ? supabase
+          .from("pertemuan_materi")
+          .select("pengajar_id, pemateri_jamaah_id, pemateri_nama, materi")
+          .eq("pertemuan_id", idPertemuan)
+          .order("urutan")
+          .returns<{ pengajar_id: string | null; pemateri_jamaah_id: string | null; pemateri_nama: string | null; materi: string | null }[]>()
+      : Promise.resolve({ data: [] }),
   ]);
+  const pilihanPengajar = (pengajar ?? []).map((g) => ({
+    nilai: `p:${g.id}`,
+    label: g.keterangan ? `${g.nama} (${g.keterangan})` : g.nama,
+  }));
+  const pilihanMuballigh = (muballigh ?? []).map((m) => ({
+    nilai: `j:${m.id}`,
+    label: `${m.nama_lengkap}${m.jenis_muballigh ? ` (${labelJenisMuballigh(m.jenis_muballigh, m.jenis_kelamin)})` : ""}${
+      m.kelompok ? ` · ${m.kelompok.nama}` : ""
+    }`,
+  }));
+  const adaPilihan = new Set([...pilihanPengajar, ...pilihanMuballigh].map((x) => x.nilai));
+  // Pilihan yang sudah tidak ada di daftar (mis. pengajar dinonaktifkan) → tampil sebagai nama ketikan.
+  const keSesi = (pilih: string, nama: string | null, materi: string | null) =>
+    adaPilihan.has(pilih)
+      ? { pilih, nama: "", materi: materi ?? "" }
+      : { pilih: nama ? "lain" : "", nama: nama ?? "", materi: materi ?? "" };
+  const sesiAwal = (sesiTersimpan ?? []).length
+    ? (sesiTersimpan ?? []).map((x) =>
+        keSesi(x.pengajar_id ? `p:${x.pengajar_id}` : x.pemateri_jamaah_id ? `j:${x.pemateri_jamaah_id}` : "", x.pemateri_nama, x.materi),
+      )
+    : k.pemateri || k.materi
+      ? [keSesi(k.pemateriJamaahId ? `j:${k.pemateriJamaahId}` : "", k.pemateri, k.materi)]
+      : [];
   const namaKelompok = new Map(akses.kelompokFitur.map((x) => [x.id, x.nama]));
   const kunci = { kegiatanId, kelompokId: k.kelompokId, tanggal, mulaiJadwal: k.mulaiJadwal };
   const bolehAbsensi = bolehBukaAbsensi(aksesAbsensi, k.kelompokId);
@@ -150,29 +191,32 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
           <h2 className="font-semibold">Pemateri & materi</h2>
           <FormPertemuan
             aksi={simpanPertemuan.bind(null, kunci)}
-            muballigh={(muballigh ?? []).map((m) => ({
-              id: m.id,
-              label: `${m.nama_lengkap}${m.jenis_muballigh ? ` (${labelJenisMuballigh(m.jenis_muballigh, m.jenis_kelamin)})` : ""}${
-                m.kelompok ? ` · ${m.kelompok.nama}` : ""
-              }`,
-            }))}
-            awal={{
-              pemateriId: k.pemateriJamaahId,
-              pemateri: k.pemateri,
-              materi: k.materi,
-              catatan: k.catatan,
-              mulai: keInputWib(k.mulai),
-            }}
+            pengajar={pilihanPengajar}
+            muballigh={pilihanMuballigh}
+            awal={{ sesi: sesiAwal, catatan: k.catatan, mulai: keInputWib(k.mulai) }}
           />
         </Card>
       ) : (
         <Card className="flex flex-col gap-2 text-sm">
-          <p>
-            <span className="text-muted">Pemateri:</span> {k.pemateri ?? "Belum diisi"}
-          </p>
-          <p>
-            <span className="text-muted">Materi:</span> {k.materi ?? "Belum diisi"}
-          </p>
+          {(sesiTersimpan ?? []).length > 1 ? (
+            <ol className="flex list-decimal flex-col gap-1 pl-5">
+              {(sesiTersimpan ?? []).map((x, i) => (
+                <li key={i}>
+                  <span className="font-medium">{x.pemateri_nama ?? "Pemateri belum diisi"}</span>
+                  {x.materi && <span className="text-muted"> · {x.materi}</span>}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <>
+              <p>
+                <span className="text-muted">Pemateri:</span> {k.pemateri ?? "Belum diisi"}
+              </p>
+              <p>
+                <span className="text-muted">Materi:</span> {k.materi ?? "Belum diisi"}
+              </p>
+            </>
+          )}
           {k.catatan && (
             <p>
               <span className="text-muted">Catatan:</span> {k.catatan}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CalendarClock, Megaphone, Settings2 } from "lucide-react";
+import { CalendarClock, GraduationCap, Megaphone, Settings2 } from "lucide-react";
 import { DaftarKejadian, hrefPertemuan } from "@/components/kegiatan/daftar-kejadian";
 import { KegiatanBelumMenyala } from "@/components/kegiatan/belum-menyala";
 import { PageHeader } from "@/components/layout/page-header";
@@ -65,6 +65,10 @@ async function Kalender({ cari }: { cari: Promise<Cari> }) {
               <Link href="/kegiatan/pengumuman" className={buttonClass("kedua")}>
                 <Megaphone className="size-4" aria-hidden />
                 Pengumuman generus
+              </Link>
+              <Link href="/kegiatan/pengajar" className={buttonClass("kedua")}>
+                <GraduationCap className="size-4" aria-hidden />
+                Pengajar
               </Link>
               <Link href="/kegiatan/kelola" className={buttonClass("kedua")}>
                 <Settings2 className="size-4" aria-hidden />

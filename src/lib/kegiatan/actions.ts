@@ -170,41 +170,98 @@ async function simpan(k: KunciPertemuan, isi: Record<string, unknown>) {
   let q = supabase.from("pertemuan").select("id").eq("kegiatan_id", k.kegiatanId).eq("tanggal", k.tanggal);
   q = kelompokId ? q.eq("kelompok_id", kelompokId) : q.is("kelompok_id", null);
   const { data: ada } = await q.maybeSingle();
-  const { error } = ada
-    ? await supabase.from("pertemuan").update(isi).eq("id", ada.id)
+  const { data, error } = ada
+    ? await supabase.from("pertemuan").update(isi).eq("id", ada.id).select("id").maybeSingle()
     : await supabase
         .from("pertemuan")
-        .insert({ kegiatan_id: k.kegiatanId, kelompok_id: kelompokId, tanggal: k.tanggal, mulai: k.mulaiJadwal, ...isi });
-  return { error: Boolean(error) };
+        .insert({ kegiatan_id: k.kegiatanId, kelompok_id: kelompokId, tanggal: k.tanggal, mulai: k.mulaiJadwal, ...isi })
+        .select("id")
+        .maybeSingle();
+  return { error: Boolean(error) || !data, id: data?.id as string | undefined };
 }
 
-/** Isi pemateri, materi, catatan, dan (opsional) pindah waktu. */
+/** Satu sesi dalam pertemuan dari form: pilihan "p:<pengajar>", "j:<jamaah>", "lain", atau kosong. */
+type IsiSesi = { pengajar_id?: string; jamaah_id?: string; nama?: string; materi?: string };
+
+function bacaSesi(fd: FormData): IsiSesi[] | { galat: string } {
+  let mentah: unknown;
+  try {
+    mentah = JSON.parse(String(fd.get("sesi") ?? "[]"));
+  } catch {
+    return { galat: "Isian pemateri tidak terbaca. Muat ulang halaman." };
+  }
+  if (!Array.isArray(mentah)) return { galat: "Isian pemateri tidak terbaca." };
+  if (mentah.length > 10) return { galat: "Maksimal 10 sesi dalam satu pertemuan." };
+  const hasil: IsiSesi[] = [];
+  for (const b of mentah as { pilih?: string; nama?: string; materi?: string }[]) {
+    const pilih = String(b.pilih ?? "");
+    const nama = String(b.nama ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+    const materi = String(b.materi ?? "").trim().replace(/\s+/g, " ").slice(0, 300);
+    const id = pilih.slice(2);
+    if (pilih.startsWith("p:") && /^[0-9a-f-]{36}$/.test(id)) hasil.push({ pengajar_id: id, materi });
+    else if (pilih.startsWith("j:") && /^[0-9a-f-]{36}$/.test(id)) hasil.push({ jamaah_id: id, materi });
+    else if (pilih === "lain" && !nama) return { galat: "Tulis nama pemateri yang dipilih \u201cLainnya\u201d." };
+    else hasil.push({ nama: pilih === "lain" ? nama : "", materi });
+  }
+  return hasil;
+}
+
+/** Isi sesi-sesi (pemateri & materi), catatan, dan (opsional) pindah waktu. */
 export async function simpanPertemuan(k: KunciPertemuan, _prev: StateAksi, fd: FormData): Promise<StateAksi> {
   const ctx = await konteks();
   if (!ctx) return TIDAK_BERHAK;
-  const pilih = String(fd.get("pemateri_id") ?? "");
-  let pemateriId: string | null = null;
-  let pemateriNama = teks(fd, "pemateri_nama", 120);
-  if (pilih && pilih !== "lain") {
-    const { data: j } = await ctx.supabase.from("jamaah").select("id, nama_lengkap").eq("id", pilih).maybeSingle();
-    if (j) {
-      pemateriId = j.id;
-      pemateriNama = j.nama_lengkap;
-    }
-  }
+  const sesi = bacaSesi(fd);
+  if ("galat" in sesi) return sesi;
   const isiMulai = String(fd.get("mulai") ?? "");
   const mulai = isiMulai ? dariInputWib(isiMulai) : k.mulaiJadwal;
   if (!mulai) return { galat: "Waktu pertemuan tidak valid." };
-  const { error } = await simpan(k, {
-    pemateri_jamaah_id: pemateriId,
-    pemateri_nama: pemateriNama,
-    materi: teks(fd, "materi", 300),
-    catatan: teks(fd, "catatan", 1000),
-    mulai,
-  });
-  if (error) return GAGAL;
+  const { error, id } = await simpan(k, { catatan: teks(fd, "catatan", 1000), mulai });
+  if (error || !id) return GAGAL;
+  const { error: galatSesi } = await ctx.supabase.rpc("simpan_materi_pertemuan", { p_pertemuan: id, p_sesi: sesi });
+  if (galatSesi) return { galat: "Pemateri gagal disimpan. Pastikan pengajar yang dipilih masih ada, lalu coba lagi." };
   refresh();
   return { pesan: "Tersimpan." };
+}
+
+// ---------------------------------------------------------------------
+// Pengajar rutin (daftar pilihan pemateri; batas = RLS)
+// ---------------------------------------------------------------------
+
+export async function tambahPengajar(_prev: StateAksi, fd: FormData): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const nama = teks(fd, "nama", 120);
+  if (!nama) return { galat: "Isi nama pengajar." };
+  const wilayah = String(fd.get("wilayah") ?? "");
+  const bolehDesa = ctx.akses.kelolaDesa && wilayah === "desa";
+  if (!bolehDesa && !ctx.akses.kelompokKelola.some((x) => x.id === wilayah)) return { galat: "Pilih wilayah pengajar." };
+  const { error } = await ctx.supabase.from("pengajar").insert({
+    nama,
+    keterangan: teks(fd, "keterangan", 120),
+    kelompok_id: wilayah === "desa" ? null : wilayah,
+  });
+  if (error?.code === "23505") return { galat: `"${nama}" sudah ada di daftar wilayah ini.` };
+  if (error) return GAGAL;
+  refresh();
+  return { pesan: `${nama} ditambahkan.` };
+}
+
+export async function aturPengajarAktif(id: string, aktif: boolean): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const { data, error } = await ctx.supabase.from("pengajar").update({ aktif }).eq("id", id).select("id");
+  if (error || !data?.length) return TIDAK_BERHAK;
+  refresh();
+  return {};
+}
+
+export async function hapusPengajar(id: string): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const { data, error } = await ctx.supabase.from("pengajar").delete().eq("id", id).select("id");
+  if (error || !data?.length) return TIDAK_BERHAK;
+  refresh();
+  return {};
 }
 
 export async function batalkanPertemuan(k: KunciPertemuan, _prev: StateAksi, fd: FormData): Promise<StateAksi> {
