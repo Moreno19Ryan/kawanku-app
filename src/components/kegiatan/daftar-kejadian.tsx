@@ -72,10 +72,14 @@ export function DaftarKejadian({
                         <span>{k.alasanBatal}</span>
                       ) : (
                         <>
-                          <span className="inline-flex items-center gap-1">
-                            <UserRound className="size-3.5" aria-hidden />
-                            {k.pemateri ?? "Pemateri belum diisi"}
-                          </span>
+                          {/* "Belum diisi" hanya untuk pengurus (yang bisa mengisinya);
+                              generus cukup melihat pemateri bila sudah ada. */}
+                          {(k.pemateri || tautan) && (
+                            <span className="inline-flex items-center gap-1">
+                              <UserRound className="size-3.5" aria-hidden />
+                              {k.pemateri ?? "Pemateri belum diisi"}
+                            </span>
+                          )}
                           {k.materi && <span className="truncate">· {k.materi}</span>}
                           {k.kegiatan.lokasi && (
                             <span className="inline-flex items-center gap-1">
