@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { ChartColumn, ChartLine, ChevronRight, IdCard, MailQuestion, UserRound } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { FormSesi } from "@/components/absensi/form-sesi";
+import { PertemuanHariIni } from "@/components/absensi/pertemuan-hari-ini";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
@@ -100,6 +101,8 @@ async function DaftarSesi() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PertemuanHariIni />
+
       <Link
         href="/absensi/izin"
         className="flex items-center gap-3 rounded-card bg-surface p-5 transition-colors duration-200 ease-oneui hover:bg-surface-muted"
@@ -116,12 +119,25 @@ async function DaftarSesi() {
 
       {akses.targetSesi.length > 0 && (
         <Card>
-          <h2 className="mb-4 font-semibold">Buat sesi baru</h2>
-          <FormSesi
-            aksi={buatSesi}
-            target={akses.targetSesi}
-            awal={{ nama: "", mulai: keInputWib(new Date().toISOString()), selesai: "" }}
-          />
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-3">
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Acara di luar jadwal?</span>
+                <span className="block text-sm text-muted">
+                  Pengajian rutin & agenda dibuka dari daftar pertemuan di atas (atau dari Kegiatan) supaya masuk
+                  laporan per kegiatan. Buat sesi manual hanya untuk acara yang tidak ada di jadwal.
+                </span>
+              </span>
+              <ChevronRight className="size-5 shrink-0 text-muted transition-transform group-open:rotate-90" aria-hidden />
+            </summary>
+            <div className="mt-5">
+              <FormSesi
+                aksi={buatSesi}
+                target={akses.targetSesi}
+                awal={{ nama: "", mulai: keInputWib(new Date().toISOString()), selesai: "" }}
+              />
+            </div>
+          </details>
         </Card>
       )}
 

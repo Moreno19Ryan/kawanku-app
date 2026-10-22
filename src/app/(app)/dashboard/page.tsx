@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { waktuRelatif } from "@/lib/waktu";
 import { KartuAsisten } from "@/components/asisten/kartu-asisten";
 import { getSaranAdmin } from "@/lib/asisten/data";
+import { PertemuanHariIni } from "@/components/absensi/pertemuan-hari-ini";
 import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
@@ -172,6 +173,9 @@ async function Ringkasan() {
     return (
       <>
         {header}
+        <Suspense fallback={null}>
+          <PertemuanHariIni judul="Hari ini" className="mb-4 sm:mb-6" />
+        </Suspense>
         <Card className="flex items-start gap-4">
           <Users className="mt-0.5 size-5 shrink-0 text-muted" aria-hidden />
           <div>
@@ -255,6 +259,10 @@ async function Ringkasan() {
   return (
     <>
       {header}
+
+      <Suspense fallback={null}>
+        <PertemuanHariIni judul="Hari ini" className="mb-4 sm:mb-6" />
+      </Suspense>
 
       <section
         aria-label="Angka utama"

@@ -7,6 +7,9 @@
 \set ON_ERROR_STOP 1
 begin;
 create extension if not exists pgtap with schema extensions;
+-- Tes ini membuka sesi untuk tanggal mendatang; aturan "paling cepat 2 jam
+-- sebelum mulai" diuji tersendiri di absensi_tepat_waktu.test.sql.
+alter table public.sesi_absensi disable trigger cek_waktu_sesi;
 select no_plan();
 
 create schema uji;

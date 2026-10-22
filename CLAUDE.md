@@ -122,7 +122,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Absensi (`/absensi`, `docs/absensi.md`) dibuka lewat saklar fitur `absensi`
   dan izin `absensi.lihat`/`absensi.kelola` (`getAksesAbsensi`). Pencatatan
   lewat RPC `catat_absensi_kode` (security invoker, batas tetap RLS). Lembar
-  cetak kartu di `/cetak/kartu` (di luar layout admin).
+  cetak kartu di `/cetak/kartu` (di luar layout admin). Sesi absensi paling
+  cepat dibuat 2 jam sebelum mulai (trigger `cek_waktu_sesi`); pertemuan hari
+  ini (`PertemuanHariIni`) tampil di Beranda admin & Absensi. Kamera QR
+  (`KameraQr`, jsQR + bantuan izin per browser) dipakai pemindai generus dan
+  "Scan pakai kamera HP" di halaman sesi.
 - Akun generus (Fase 2b): login di `/masuk` (username + PIN). PIN diperiksa
   server (`siapkanMasukGenerus` → RPC `cek_pin_generus`, hanya service_role,
   kunci 5x salah); hash PIN di `private.pin_generus`, kata sandi Auth selalu

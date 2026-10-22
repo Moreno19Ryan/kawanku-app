@@ -122,3 +122,25 @@ export function bolehCatatSesi(akses: AksesAbsensi, sesi: Pick<Sesi, "kelompok_i
     ? akses.kelompokKelola.length > 0
     : akses.kelompokKelola.some((k) => k.id === sesi.kelompok_id);
 }
+
+/** Sesi absensi boleh dibuka paling cepat 2 jam sebelum mulai (sama dengan trigger cek_waktu_sesi). */
+export const BUKA_SEBELUM_MS = 2 * 3600_000;
+
+/** Waktu paling cepat absensi bisa dibuka (ISO), atau null bila sudah bisa. */
+export function belumBisaDibuka(mulai: string, sekarang = Date.now()): string | null {
+  const awal = new Date(mulai).getTime() - BUKA_SEBELUM_MS;
+  return sekarang < awal ? new Date(awal).toISOString() : null;
+}
+
+/** Admin ini boleh membuka absensi pertemuan di wilayah ini (null = tingkat desa). */
+export function bolehBukaAbsensi(akses: AksesAbsensi | null, kelompokId: string | null): boolean {
+  if (!akses) return false;
+  return kelompokId === null
+    ? akses.kelompokKelola.length > 0 && akses.targetSesi.some((t) => t.kelompokId === null)
+    : akses.kelompokKelola.some((x) => x.id === kelompokId);
+}
+
+/** Waktu (ISO) sudah lewat. */
+export function sudahLewat(iso: string, sekarang = Date.now()): boolean {
+  return new Date(iso).getTime() < sekarang;
+}
