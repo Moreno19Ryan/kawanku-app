@@ -1,6 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import { getAksesJamaah } from "@/lib/jamaah/akses";
+import { cekKewajaran } from "@/lib/jamaah/kategori";
+import { LABEL_STATUS_SEKOLAH } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -13,6 +15,7 @@ export type KodePeriksa =
   | "data_pokok"
   | "tanpa_kategori"
   | "usia_jenjang"
+  | "kombinasi"
   | "mt_ms"
   | "paket"
   | "alamat"
@@ -45,6 +48,13 @@ export const PEMERIKSAAN: Pemeriksaan[] = [
     keterangan:
       "Mis. usia 19+ masih tercatat SMA/SMK, atau usia 17 tercatat SMP. Bisa benar, tapi perlu dipastikan.",
     saran: "Pastikan status sekolah masih benar (sudah lulus? kuliah/bekerja?).",
+  },
+  {
+    kode: "kombinasi",
+    judul: "Kombinasi data tidak lazim",
+    keterangan:
+      "Mis. tercatat menikah tapi usia di bawah 16 atau masih SD/SMP/SMA, atau usia di bawah 15 tapi kuliah/bekerja. Kategorinya bisa keliru.",
+    saran: "Periksa tanggal lahir, status pernikahan, dan status sekolah di Ubah data.",
   },
   {
     kode: "mt_ms",
@@ -92,13 +102,6 @@ export type BarisPeriksa = {
   muballigh: boolean;
   jenis_muballigh: string | null;
   paket_caberawit: string | null;
-};
-
-/** Rentang usia wajar per jenjang (di luar ini = perlu dipastikan). */
-const RENTANG_JENJANG: Record<string, [number, number]> = {
-  sd: [5, 13],
-  smp: [11, 16],
-  sma_smk: [14, 19],
 };
 
 type Pribadi = {
@@ -163,13 +166,13 @@ export const getPerluDicek = cache(async (): Promise<HasilPeriksa | null> => {
   const petaPribadi = new Map((pribadi ?? []).map((p) => [p.jamaah_id, p]));
   const petaKontak = new Map((kontak ?? []).map((k) => [k.jamaah_id, k]));
 
+  const kewajaran = (j: BarisPeriksa) =>
+    cekKewajaran(j.usia, j.status_pernikahan, j.status_sekolah, { sekolah: LABEL_STATUS_SEKOLAH });
   const uji: Record<KodePeriksa, (j: BarisPeriksa) => boolean> = {
     data_pokok: (j) => (!j.tanggal_lahir && !j.tahun_lahir) || !j.status_pernikahan || !j.status_sekolah,
     tanpa_kategori: (j) => !j.kategori_jamaah_id,
-    usia_jenjang: (j) => {
-      const r = j.status_sekolah ? RENTANG_JENJANG[j.status_sekolah] : undefined;
-      return Boolean(r && j.usia !== null && (j.usia < r[0] || j.usia > r[1]));
-    },
+    usia_jenjang: (j) => kewajaran(j).jenjang !== null,
+    kombinasi: (j) => kewajaran(j).lain.length > 0,
     mt_ms: (j) => j.muballigh && !j.jenis_muballigh,
     paket: (j) => j.kategori_jamaah_kode === "caberawit" && !j.paket_caberawit,
     alamat: (j) => {

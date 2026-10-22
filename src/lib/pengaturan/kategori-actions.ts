@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { bacaAdmin, punyaIzin } from "@/lib/auth/admin";
+import { masalahAturan, urutanSistem, type AturanKategori } from "@/lib/jamaah/kategori";
 import { LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 
@@ -57,14 +58,44 @@ function bacaIsian(formData: FormData): IsiKategori | string {
     return "Isi minimal satu syarat (status sekolah, status pernikahan, atau usia).";
   }
 
+  // Generus selalu khusus lajang (dijaga database: kategori_jamaah_generus_lajang).
+  const generus = formData.get("generus") === "on";
   return {
     nama,
     usia_min: usiaMin,
     usia_max: usiaMax,
     status_sekolah_berlaku: sekolah.length ? sekolah : null,
-    status_pernikahan_berlaku: pernikahan.length ? pernikahan : null,
-    termasuk_generus: formData.get("generus") === "on",
+    status_pernikahan_berlaku: generus ? ["lajang"] : pernikahan.length ? pernikahan : null,
+    termasuk_generus: generus,
   };
+}
+
+type Ctx = NonNullable<Awaited<ReturnType<typeof konteks>>>;
+
+async function bacaSemua(ctx: Ctx) {
+  return ctx.supabase
+    .from("kategori_jamaah")
+    .select(
+      "id, kode, nama, urutan, usia_min, usia_max, status_sekolah_berlaku, status_pernikahan_berlaku, termasuk_generus",
+    )
+    .returns<(AturanKategori & { kode: string })[]>();
+}
+
+/** Tolak aturan yang membuat kategori tak terpakai / generus memuat yang menikah. */
+function tolakBilaBermasalah(aturan: AturanKategori[]): StateAksi | null {
+  const masalah = masalahAturan(aturan);
+  if (!masalah.length) return null;
+  return { galat: `Tidak disimpan. ${masalah.join(" ")} Ubah syaratnya supaya setiap kategori punya jamaahnya sendiri.` };
+}
+
+/** Tulis urutan pemeriksaan yang diatur sistem (satu transaksi, lewat RLS). */
+async function aturUrutan(ctx: Ctx): Promise<boolean> {
+  const { data, error } = await bacaSemua(ctx);
+  if (error) return false;
+  const { error: galat } = await ctx.supabase.rpc("atur_urutan_kategori", {
+    p_ids: urutanSistem(data).map((k) => k.id),
+  });
+  return !galat;
 }
 
 /** Kode tetap dari nama (mis. "Remaja Muda" → remaja_muda), unik. */
@@ -92,15 +123,23 @@ export async function simpanKategori(
   const isi = bacaIsian(formData);
   if (typeof isi === "string") return { galat: isi };
 
+  const { data: semua, error: galatBaca } = await bacaSemua(ctx);
+  if (galatBaca) return GAGAL;
+  const tolak = tolakBilaBermasalah(semua.map((k) => (k.id === id ? { ...k, ...isi } : k)));
+  if (tolak) return tolak;
+
   const { data, error } = await ctx.supabase
     .from("kategori_jamaah")
     .update(isi)
     .eq("id", id)
     .select("id");
   if (error || data.length === 0) return GAGAL;
+  const urutanOk = await aturUrutan(ctx);
 
   refresh();
-  return { pesan: "Tersimpan." };
+  return urutanOk
+    ? { pesan: "Tersimpan. Urutan pemeriksaan disesuaikan otomatis." }
+    : { galat: "Aturan tersimpan, tapi urutan gagal disesuaikan. Simpan sekali lagi." };
 }
 
 export async function tambahKategori(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
@@ -110,61 +149,21 @@ export async function tambahKategori(_prev: StateAksi, formData: FormData): Prom
   const isi = bacaIsian(formData);
   if (typeof isi === "string") return { galat: isi };
 
-  const { data: ada, error: galatBaca } = await ctx.supabase
-    .from("kategori_jamaah")
-    .select("kode, urutan");
+  const { data: ada, error: galatBaca } = await bacaSemua(ctx);
   if (galatBaca) return GAGAL;
+  const tolak = tolakBilaBermasalah([...ada, { ...isi, id: "baru", urutan: 0 }]);
+  if (tolak) return tolak;
 
-  // Kategori baru masuk paling bawah (dicek terakhir); urutan bisa diubah.
+  // Ditaruh paling bawah dulu, lalu urutan diatur ulang oleh sistem.
   const urutan = Math.max(0, ...ada.map((k) => k.urutan)) + 1;
   const kode = buatKode(isi.nama, ada.map((k) => k.kode));
 
   const { error } = await ctx.supabase.from("kategori_jamaah").insert({ ...isi, kode, urutan });
   if (error) return GAGAL;
+  await aturUrutan(ctx);
 
   refresh();
   return { pesan: `Kategori “${isi.nama}” ditambahkan.` };
-}
-
-/**
- * Tukar urutan dengan kategori di atas/bawahnya. `urutan` unik, jadi lewat
- * nilai sementara (negatif) dulu.
- */
-export async function pindahKategori(id: string, arah: "naik" | "turun"): Promise<StateAksi> {
-  const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
-
-  const { data: semua, error } = await ctx.supabase
-    .from("kategori_jamaah")
-    .select("id, urutan")
-    .order("urutan");
-  if (error) return GAGAL;
-
-  const i = semua.findIndex((k) => k.id === id);
-  const j = arah === "naik" ? i - 1 : i + 1;
-  if (i < 0 || j < 0 || j >= semua.length) return {};
-  const a = semua[i];
-  const b = semua[j];
-
-  const ubah = (kategoriId: string, urutan: number) =>
-    ctx.supabase.from("kategori_jamaah").update({ urutan }).eq("id", kategoriId).select("id");
-
-  const r1 = await ubah(a.id, -a.urutan);
-  if (r1.error || r1.data.length === 0) return GAGAL;
-  const r2 = await ubah(b.id, a.urutan);
-  if (r2.error || r2.data.length === 0) {
-    await ubah(a.id, a.urutan);
-    return GAGAL;
-  }
-  const r3 = await ubah(a.id, b.urutan);
-  if (r3.error || r3.data.length === 0) {
-    await ubah(b.id, b.urutan);
-    await ubah(a.id, a.urutan);
-    return GAGAL;
-  }
-
-  refresh();
-  return { pesan: "Urutan diubah." };
 }
 
 export async function hapusKategori(id: string): Promise<StateAksi> {
