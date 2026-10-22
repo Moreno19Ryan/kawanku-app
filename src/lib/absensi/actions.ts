@@ -268,6 +268,19 @@ export async function tanganiPengajuanIzin(id: string, _prev: StateAksi, formDat
 }
 
 /** Token QR layar terbaru (berganti tiap 60 detik, berlaku 90 detik) + jumlah hadir. */
+/** Jumlah hadir sesi untuk layar QR (tanpa membuat token baru). */
+export async function hadirLayar(sesiId: string): Promise<number | null> {
+  const akses = await getAksesAbsensi();
+  if (!akses || akses.kelompokKelola.length === 0) return null;
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("absensi")
+    .select("id", { count: "exact", head: true })
+    .eq("sesi_id", sesiId)
+    .eq("status", "hadir");
+  return error ? null : (count ?? 0);
+}
+
 export async function tokenLayar(sesiId: string): Promise<{ token: string | null; hadir: number } | null> {
   const akses = await getAksesAbsensi();
   if (!akses || akses.kelompokKelola.length === 0) return null;

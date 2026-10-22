@@ -3,6 +3,7 @@
 import { addTransitionType, startTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { langganan } from "@/lib/supabase/realtime";
 
 /**
  * Tabel yang perubahannya membuat halaman dimuat ulang otomatis. Isi
@@ -74,18 +75,19 @@ export function SegarkanLangsung() {
       if (document.visibilityState === "hidden") terakhir = Date.now();
     };
 
-    const kanal = supabase.channel("kawanku-segarkan");
-    for (const table of TABEL) {
-      kanal.on("postgres_changes", { event: "*", schema: "public", table }, adaPerubahan);
-    }
-    kanal.subscribe();
+    const berhenti = langganan(supabase, "kawanku-segarkan", (kanal) => {
+      for (const table of TABEL) {
+        kanal.on("postgres_changes", { event: "*", schema: "public", table }, adaPerubahan);
+      }
+      return kanal;
+    });
 
     document.addEventListener("visibilitychange", saatTerlihat);
     document.addEventListener("visibilitychange", saatTersembunyi);
     window.addEventListener("online", muatUlang);
     return () => {
       clearTimeout(timer);
-      void supabase.removeChannel(kanal);
+      berhenti();
       document.removeEventListener("visibilitychange", saatTerlihat);
       document.removeEventListener("visibilitychange", saatTersembunyi);
       window.removeEventListener("online", muatUlang);
