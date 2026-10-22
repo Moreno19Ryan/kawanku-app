@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { refresh } from "next/cache";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { pinDariTanggalLahir } from "@/lib/generus/akun";
@@ -66,7 +67,9 @@ async function buat(
 
   const { data: dibuat, error: galatAuth } = await adminAuth.auth.admin.createUser({
     email: `${j.kode.toLowerCase()}@generus.kawanku.invalid`,
-    password: pin,
+    // Kata sandi Auth acak; PIN disimpan terpisah (atur_pin_generus) dan
+    // diperiksa server saat login.
+    password: randomBytes(24).toString("base64url"),
     email_confirm: true,
     app_metadata: { jenis: "generus" },
   });
@@ -85,7 +88,14 @@ async function buat(
     const { error } = await supabase
       .from("akun_generus")
       .insert({ user_id: dibuat.user.id, jamaah_id: j.id, username: coba });
-    if (!error) return { pesan: `Akun dibuat: @${coba}`, username: coba };
+    if (!error) {
+      const { error: galatPin } = await supabase.rpc("atur_pin_generus", { p_user_id: dibuat.user.id, p_pin: pin });
+      if (galatPin) {
+        await adminAuth.auth.admin.deleteUser(dibuat.user.id);
+        return { galat: "Gagal menyimpan PIN. Coba lagi." };
+      }
+      return { pesan: `Akun dibuat: @${coba}`, username: coba };
+    }
     if (error.code !== "23505" || !error.message.includes("username") || !bolehAkhiran) {
       await adminAuth.auth.admin.deleteUser(dibuat.user.id);
       return {
@@ -167,14 +177,9 @@ export async function aturUlangPin(jamaahId: string, _prev: StateAksi, formData:
   if (typeof pin !== "string") return pin;
   const { data: akun } = await ctx.supabase.from("akun_generus").select("user_id").eq("jamaah_id", jamaahId).maybeSingle();
   if (!akun) return { galat: "Akun tidak ditemukan." };
-  const adminAuth = createAdminClient();
-  if (!adminAuth) return TANPA_KEY;
-  const { error } = await adminAuth.auth.admin.updateUserById(akun.user_id, { password: pin });
+  // Menyimpan hash PIN baru, membuka kunci, dan menandai PIN awal.
+  const { error } = await ctx.supabase.rpc("atur_pin_generus", { p_user_id: akun.user_id, p_pin: pin });
   if (error) return { galat: "Gagal mengatur ulang PIN. Coba lagi." };
-  await ctx.supabase
-    .from("akun_generus")
-    .update({ pin_awal: true, gagal_login: 0, terkunci_sampai: null })
-    .eq("jamaah_id", jamaahId);
   refresh();
   return { pesan: formData.get("pin") ? "PIN diatur ulang." : "PIN kembali ke tanggal lahir (DDMMYY)." };
 }
