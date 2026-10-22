@@ -25,6 +25,7 @@ import { aturSesiDitutup, catatKode, hapusSesi, ubahSesi, ubahStatusPeserta } fr
 import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { keInputWib, tanggalJam } from "@/lib/waktu";
+import { FormOtomatis } from "@/components/ui/form-otomatis";
 
 export const metadata: Metadata = {
   title: "Sesi absensi",
@@ -182,7 +183,7 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
       )}
 
       <section className="flex flex-col gap-3">
-        <form method="get" className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
+        <FormOtomatis className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
           <div className="relative sm:flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" aria-hidden />
             <input
@@ -201,10 +202,7 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
               </option>
             ))}
           </select>
-          <button type="submit" className={buttonClass("kedua", "h-12 shrink-0")}>
-            Tampilkan
-          </button>
-        </form>
+        </FormOtomatis>
 
         <p className="px-1 text-sm text-muted">
           {terlihat.length} dari {daftar.length} peserta

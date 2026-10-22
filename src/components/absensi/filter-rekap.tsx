@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
 import type { ParamRekap } from "@/lib/absensi/rekap";
+import { FormOtomatis } from "@/components/ui/form-otomatis";
 
 const LABEL = "text-sm font-medium";
 
@@ -19,7 +19,7 @@ export function FilterRekap({
 }) {
   const [jenis, setJenis] = useState(param.jenis);
   return (
-    <form method="get" className="grid gap-4 rounded-card bg-surface p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
+    <FormOtomatis className="grid gap-4 rounded-card bg-surface p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
       <label className="flex flex-col gap-1.5">
         <span className={LABEL}>Jenis rekap</span>
         <select
@@ -73,12 +73,6 @@ export function FilterRekap({
           <option value="generus">Generus saja</option>
         </select>
       </label>
-
-      <div className="flex items-end sm:col-span-2 lg:col-span-4">
-        <button type="submit" className={buttonClass("utama")}>
-          Tampilkan pratinjau
-        </button>
-      </div>
-    </form>
+    </FormOtomatis>
   );
 }

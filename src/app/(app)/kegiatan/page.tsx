@@ -13,6 +13,7 @@ import { bolehKelolaPertemuan, getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { jam, waktuRelatif } from "@/lib/waktu";
+import { FormOtomatis } from "@/components/ui/form-otomatis";
 
 export const metadata: Metadata = {
   title: "Kegiatan",
@@ -99,7 +100,7 @@ async function Kalender({ cari }: { cari: Promise<Cari> }) {
         </Card>
       )}
 
-      <form method="get" className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
+      <FormOtomatis className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
         {pilihan.length > 1 && (
           <select name="kelompok" defaultValue={kelompok?.id ?? ""} aria-label="Kelompok" className={`${INPUT_CLASS} w-full sm:flex-1`}>
             <option value="">Semua kelompok</option>
@@ -117,10 +118,7 @@ async function Kalender({ cari }: { cari: Promise<Cari> }) {
             </option>
           ))}
         </select>
-        <button type="submit" className={buttonClass("kedua", "h-12 shrink-0")}>
-          Tampilkan
-        </button>
-      </form>
+      </FormOtomatis>
 
       <DaftarKejadian kejadian={kejadian} namaKelompok={namaKelompok} />
     </div>

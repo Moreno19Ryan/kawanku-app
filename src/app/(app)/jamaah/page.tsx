@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { cariPemeriksaan, getPerluDicek } from "@/lib/jamaah/periksa";
 import { createClient } from "@/lib/supabase/server";
+import { FormOtomatis } from "@/components/ui/form-otomatis";
 
 export const metadata: Metadata = {
   title: "Jamaah",
@@ -203,7 +204,7 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
           </Link>
         </div>
       ) : (
-      <form method="get" action="/jamaah" className="mb-4 flex flex-col gap-3 rounded-card bg-surface p-4 sm:p-5">
+      <FormOtomatis className="mb-4 flex flex-col gap-3 rounded-card bg-surface p-4 sm:p-5">
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" aria-hidden />
           <input
@@ -242,11 +243,8 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
             <option value="nonaktif">Nonaktif</option>
             <option value="semua">Semua status</option>
           </select>
-          <button type="submit" className={buttonClass("kedua", "h-12 shrink-0")}>
-            Terapkan
-          </button>
         </div>
-      </form>
+      </FormOtomatis>
       )}
 
       <div className="mb-3 flex items-center justify-between gap-3 px-1 text-sm text-muted">

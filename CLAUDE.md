@@ -146,6 +146,13 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Asisten KawanKu (`docs/asisten.md`): kartu pengingat/peringatan/saran/
   apresiasi di Beranda admin & generus, dihitung dari data yang ada
   (`src/lib/asisten/`), tanpa tabel baru.
+- Realtime: `SegarkanLangsung` (di layout admin & generus) mendengarkan
+  perubahan tabel lewat Supabase Realtime (publikasi `supabase_realtime`,
+  migrasi `20261022100000_realtime`; tetap RLS) lalu `router.refresh()`,
+  juga saat tab dibuka lagi/koneksi kembali. Tabel baru yang tampil di
+  halaman → tambahkan ke migrasi publikasi & daftar `TABEL`. Pencarian/filter
+  memakai `FormOtomatis` (tanpa tombol: ketik → cari setelah jeda, pilihan →
+  langsung).
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
   diketahui saat runtime.

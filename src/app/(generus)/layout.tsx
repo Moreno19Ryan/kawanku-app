@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { NavGenerus } from "@/components/generus/nav-generus";
+import { SegarkanLangsung } from "@/components/sistem/segarkan-langsung";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { keluarGenerus } from "@/lib/generus/actions";
 
@@ -28,6 +29,7 @@ export default function GenerusLayout({ children }: LayoutProps<"/">) {
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-gutter pb-8">{children}</main>
       <AppFooter className="mx-auto mt-6 w-full max-w-lg px-gutter pb-[calc(var(--spacing-bottomnav)+env(safe-area-inset-bottom)+1.5rem)]" />
       <NavGenerus />
+      <SegarkanLangsung />
     </div>
   );
 }

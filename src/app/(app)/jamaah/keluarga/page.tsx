@@ -6,13 +6,13 @@ import { FormBuatKeluarga } from "@/components/jamaah/form-keluarga";
 import { JamaahBelumMenyala } from "@/components/jamaah/belum-menyala";
 import { KembaliKeJamaah } from "@/components/jamaah/kembali";
 import { PageHeader } from "@/components/layout/page-header";
-import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesJamaah } from "@/lib/jamaah/akses";
 import { buatKeluarga } from "@/lib/jamaah/keluarga-actions";
 import { createClient } from "@/lib/supabase/server";
+import { FormOtomatis } from "@/components/ui/form-otomatis";
 
 export const metadata: Metadata = {
   title: "Keluarga",
@@ -84,7 +84,7 @@ async function DaftarKeluarga({ cari }: { cari: Promise<Cari> }) {
         </Card>
       )}
 
-      <form method="get" className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
+      <FormOtomatis className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
         <div className="relative sm:flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" aria-hidden />
           <input
@@ -106,10 +106,7 @@ async function DaftarKeluarga({ cari }: { cari: Promise<Cari> }) {
             ))}
           </select>
         )}
-        <button type="submit" className={buttonClass("kedua", "h-12 shrink-0")}>
-          Cari
-        </button>
-      </form>
+      </FormOtomatis>
 
       <p className="px-1 text-sm text-muted">{daftar.length} keluarga</p>
       {daftar.length === 0 ? (

@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
 import type { BarisJamaah, StatusJamaah } from "@/lib/absensi/laporan-hitung";
 import type { ParamLaporan } from "@/lib/absensi/laporan";
+import { FormOtomatis } from "@/components/ui/form-otomatis";
 
 const LABEL = "text-sm font-medium";
 
 /** Filter laporan (GET). */
 export function FilterLaporan({ param, wilayah }: { param: ParamLaporan; wilayah: { id: string; nama: string }[] }) {
   return (
-    <form method="get" className="grid gap-4 rounded-card bg-surface p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
+    <FormOtomatis className="grid gap-4 rounded-card bg-surface p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
       <label className="flex flex-col gap-1.5">
         <span className={LABEL}>Wilayah</span>
         <select name="wilayah" defaultValue={param.wilayah} className={INPUT_CLASS}>
@@ -36,12 +36,7 @@ export function FilterLaporan({ param, wilayah }: { param: ParamLaporan; wilayah
           <option value="12">12 bulan terakhir</option>
         </select>
       </label>
-      <div className="flex items-end">
-        <button type="submit" className={`${buttonClass("utama")} w-full`}>
-          Tampilkan
-        </button>
-      </div>
-    </form>
+    </FormOtomatis>
   );
 }
 

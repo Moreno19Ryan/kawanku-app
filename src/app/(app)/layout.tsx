@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { BannerPengumuman } from "@/components/sistem/banner-pengumuman";
 import { GerbangPerawatan } from "@/components/sistem/gerbang-perawatan";
+import { SegarkanLangsung } from "@/components/sistem/segarkan-langsung";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -56,6 +57,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       <Suspense fallback={<BottomNav />}>
         <BottomNavTerbuka />
       </Suspense>
+      <SegarkanLangsung />
     </div>
   );
 }
