@@ -3,7 +3,11 @@ import type { Rekap } from "@/lib/absensi/rekap";
 const LABEL = { H: "Hadir", I: "Izin", S: "Sakit", A: "Tidak hadir", "-": "-" } as const;
 
 function sel(v: string | number | null | undefined): string {
-  const s = v === null || v === undefined ? "" : String(v);
+  let s = v === null || v === undefined ? "" : String(v);
+  // Cegah "formula injection": teks yang diawali = + - @ dibaca Excel
+  // sebagai rumus, jadi diawali tanda kutip tunggal.
+  // Sel "-" (bukan peserta) dibiarkan.
+  if (typeof v === "string" && (/^[=+@\t\r]/.test(s) || (s.startsWith("-") && s.length > 1))) s = `'${s}`;
   return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
