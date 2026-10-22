@@ -10,6 +10,19 @@ import { tanggalPanjang } from "@/lib/waktu";
 /** Bagian yang nilainya bisa dipilih (dan diterapkan sekali klik). */
 export const BAGIAN_TERSTRUKTUR = ["status_sekolah", "status_pernikahan", "tanggal_lahir"] as const;
 
+/**
+ * Bagian yang dilaporkan generus ke admin. Data lain (tanggal lahir, status
+ * sekolah, pendidikan, kontak, orang tua, alamat) diubah generus sendiri.
+ */
+export const BAGIAN_LAPOR_GENERUS = [
+  "nama_lengkap",
+  "jenis_kelamin",
+  "status_pernikahan",
+  "kelompok",
+  "keluarga",
+  "lainnya",
+] as const;
+
 export function bagianTerstruktur(bagian: string): boolean {
   return (BAGIAN_TERSTRUKTUR as readonly string[]).includes(bagian);
 }

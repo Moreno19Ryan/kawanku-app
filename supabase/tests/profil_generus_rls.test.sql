@@ -58,6 +58,13 @@ create function uji.sebagai(p_uid text) returns void language sql as $$
 $$;
 grant execute on all functions in schema uji to anon, authenticated;
 
+-- Sejak 20261022120000 profil diubah lewat ubah_data_diri_saya (RPC lama ditutup).
+create function uji.profil(p_panggilan text, p_hp text, p_email text) returns void language sql as $$
+  select public.ubah_data_diri_saya(p_panggilan, null, null, 'smp', null, null, null, p_hp, p_email,
+                                    '082222222222', null, null);
+$$;
+grant execute on function uji.profil(text, text, text) to anon, authenticated;
+
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b2', 'kel1@uji.id'),
   ('00000000-0000-0000-0000-0000000000b3', 'kel2@uji.id'),
@@ -97,20 +104,20 @@ select uji.harus_ditolak('Gen: tidak bisa update kontak langsung',
   $q$ update public.jamaah_kontak set no_hp = '089999999999' returning 1 $q$);
 select uji.harus_ditolak('Gen: tidak bisa update jamaah langsung',
   $q$ update public.jamaah set nama_lengkap = 'Ganti' returning 1 $q$);
-select public.ubah_profil_saya('  Satu   Baru ', '085555555555', 'Satu@Contoh.ID');
+select uji.profil('  Satu   Baru ', '085555555555', 'Satu@Contoh.ID');
 select uji.cek('Gen: nama panggilan berubah (dirapikan)',
   (select nama_panggilan = 'Satu Baru' and nama_lengkap = 'Generus Satu' from public.jamaah));
 select uji.cek('Gen: no HP & email berubah, HP wali tetap',
   (select no_hp = '085555555555' and email = 'satu@contoh.id' and no_hp_wali = '082222222222'
    from public.jamaah_kontak));
-select public.ubah_profil_saya('', '', '');
+select uji.profil('', '', '');
 select uji.cek('Gen: mengosongkan isian',
   (select nama_panggilan is null from public.jamaah)
   and (select no_hp is null and email is null and no_hp_wali = '082222222222' from public.jamaah_kontak));
 select uji.harus_ditolak('Gen: no HP tidak valid ditolak',
-  $q$ select public.ubah_profil_saya('x', '12345', '') $q$);
+  $q$ select uji.profil('x', '12345', '') $q$);
 select uji.harus_ditolak('Gen: nama panggilan > 40 ditolak',
-  $q$ select public.ubah_profil_saya(repeat('a', 41), '', '') $q$);
+  $q$ select uji.profil(repeat('a', 41), '', '') $q$);
 
 -- Usulan koreksi
 select uji.harus_berhasil('Gen: kirim usulan untuk dirinya',
@@ -140,7 +147,7 @@ values ('00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-0000000
 -- ---------------------------------------------------------------------
 select uji.sebagai('00000000-0000-0000-0000-0000000000c2');
 select uji.harus_ditolak('Gen PIN awal: ubah profil ditolak',
-  $q$ select public.ubah_profil_saya('x', '', '') $q$);
+  $q$ select uji.profil('x', '', '') $q$);
 select uji.cek('Gen2: tidak melihat usulan orang lain', not exists (select 1 from public.usulan_koreksi));
 
 -- ---------------------------------------------------------------------
@@ -182,7 +189,7 @@ select uji.harus_berhasil('Gen: setelah selesai, boleh kirim lagi bagian yang sa
 reset role;
 set local role anon;
 select uji.harus_ditolak('Anon: tidak bisa membaca usulan', $q$ select 1 from public.usulan_koreksi $q$);
-select uji.harus_ditolak('Anon: tidak bisa memanggil ubah_profil_saya', $q$ select public.ubah_profil_saya('', '', '') $q$);
+select uji.harus_ditolak('Anon: tidak bisa memanggil ubah_profil_saya', $q$ select uji.profil('', '', '') $q$);
 reset role;
 
 select ok(lulus, nama || coalesce(' — ' || catatan, '')) from uji.hasil order by no;

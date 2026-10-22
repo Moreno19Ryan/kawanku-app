@@ -12,6 +12,7 @@ import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { labelTahunAjaran, masaKenaikan, tahunAjaran } from "@/lib/jamaah/kenaikan";
 import { hitungBelumNaik } from "@/lib/jamaah/kenaikan-data";
 import { getPerluDicek } from "@/lib/jamaah/periksa";
+import { getPerubahanGenerus } from "@/lib/jamaah/perubahan";
 import { getUsulanMenunggu } from "@/lib/jamaah/usulan";
 import { createClient } from "@/lib/supabase/server";
 import { waktuRelatif } from "@/lib/waktu";
@@ -210,9 +211,10 @@ async function Ringkasan() {
   const generus = aktif.filter((j) => j.termasuk_generus).length;
   const laki = aktif.filter((j) => j.jenis_kelamin === "L").length;
   const nonaktif = data.length - aktif.length;
-  const [periksa, usulan, belumNaik] = await Promise.all([
+  const [periksa, usulan, perubahan, belumNaik] = await Promise.all([
     getPerluDicek(),
     getUsulanMenunggu(),
+    getPerubahanGenerus(),
     // Pengingat kenaikan kelas hanya Juli–September, untuk yang boleh mengubah.
     masaKenaikan() ? hitungBelumNaik(akses.kelompokUbah.map((k) => k.id)) : Promise.resolve(0),
   ]);
@@ -275,7 +277,7 @@ async function Ringkasan() {
         <Angka label="Perempuan" nilai={aktif.length - laki} />
       </section>
 
-      {(jumlahPerluDicek > 0 || usulan.length > 0) && (
+      {(jumlahPerluDicek > 0 || usulan.length > 0 || perubahan.length > 0) && (
         <Link
           href="/jamaah/periksa"
           className="mt-4 flex items-center gap-3 rounded-card bg-surface p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-colors duration-200 ease-oneui hover:bg-surface-muted sm:mt-6 sm:p-6"
@@ -286,6 +288,7 @@ async function Ringkasan() {
             <span className="block text-muted">
               {[
                 usulan.length > 0 && `${usulan.length} laporan data salah dari jamaah`,
+                perubahan.length > 0 && `${perubahan.length} generus memperbarui datanya`,
                 jumlahPerluDicek > 0 && `${jumlahPerluDicek} jamaah: ${ringkasPerluDicek}`,
               ]
                 .filter(Boolean)

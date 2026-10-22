@@ -111,3 +111,20 @@ export const LABEL_BAGIAN_USULAN: Record<string, string> = {
   keluarga: "Keluarga",
   lainnya: "Lainnya",
 };
+
+/** Bagian data yang diubah generus sendiri (jejak perubahan). */
+export const LABEL_BAGIAN_PERUBAHAN: Record<string, string> = {
+  nama_panggilan: "Nama panggilan",
+  tempat_lahir: "Tempat lahir",
+  tanggal_lahir: "Tanggal lahir",
+  status_sekolah: "Status sekolah",
+  kelas: "Kelas",
+  pendidikan_terakhir: "Pendidikan terakhir",
+  kegiatan: "Pekerjaan/kegiatan",
+  no_hp: "No. HP",
+  email: "Email",
+  no_hp_wali: "No. HP wali",
+  nama_ayah: "Nama ayah",
+  nama_ibu: "Nama ibu",
+  alamat: "Alamat",
+};

@@ -130,12 +130,16 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `wajibGenerus`, `src/lib/generus/`). Akun generus tidak punya baris
   `admin`; `wajibAdmin()` mengarahkan akun generus ke `/saya`, dan
   `wajibGenerus()` mengarahkan admin ke `/dashboard`. Profil generus di
-  `/saya/profil`: nama panggilan, no. HP & email diubah sendiri (RPC
-  `ubah_profil_saya`), alamat di `/saya/alamat` (RPC `ubah_alamat_saya`); data
-  lain lewat laporan `usulan_koreksi` yang ditangani admin di Perlu dicek &
-  detail jamaah (status sekolah/pernikahan/tanggal lahir berisi nilai
-  terstruktur `nilai`/`nilai_kelas`; tombol Terapkan → RPC
-  `terapkan_usulan_koreksi`, security invoker). Semua RPC ini hanya menulis baris `jamaah_saya()`. Izin/sakit
+  `/saya/profil`: data diri lengkap diubah sendiri (RPC
+  `ubah_data_diri_saya`: sapaan, tempat/tanggal lahir, sekolah & kelas,
+  pendidikan, kegiatan, kontak, HP wali, orang tua; ditolak bila membuatnya
+  keluar dari generus), alamat di `/saya/alamat` (RPC `ubah_alamat_saya`);
+  setiap perubahan tercatat di `perubahan_data_generus` (admin menandai
+  "Sudah dicek" di Perlu dicek & detail jamaah). Nama lengkap, jenis
+  kelamin, status pernikahan, kelompok, keluarga lewat laporan
+  `usulan_koreksi` (status pernikahan berisi nilai terstruktur; tombol
+  Terapkan → RPC `terapkan_usulan_koreksi`, security invoker). NIK/KK tidak
+  tampil di akun generus. Semua RPC ini hanya menulis baris `jamaah_saya()`. Izin/sakit
   diajukan generus di `/saya/izin` (`pengajuan_izin`, per kejadian kalender),
   disetujui admin di `/absensi/izin` atau halaman pertemuan, lalu otomatis
   tercatat di absensi (trigger, hadir tidak ditimpa). Beranda generus:
