@@ -3,10 +3,9 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { INPUT_CLASS } from "@/components/ui/input";
+import { siapkanMasukGenerus } from "@/lib/generus/masuk-actions";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
 import { createClient } from "@/lib/supabase/client";
-
-const SALAH = "Username atau PIN salah.";
 
 const PESAN_PARAM: Record<string, string> = {
   "bukan-generus": "Akun ini tidak aktif sebagai akun generus. Hubungi admin.",
@@ -14,9 +13,9 @@ const PESAN_PARAM: Record<string, string> = {
 };
 
 /**
- * Login generus (username + PIN). Berjalan di browser supaya batas
- * percobaan Supabase Auth dihitung per perangkat, bukan per server.
- * Salah PIN 5x berturut-turut → akun dikunci 15 menit (dicatat database).
+ * Login generus (username + PIN). PIN diperiksa server (kunci 5x salah →
+ * 15 menit); bila benar, server memberi kata sandi sekali pakai dan browser
+ * login sendiri, supaya batas percobaan Supabase dihitung per perangkat.
  */
 export function FormMasukGenerus() {
   const [galat, setGalat] = useState<string>();
@@ -37,25 +36,16 @@ export function FormMasukGenerus() {
     setGalat(undefined);
     const supabase = createClient();
     try {
-      const { data: akun } = await supabase
-        .rpc("mulai_login_generus", { p_username: username })
-        .maybeSingle<{ email: string; terkunci_sampai: string | null }>();
-      if (!akun) return setGalat(SALAH);
-      if (akun.terkunci_sampai) {
-        const jam = new Intl.DateTimeFormat("id-ID", { timeStyle: "short", timeZone: "Asia/Jakarta" }).format(
-          new Date(akun.terkunci_sampai),
-        );
-        return setGalat(`Terlalu banyak PIN salah. Akun dikunci sampai pukul ${jam}.`);
-      }
-      const { error } = await supabase.auth.signInWithPassword({ email: akun.email, password: pin });
+      const izin = await siapkanMasukGenerus(username, pin);
+      if ("galat" in izin) return setGalat(izin.galat);
+      const { error } = await supabase.auth.signInWithPassword({ email: izin.email, password: izin.password });
       if (error) {
-        if (error.status === 429) return setGalat("Terlalu banyak percobaan. Coba lagi beberapa menit lagi.");
-        await supabase.rpc("gagal_login_generus", { p_username: username });
-        return setGalat(SALAH);
+        return setGalat(
+          error.status === 429 ? "Terlalu banyak percobaan. Coba lagi beberapa menit lagi." : "Gagal masuk. Coba lagi.",
+        );
       }
-      const { data: pinAwal } = await supabase.rpc("login_generus_berhasil");
       // Muat ulang penuh supaya server membaca cookie sesi yang baru.
-      window.location.assign(pinAwal ? `/saya/pin?next=${encodeURIComponent(tujuan)}` : tujuan);
+      window.location.assign(izin.pinAwal ? `/saya/pin?next=${encodeURIComponent(tujuan)}` : tujuan);
     } catch {
       setGalat("Gagal terhubung. Periksa internet lalu coba lagi.");
     } finally {
