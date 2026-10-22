@@ -118,8 +118,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   dan izin `absensi.lihat`/`absensi.kelola` (`getAksesAbsensi`). Pencatatan
   lewat RPC `catat_absensi_kode` (security invoker, batas tetap RLS). Lembar
   cetak kartu di `/cetak/kartu` (di luar layout admin).
-- Akun generus (Fase 2b): login di `/masuk` (username + PIN, dijalankan di
-  browser), area generus `/saya` & `/absen` (`getGenerusSaatIni` /
+- Akun generus (Fase 2b): login di `/masuk` (username + PIN). PIN diperiksa
+  server (`siapkanMasukGenerus` → RPC `cek_pin_generus`, hanya service_role,
+  kunci 5x salah); hash PIN di `private.pin_generus`, kata sandi Auth selalu
+  acak (lihat `docs/absensi.md`). Area generus `/saya` & `/absen` (`getGenerusSaatIni` /
   `wajibGenerus`, `src/lib/generus/`). Akun generus tidak punya baris
   `admin`; `wajibAdmin()` mengarahkan akun generus ke `/saya`, dan
   `wajibGenerus()` mengarahkan admin ke `/dashboard`. Profil generus di
