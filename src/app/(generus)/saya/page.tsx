@@ -17,6 +17,8 @@ import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { getPengumumanTayang } from "@/lib/sistem/data";
 import { tanggalJam, waktuRelatif } from "@/lib/waktu";
+import { KartuAsisten } from "@/components/asisten/kartu-asisten";
+import { getSaranGenerus } from "@/lib/asisten/data";
 import { TombolPasang } from "@/components/pwa/tombol-pasang";
 
 export const metadata: Metadata = {
@@ -39,6 +41,7 @@ async function BerandaGenerus() {
     getKalender(hariIni, tambahHari(hariIni, 6), [generus.jamaah.kelompokId]),
     getPengumumanTayang("generus"),
   ]);
+  const saran = await getSaranGenerus(generus, jadwal);
   const ringkasan = ringkasKehadiran(kehadiran);
   const sekarang = new Date().toISOString();
   const berikut = jadwal.find((k) => k.status === "terjadwal" && k.selesai > sekarang);
@@ -55,6 +58,7 @@ async function BerandaGenerus() {
         </p>
       </div>
 
+      <KartuAsisten saran={saran} />
       <TombolPasang />
 
       {pengumuman.length > 0 && (
