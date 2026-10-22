@@ -212,6 +212,7 @@ src/
                         # bantuan (difilter izin)
     cetak/kartu/        # lembar cetak kartu QR (A4, tanpa navigasi)
     cetak/rekap/        # lembar cetak rekap absensi (KopDokumen, A4)
+    cetak/akun/         # slip info masuk akun generus (alamat + QR, username, aturan PIN)
     api/rekap/          # GET ekspor rekap absensi (CSV)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)

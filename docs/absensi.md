@@ -144,6 +144,13 @@ Tes: `supabase/tests/akun_generus_rls.test.sql`.
 - **Email Auth sintetis** `kw-xxxxxx@generus.kawanku.invalid`. Email ini tidak
   pernah dipakai mengirim email. Akun dibuat lewat Auth Admin API (secret key)
   setelah `boleh_kelola_akun_generus()` lolos.
+- **Membagikan info masuk** (Absensi → Akun generus):
+  - "Cetak info masuk" → `/cetak/akun?kelompok=` (slip A4 dengan kop: alamat +
+    QR halaman masuk, username, dan **aturan** PIN awal; angka PIN tidak
+    dicetak). Bawaan hanya akun yang masih PIN awal; `&semua=1` untuk semua.
+  - Per akun: "Kirim/Bagikan info masuk lewat WhatsApp" (wa.me ke no. HP
+    generus bila terlihat admin, isi pesan sama dengan slip;
+    `src/lib/generus/info-masuk.ts`).
 - **Akun generus tidak punya baris `admin`.** Trigger mencegah satu akun
   menjadi admin sekaligus generus.
 - **PIN tidak sama dengan kata sandi Auth** (migrasi

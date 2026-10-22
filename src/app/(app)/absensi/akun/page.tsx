@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, MessageCircle, Printer, Search } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
-import { FormAturUlangPin, FormBuatAkun, FormUsername } from "@/components/absensi/form-akun-generus";
+import {
+  FormAturUlangPin,
+  FormBuatAkun,
+  FormUsername,
+} from "@/components/absensi/form-akun-generus";
 import { PageHeader } from "@/components/layout/page-header";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
+import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
@@ -18,7 +23,9 @@ import {
   hapusAkunGenerus,
   ubahUsername,
 } from "@/lib/absensi/akun-actions";
+import { pesanWhatsapp, tautanWhatsapp } from "@/lib/generus/info-masuk";
 import { usulanUsername } from "@/lib/generus/username";
+import { alamatSitus } from "@/lib/situs";
 import { createClient } from "@/lib/supabase/server";
 import { jam, waktuRelatif } from "@/lib/waktu";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
@@ -29,7 +36,14 @@ export const metadata: Metadata = {
 };
 
 type Cari = { q?: string | string[]; kelompok?: string | string[] };
-type Generus = { id: string; kode: string; nama_lengkap: string; nama_panggilan: string | null; tanggal_lahir: string | null };
+type Generus = {
+  id: string;
+  kode: string;
+  nama_lengkap: string;
+  nama_panggilan: string | null;
+  tanggal_lahir: string | null;
+  jenis_kelamin: string;
+};
 type Akun = {
   jamaah_id: string;
   username: string;
@@ -39,12 +53,18 @@ type Akun = {
   login_terakhir: string | null;
 };
 
-const satu = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+const satu = (v: string | string[] | undefined) =>
+  (Array.isArray(v) ? v[0] : v) ?? "";
 
-export default function AkunGenerusPage({ searchParams }: PageProps<"/absensi/akun">) {
+export default function AkunGenerusPage({
+  searchParams,
+}: PageProps<"/absensi/akun">) {
   return (
     <>
-      <Link href="/absensi" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary lg:mt-10">
+      <Link
+        href="/absensi"
+        className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary lg:mt-10"
+      >
         <ArrowLeft className="size-4" aria-hidden />
         Absensi
       </Link>
@@ -64,14 +84,17 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
   if (!akses || akses.kelompokAkun.length === 0) return <AbsensiBelumMenyala />;
 
   const pilihan = akses.kelompokAkun;
-  const kelompok = pilihan.find((k) => k.id === satu(param.kelompok)) ?? pilihan[0];
+  const kelompok =
+    pilihan.find((k) => k.id === satu(param.kelompok)) ?? pilihan[0];
   const q = satu(param.q).trim().slice(0, 60).toLowerCase();
 
   const supabase = await createClient();
   const [{ data: generus }, { data: akun }] = await Promise.all([
     supabase
       .from("jamaah_dengan_kategori")
-      .select("id, kode, nama_lengkap, nama_panggilan, tanggal_lahir")
+      .select(
+        "id, kode, nama_lengkap, nama_panggilan, tanggal_lahir, jenis_kelamin",
+      )
       .eq("kelompok_id", kelompok.id)
       .eq("aktif", true)
       .eq("termasuk_generus", true)
@@ -79,10 +102,25 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
       .returns<Generus[]>(),
     supabase
       .from("akun_generus")
-      .select("jamaah_id, username, aktif, pin_awal, terkunci_sampai, login_terakhir")
+      .select(
+        "jamaah_id, username, aktif, pin_awal, terkunci_sampai, login_terakhir",
+      )
       .returns<Akun[]>(),
   ]);
   const petaAkun = new Map((akun ?? []).map((a) => [a.jamaah_id, a]));
+  // No. HP untuk tombol WhatsApp (RLS: hanya bila boleh melihat kontak).
+  const [{ data: kontak }, situs] = await Promise.all([
+    supabase
+      .from("jamaah_kontak")
+      .select("jamaah_id, no_hp")
+      .in(
+        "jamaah_id",
+        (generus ?? []).filter((g) => petaAkun.has(g.id)).map((g) => g.id),
+      )
+      .returns<{ jamaah_id: string; no_hp: string | null }[]>(),
+    alamatSitus(),
+  ]);
+  const noHp = new Map((kontak ?? []).map((k) => [k.jamaah_id, k.no_hp]));
   const semua = generus ?? [];
   const daftar = semua.filter(
     (g) =>
@@ -100,22 +138,37 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
         <div className="flex-1">
           <p className="font-semibold">{kelompok.nama}</p>
           <p className="text-sm text-muted">
-            {punya} dari {semua.length} generus aktif sudah punya akun. PIN awal = tanggal lahir (DDMMYY), wajib
-            diganti saat login pertama.
+            {punya} dari {semua.length} generus aktif sudah punya akun. PIN awal
+            = tanggal lahir (DDMMYY), wajib diganti saat login pertama.
           </p>
         </div>
-        <TombolAksi
-          aksi={buatAkunKelompok.bind(null, kelompok.id)}
-          label="Buat akun yang belum ada"
-          tampilkanPesan
-          varian="kedua"
-          konfirmasi="Buat akun untuk semua generus yang belum punya (tanggal lahir lengkap)? PIN awal = tanggal lahir DDMMYY."
-        />
+        <div className="flex flex-wrap gap-2">
+          {punya > 0 && (
+            <Link
+              href={`/cetak/akun?kelompok=${kelompok.id}`}
+              target="_blank"
+              className={buttonClass("kedua")}
+            >
+              <Printer className="size-4" aria-hidden />
+              Cetak info masuk
+            </Link>
+          )}
+          <TombolAksi
+            aksi={buatAkunKelompok.bind(null, kelompok.id)}
+            label="Buat akun yang belum ada"
+            tampilkanPesan
+            varian="kedua"
+            konfirmasi="Buat akun untuk semua generus yang belum punya (tanggal lahir lengkap)? PIN awal = tanggal lahir DDMMYY."
+          />
+        </div>
       </Card>
 
       <FormOtomatis className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
         <div className="relative sm:flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" aria-hidden />
+          <Search
+            className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted"
+            aria-hidden
+          />
           <input
             name="q"
             type="search"
@@ -126,7 +179,12 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
           />
         </div>
         {pilihan.length > 1 && (
-          <select name="kelompok" defaultValue={kelompok.id} aria-label="Kelompok" className={`${INPUT_CLASS} w-full sm:w-48`}>
+          <select
+            name="kelompok"
+            defaultValue={kelompok.id}
+            aria-label="Kelompok"
+            className={`${INPUT_CLASS} w-full sm:w-48`}
+          >
             {pilihan.map((k) => (
               <option key={k.id} value={k.id}>
                 {k.nama}
@@ -137,7 +195,9 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
       </FormOtomatis>
 
       {daftar.length === 0 ? (
-        <Card className="text-center text-sm text-muted">Tidak ada generus yang cocok.</Card>
+        <Card className="text-center text-sm text-muted">
+          Tidak ada generus yang cocok.
+        </Card>
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-card bg-surface">
           {daftar.map((g) => {
@@ -150,10 +210,18 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
                   <span className="font-medium">{g.nama_lengkap}</span>
                   {a ? (
                     <>
-                      <span className="font-mono text-sm text-muted">@{a.username}</span>
-                      <Badge nada={a.aktif ? "sukses" : "netral"}>{a.aktif ? "Aktif" : "Nonaktif"}</Badge>
+                      <span className="font-mono text-sm text-muted">
+                        @{a.username}
+                      </span>
+                      <Badge nada={a.aktif ? "sukses" : "netral"}>
+                        {a.aktif ? "Aktif" : "Nonaktif"}
+                      </Badge>
                       {a.pin_awal && <Badge>PIN awal</Badge>}
-                      {terkunci && <Badge nada="bahaya">Terkunci s.d. {jam(a.terkunci_sampai!)}</Badge>}
+                      {terkunci && (
+                        <Badge nada="bahaya">
+                          Terkunci s.d. {jam(a.terkunci_sampai!)}
+                        </Badge>
+                      )}
                     </>
                   ) : (
                     <Badge>Belum ada akun</Badge>
@@ -163,34 +231,74 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
                   {[
                     g.kode,
                     adaTanggal ? null : "tanggal lahir belum lengkap",
-                    a ? (a.login_terakhir ? `login ${waktuRelatif(a.login_terakhir)}` : "belum pernah login") : null,
+                    a
+                      ? a.login_terakhir
+                        ? `login ${waktuRelatif(a.login_terakhir)}`
+                        : "belum pernah login"
+                      : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
                 {!a ? (
-                  <FormBuatAkun aksi={buatAkunGenerus.bind(null, g.id)} usulan={usulanUsername(g)} adaTanggal={adaTanggal} />
+                  <FormBuatAkun
+                    aksi={buatAkunGenerus.bind(null, g.id)}
+                    usulan={usulanUsername(g)}
+                    adaTanggal={adaTanggal}
+                  />
                 ) : (
-                  <details className="group">
-                    <summary className="cursor-pointer text-sm font-medium text-primary">Kelola akun</summary>
-                    <div className="mt-3 flex flex-col gap-3">
-                      <FormUsername aksi={ubahUsername.bind(null, g.id)} username={a.username} />
-                      <FormAturUlangPin aksi={aturUlangPin.bind(null, g.id)} adaTanggal={adaTanggal} />
-                      <div className="flex flex-wrap gap-2">
-                        <TombolAksi
-                          aksi={aturAkunAktif.bind(null, g.id, !a.aktif)}
-                          label={a.aktif ? "Nonaktifkan" : "Aktifkan"}
-                          varian="kedua"
+                  <>
+                    <a
+                      href={tautanWhatsapp(
+                        noHp.get(g.id) ?? null,
+                        pesanWhatsapp({
+                          panggilan:
+                            g.nama_panggilan || g.nama_lengkap.split(" ")[0],
+                          username: a.username,
+                          pinAwal: a.pin_awal,
+                          adaTanggal,
+                          jenisKelamin: g.jenis_kelamin,
+                          alamat: `${situs}/masuk`,
+                        }),
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-primary"
+                    >
+                      <MessageCircle className="size-4" aria-hidden />
+                      {noHp.get(g.id)
+                        ? "Kirim info masuk lewat WhatsApp"
+                        : "Bagikan info masuk lewat WhatsApp"}
+                    </a>
+                    <details className="group">
+                      <summary className="cursor-pointer text-sm font-medium text-primary">
+                        Kelola akun
+                      </summary>
+                      <div className="mt-3 flex flex-col gap-3">
+                        <FormUsername
+                          aksi={ubahUsername.bind(null, g.id)}
+                          username={a.username}
                         />
-                        <TombolAksi
-                          aksi={hapusAkunGenerus.bind(null, g.id)}
-                          label="Hapus akun"
-                          varian="bahaya"
-                          konfirmasi={`Hapus akun @${a.username}? ${g.nama_lengkap} tidak bisa login lagi (riwayat absen tetap ada).`}
+                        <FormAturUlangPin
+                          aksi={aturUlangPin.bind(null, g.id)}
+                          adaTanggal={adaTanggal}
                         />
+                        <div className="flex flex-wrap gap-2">
+                          <TombolAksi
+                            aksi={aturAkunAktif.bind(null, g.id, !a.aktif)}
+                            label={a.aktif ? "Nonaktifkan" : "Aktifkan"}
+                            varian="kedua"
+                          />
+                          <TombolAksi
+                            aksi={hapusAkunGenerus.bind(null, g.id)}
+                            label="Hapus akun"
+                            varian="bahaya"
+                            konfirmasi={`Hapus akun @${a.username}? ${g.nama_lengkap} tidak bisa login lagi (riwayat absen tetap ada).`}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </details>
+                    </details>
+                  </>
                 )}
               </li>
             );
