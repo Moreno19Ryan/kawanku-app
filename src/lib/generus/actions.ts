@@ -27,13 +27,10 @@ export async function gantiPin(_prev: StateAksi, formData: FormData): Promise<St
     return { galat: "PIN terlalu mudah ditebak (mis. 111111 atau 123456)." };
   }
 
-  const { error } = await supabase.auth.updateUser({ password: pin });
+  const { error } = await supabase.rpc("ganti_pin_saya", { p_pin: pin });
   if (error) {
-    return {
-      galat: error.code === "same_password" ? "PIN baru harus berbeda dari PIN lama." : "Gagal mengganti PIN. Coba lagi.",
-    };
+    return { galat: error.hint === "sama" ? "PIN baru harus berbeda dari PIN lama." : "Gagal mengganti PIN. Coba lagi." };
   }
-  await supabase.rpc("pin_generus_diganti");
   redirect(tujuanGenerus(formData.get("tujuan")));
 }
 

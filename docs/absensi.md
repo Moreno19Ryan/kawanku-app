@@ -137,13 +137,22 @@ Tes: `supabase/tests/akun_generus_rls.test.sql`.
   setelah `boleh_kelola_akun_generus()` lolos.
 - **Akun generus tidak punya baris `admin`.** Trigger mencegah satu akun
   menjadi admin sekaligus generus.
-- **Login di `/masuk`**, dijalankan di browser supaya batas percobaan Supabase
-  dihitung per perangkat:
-  1. `mulai_login_generus(username)`.
-  2. `signInWithPassword`.
-  3. Bila PIN salah: `gagal_login_generus`. Setelah **5x salah**, akun dikunci
-     **15 menit**.
-  4. Bila berhasil: `login_generus_berhasil()`.
+- **PIN tidak sama dengan kata sandi Auth** (migrasi
+  `20261022070000_login_generus_aman`, hasil audit keamanan 22 Okt 2026).
+  Hash PIN (bcrypt) ada di `private.pin_generus`, tidak terbaca lewat API;
+  kata sandi Auth generus selalu acak. Jadi PIN tidak bisa dipakai login
+  langsung ke Supabase, dan batas salah PIN tidak bisa dilewati.
+- **Login di `/masuk`**:
+  1. Server Action `siapkanMasukGenerus` (secret key) memanggil
+     `cek_pin_generus(username, pin)` (hanya `service_role`). Salah **5x**
+     berturut-turut → akun dikunci **15 menit**. Username tak dikenal
+     dijawab sama dengan PIN salah.
+  2. Bila benar, server mengganti kata sandi Auth akun itu dengan nilai acak
+     baru dan mengirimnya ke browser.
+  3. Browser login sendiri (`signInWithPassword`) supaya batas percobaan
+     Supabase dihitung per perangkat, bukan per server.
+- **PIN diubah** lewat `atur_pin_generus` (pengelola akun: buat akun & atur
+  ulang PIN, sekaligus membuka kunci) dan `ganti_pin_saya` (generus sendiri).
 - **Admin bisa**:
   - membuat akun massal per kelompok (yang tanggal lahirnya lengkap);
   - mengubah username;

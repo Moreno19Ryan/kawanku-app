@@ -19,6 +19,7 @@ import { getPengumumanTayang } from "@/lib/sistem/data";
 import { tanggalJam, waktuRelatif } from "@/lib/waktu";
 import { KartuAsisten } from "@/components/asisten/kartu-asisten";
 import { getSaranGenerus } from "@/lib/asisten/data";
+import { TombolPasang } from "@/components/pwa/tombol-pasang";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -58,6 +59,7 @@ async function BerandaGenerus() {
       </div>
 
       <KartuAsisten saran={saran} />
+      <TombolPasang />
 
       {pengumuman.length > 0 && (
         <div className="-mt-4">

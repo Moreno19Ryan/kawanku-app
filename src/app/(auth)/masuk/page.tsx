@@ -6,6 +6,7 @@ import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { Card } from "@/components/ui/card";
+import { TombolPasang } from "@/components/pwa/tombol-pasang";
 
 export const metadata: Metadata = {
   title: "Masuk Generus",
@@ -26,6 +27,8 @@ export default function GenerusLoginPage() {
           <p className="mt-1 text-sm text-muted">Assalamu&apos;alaikum. Silakan masuk untuk absen dengan scan QR di layar admin.</p>
           <FormMasukGenerus />
         </Card>
+
+        <TombolPasang className="mt-4" />
 
         <div className="mt-5 flex flex-col gap-2 px-1 text-center">
           <p className="text-sm text-muted">
