@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Target } from "lucide-react";
+import { Info, Target, TriangleAlert } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { FormKategori } from "@/components/pengaturan/form-kategori";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adalahAdminGenerus, punyaIzin, wajibAdmin } from "@/lib/auth/admin";
+import { analisisPrioritas, type CatatanPrioritas, type Kombinasi } from "@/lib/jamaah/kategori";
 import { LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
 import {
   hapusKategori,
@@ -66,6 +67,11 @@ function syarat(k: BarisKategori): string[] {
   return hasil;
 }
 
+/** "menikah, bekerja, 30 th" */
+function contoh(c: Kombinasi): string {
+  return `${(LABEL_STATUS_PERNIKAHAN[c.nikah] ?? c.nikah).toLowerCase()}, ${(LABEL_STATUS_SEKOLAH[c.sekolah] ?? c.sekolah).toLowerCase()}, ${c.usia} th`;
+}
+
 async function DaftarKategori() {
   const admin = await wajibAdmin();
   const bolehUbah = punyaIzin(admin, "pengaturan.kelola");
@@ -98,6 +104,8 @@ async function DaftarKategori() {
   }
   const tanpaKategori = jumlah.get(null) ?? 0;
   const sasaran = kategori.filter((k) => k.termasuk_generus).map((k) => k.nama);
+  const prioritas = analisisPrioritas(kategori);
+  const adaMasalah = [...prioritas.values()].some((c) => c.tidakTerpakai || c.generusMenikah);
 
   return (
     <div className="flex flex-col gap-3">
@@ -124,6 +132,18 @@ async function DaftarKategori() {
         </Card>
       )}
 
+      {bolehUbah && adaMasalah && (
+        <div role="alert" className="flex gap-3 rounded-card bg-warning/10 p-5 text-sm">
+          <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
+          <p>
+            <span className="font-semibold">Urutan atau aturan kategori perlu dicek.</span> Ada kategori yang tidak
+            pernah terpakai, atau kategori generus yang bisa memuat jamaah yang sudah menikah. Lihat tanda di bawah;
+            biasanya cukup dibetulkan dengan tombol Naik/Turun (aturan yang lebih khusus, mis. Lansia dan
+            Berkeluarga, diletakkan di atas).
+          </p>
+        </div>
+      )}
+
       <ol className="flex flex-col gap-3">
         {kategori.map((k, i) => (
           <li key={k.id}>
@@ -147,6 +167,7 @@ async function DaftarKategori() {
                   {jamaah && (
                     <p className="mt-2 text-xs text-muted">{jumlah.get(k.id) ?? 0} jamaah aktif</p>
                   )}
+                  <CatatanUrutan catatan={prioritas.get(k.id)} />
                 </div>
                 {bolehUbah && (
                   <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
@@ -203,6 +224,36 @@ async function DaftarKategori() {
           <FormKategori aksi={tambahKategori} labelKirim="Tambah kategori" />
         </Card>
       )}
+    </div>
+  );
+}
+
+/** Peringatan & catatan prioritas satu aturan (dari analisisPrioritas). */
+function CatatanUrutan({ catatan }: { catatan?: CatatanPrioritas }) {
+  if (!catatan) return null;
+  return (
+    <div className="mt-2 flex flex-col gap-1.5 text-xs">
+      {catatan.tidakTerpakai && (
+        <p className="flex gap-1.5 font-medium text-danger">
+          <TriangleAlert className="size-4 shrink-0" aria-hidden />
+          Tidak pernah terpakai: semua jamaah yang cocok sudah masuk kategori di atasnya (
+          {catatan.kalahDari.map((x) => x.nama).join(", ")}).
+        </p>
+      )}
+      {catatan.generusMenikah && (
+        <p className="flex gap-1.5 font-medium text-danger">
+          <TriangleAlert className="size-4 shrink-0" aria-hidden />
+          Jamaah yang sudah menikah bisa masuk kategori generus ini (mis. {contoh(catatan.generusMenikah)}) dan
+          terlihat oleh admin generus.
+        </p>
+      )}
+      {!catatan.tidakTerpakai &&
+        catatan.kalahDari.map((x) => (
+          <p key={x.nama} className="flex gap-1.5 text-muted">
+            <Info className="size-4 shrink-0" aria-hidden />
+            Yang juga cocok dengan &ldquo;{x.nama}&rdquo; di atasnya masuk &ldquo;{x.nama}&rdquo; (mis. {contoh(x.contoh)}).
+          </p>
+        ))}
     </div>
   );
 }
