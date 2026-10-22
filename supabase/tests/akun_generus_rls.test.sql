@@ -131,22 +131,47 @@ select uji.harus_ditolak('Format username: huruf besar/spasi ditolak',
       values ('00000000-0000-0000-0000-0000000000c3', '00000000-0000-0000-0000-0000000000f3', 'Generus Dua') returning 1 $q$);
 
 -- ---------------------------------------------------------------------
--- Login generus (anon)
+-- Login generus: PIN diperiksa server (service_role) lewat cek_pin_generus
 -- ---------------------------------------------------------------------
+insert into private.pin_generus (user_id, pin_hash)
+values ('00000000-0000-0000-0000-0000000000c1', extensions.crypt('140310', extensions.gen_salt('bf')));
+grant usage on schema uji to service_role;
+grant insert, select on uji.hasil to service_role;
+grant usage on sequence uji.hasil_no_seq to service_role;
+grant execute on all functions in schema uji to service_role;
+
 set local role anon;
-select uji.cek('Anon: mulai_login → email sintetis',
-  (select email from public.mulai_login_generus(' SATU ')) = 'g-satu@generus.kawanku.invalid');
-select uji.cek('Anon: username tak dikenal → kosong',
-  not exists (select 1 from public.mulai_login_generus('tidakada')));
+select uji.harus_ditolak('Anon: tidak bisa memeriksa PIN (cek_pin_generus)',
+  $q$ select 1 from public.cek_pin_generus('satu', '140310') $q$);
+select uji.harus_ditolak('Anon: RPC login lama ditutup (mulai_login_generus)',
+  $q$ select 1 from public.mulai_login_generus('satu') $q$);
+select uji.harus_ditolak('Anon: RPC login lama ditutup (gagal_login_generus)',
+  $q$ select public.gagal_login_generus('satu') $q$);
 select uji.harus_ditolak('Anon: tidak bisa membaca akun_generus', $q$ select 1 from public.akun_generus $q$);
 select uji.harus_ditolak('Anon: tidak bisa membuat token layar',
   $q$ select public.token_layar('00000000-0000-0000-0000-0000000000e1') $q$);
-select public.gagal_login_generus('satu') from generate_series(1, 4);
-select uji.cek('Anon: 4x salah belum terkunci',
-  (select terkunci_sampai is null from public.mulai_login_generus('satu')));
-select public.gagal_login_generus('satu');
-select uji.cek('Anon: 5x salah → terkunci ±15 menit',
-  (select terkunci_sampai > now() + interval '14 minutes' from public.mulai_login_generus('satu')));
+reset role;
+
+set local role authenticated;
+select uji.sebagai('00000000-0000-0000-0000-0000000000b1');
+select uji.harus_ditolak('Admin: tidak bisa memeriksa PIN langsung',
+  $q$ select 1 from public.cek_pin_generus('satu', '140310') $q$);
+select uji.harus_ditolak('Admin: tidak bisa membaca hash PIN', $q$ select 1 from private.pin_generus $q$);
+reset role;
+
+set local role service_role;
+select uji.cek('Server: PIN benar → ok + email sintetis + pin_awal',
+  (select hasil = 'ok' and email = 'g-satu@generus.kawanku.invalid' and pin_awal from public.cek_pin_generus(' SATU ', '140310')));
+select uji.cek('Server: username tak dikenal → salah (tidak dibedakan)',
+  (select hasil = 'salah' and email is null from public.cek_pin_generus('tidakada', '140310')));
+select uji.cek('Server: PIN salah → salah', (select hasil = 'salah' from public.cek_pin_generus('satu', '000000')));
+do $$ begin for i in 1..3 loop perform public.cek_pin_generus('satu', '000000'); end loop; end $$;
+select uji.cek('Server: 4x salah belum terkunci',
+  (select terkunci_sampai is null and gagal_login = 4 from public.akun_generus where username = 'satu'));
+select uji.cek('Server: 5x salah → terkunci',
+  (select hasil = 'terkunci' and terkunci_sampai > now() + interval '14 minutes' from public.cek_pin_generus('satu', '000000')));
+select uji.cek('Server: terkunci → PIN benar pun ditolak',
+  (select hasil = 'terkunci' from public.cek_pin_generus('satu', '140310')));
 reset role;
 
 -- ---------------------------------------------------------------------
@@ -165,7 +190,20 @@ select uji.harus_ditolak('K1: membuat akun generus K2 ditolak',
 select uji.harus_berhasil('K1: membuka kunci / atur ulang PIN awal',
   $q$ update public.akun_generus set gagal_login = 0, terkunci_sampai = null, pin_awal = true
       where username = 'satu' returning 1 $q$);
-update public.akun_generus set terkunci_sampai = null where username = 'satu';
+select public.atur_pin_generus('00000000-0000-0000-0000-0000000000c1', '250311');
+select uji.cek('K1: atur_pin_generus → kunci dibuka & PIN awal',
+  (select terkunci_sampai is null and pin_awal from public.akun_generus where username = 'satu'));
+select uji.harus_ditolak('K1: atur PIN akun di luar wewenang ditolak',
+  $q$ select public.atur_pin_generus('00000000-0000-0000-0000-0000000000b1', '123456') $q$);
+select uji.harus_ditolak('K1: PIN bukan 6 angka ditolak',
+  $q$ select public.atur_pin_generus('00000000-0000-0000-0000-0000000000c1', '12ab') $q$);
+reset role;
+set local role service_role;
+select uji.cek('Server: PIN hasil atur ulang admin berlaku',
+  (select hasil = 'ok' from public.cek_pin_generus('satu', '250311')));
+reset role;
+set local role authenticated;
+select uji.sebagai('00000000-0000-0000-0000-0000000000b2');
 
 create temp table tok on commit drop as
   select public.token_layar('00000000-0000-0000-0000-0000000000e1') t1,
@@ -186,7 +224,10 @@ grant select on tok2 to authenticated;
 -- Generus (akun satu)
 -- ---------------------------------------------------------------------
 select uji.sebagai('00000000-0000-0000-0000-0000000000c1');
-select uji.cek('Gen: login_generus_berhasil → pin_awal true', public.login_generus_berhasil());
+select uji.harus_ditolak('Gen: RPC login lama ditutup (login_generus_berhasil)',
+  $q$ select public.login_generus_berhasil() $q$);
+select uji.harus_ditolak('Gen: atur PIN lewat jalur admin ditolak',
+  $q$ select public.atur_pin_generus('00000000-0000-0000-0000-0000000000c1', '111222') $q$);
 select uji.cek('Gen: hanya melihat profilnya sendiri',
   (select array_agg(nama_lengkap) from public.jamaah) = array['Generus Satu']);
 select uji.cek('Gen: view kategori juga hanya dirinya', (select count(*) from public.jamaah_dengan_kategori) = 1);
@@ -219,10 +260,17 @@ select uji.cek('Gen: token lebih dari 90 detik → kedaluwarsa',
   uji.absen(uji.token('00000000-0000-0000-0000-0000000000e1', floor(extract(epoch from now()))::bigint - 120)) = 'kedaluwarsa');
 select uji.cek('Gen: token 80 detik lalu masih berlaku (sudah)',
   uji.absen(uji.token('00000000-0000-0000-0000-0000000000e1', floor(extract(epoch from now()))::bigint - 80)) = 'sudah');
-select public.pin_generus_diganti();
+select uji.harus_ditolak('Gen: PIN baru sama dengan lama ditolak',
+  $q$ select public.ganti_pin_saya('250311') $q$);
+select public.ganti_pin_saya('739182');
 reset role;
 select uji.cek('PIN diganti → pin_awal false',
   (select not pin_awal from public.akun_generus where username = 'satu'));
+set local role service_role;
+select uji.cek('Server: PIN baru generus berlaku, lama tidak',
+  (select hasil = 'ok' from public.cek_pin_generus('satu', '739182'))
+  and (select hasil = 'salah' from public.cek_pin_generus('satu', '250311')));
+reset role;
 
 -- Sesi ditutup
 update public.sesi_absensi set ditutup = true where id = '00000000-0000-0000-0000-0000000000e3';
@@ -240,9 +288,9 @@ select uji.sebagai('00000000-0000-0000-0000-0000000000c1');
 select uji.cek('Gen nonaktif: absen_layar → bukan_generus', uji.absen((select t1 from tok)) = 'bukan_generus');
 select uji.cek('Gen nonaktif: tidak melihat profil', not exists (select 1 from public.jamaah));
 reset role;
-set local role anon;
-select uji.cek('Anon: akun nonaktif tidak bisa mulai login',
-  not exists (select 1 from public.mulai_login_generus('satu')));
+set local role service_role;
+select uji.cek('Server: akun nonaktif → salah walau PIN benar',
+  (select hasil = 'salah' from public.cek_pin_generus('satu', '739182')));
 reset role;
 
 select ok(lulus, nama || coalesce(' — ' || catatan, '')) from uji.hasil order by no;
