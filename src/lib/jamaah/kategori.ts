@@ -134,3 +134,119 @@ export function analisisPrioritas(aturan: AturanKategori[]): Map<string, Catatan
   }
   return hasil;
 }
+
+// ---------------------------------------------------------------------------
+// Urutan otomatis (sistem) & pemeriksaan aturan
+// ---------------------------------------------------------------------------
+
+/**
+ * Urutan pemeriksaan yang diatur sistem, dari bentuk aturannya (admin tidak
+ * mengurutkan sendiri):
+ *   1. aturan usia saja (mis. Lansia), usia minimal tertinggi dulu;
+ *   2. aturan bukan generus yang memuat menikah/janda-duda (Berkeluarga);
+ *   3. aturan bukan generus lainnya (mis. Caberawit);
+ *   4. aturan generus (selalu khusus lajang, dijaga database).
+ * Di dalam kelompok yang sama: jenjang sekolah termuda dulu, lalu usia, nama.
+ */
+export function urutanSistem<T extends AturanKategori>(aturan: T[]): T[] {
+  const tingkat = (k: AturanKategori) => {
+    const sekolah = k.status_sekolah_berlaku?.length ?? 0;
+    const nikah = k.status_pernikahan_berlaku ?? [];
+    if (!sekolah && !nikah.length && k.usia_min !== null) return 0;
+    if (k.termasuk_generus) return 3;
+    return nikah.some((n) => n !== "lajang") ? 1 : 2;
+  };
+  const jenjang = (k: AturanKategori) =>
+    Math.min(99, ...(k.status_sekolah_berlaku ?? []).map((s) => SEKOLAH.indexOf(s as (typeof SEKOLAH)[number])));
+  return [...aturan].sort(
+    (a, b) =>
+      tingkat(a) - tingkat(b) ||
+      (tingkat(a) === 0 ? (b.usia_min ?? 0) - (a.usia_min ?? 0) : 0) ||
+      jenjang(a) - jenjang(b) ||
+      (a.usia_min ?? -1) - (b.usia_min ?? -1) ||
+      a.nama.localeCompare(b.nama, "id"),
+  );
+}
+
+/**
+ * Masalah yang membuat aturan ditolak disimpan (urutan sistem dipakai):
+ * kategori yang tidak pernah terpakai, atau kategori generus yang bisa
+ * memuat jamaah yang sudah menikah. Kosong = aman.
+ */
+export function masalahAturan(aturan: AturanKategori[]): string[] {
+  const urut = urutanSistem(aturan).map((k, i) => ({ ...k, urutan: i + 1 }));
+  const catatan = analisisPrioritas(urut);
+  const hasil: string[] = [];
+  for (const k of urut) {
+    const c = catatan.get(k.id)!;
+    if (c.tidakTerpakai) {
+      hasil.push(
+        `“${k.nama}” tidak akan pernah terpakai: semua jamaah yang cocok sudah masuk ${c.kalahDari
+          .map((x) => `“${x.nama}”`)
+          .join(", ")}.`,
+      );
+    }
+    if (c.generusMenikah) hasil.push(`“${k.nama}” (generus) bisa memuat jamaah yang sudah menikah.`);
+  }
+  return hasil;
+}
+
+/** Kalimat singkat mengapa jamaah masuk kategori ini, mis. "status menikah". */
+export function alasanKategori(
+  k: AturanKategori,
+  label: { sekolah: Record<string, string>; nikah: Record<string, string> },
+): string {
+  const bagian: string[] = [];
+  if (k.usia_min !== null && k.usia_max !== null) bagian.push(`usia ${k.usia_min}–${k.usia_max} th`);
+  else if (k.usia_min !== null) bagian.push(`usia ${k.usia_min} th ke atas`);
+  else if (k.usia_max !== null) bagian.push(`usia sampai ${k.usia_max} th`);
+  const nikah = k.status_pernikahan_berlaku ?? [];
+  if (nikah.length && !(k.termasuk_generus && nikah.length === 1)) {
+    bagian.push(`status ${nikah.map((n) => (label.nikah[n] ?? n).toLowerCase()).join("/")}`);
+  }
+  if (k.status_sekolah_berlaku?.length) {
+    bagian.push(k.status_sekolah_berlaku.map((s) => label.sekolah[s] ?? s).join("/"));
+  }
+  if (k.termasuk_generus) bagian.push("belum menikah");
+  return bagian.join(", ");
+}
+
+/** Rentang usia lazim per jenjang (di luar ini = perlu dipastikan). */
+export const RENTANG_JENJANG: Record<string, [number, number]> = {
+  belum_sekolah: [0, 7],
+  paud_tk: [2, 7],
+  sd: [5, 13],
+  smp: [11, 16],
+  sma_smk: [14, 19],
+};
+
+const JENJANG_SEKOLAH = ["belum_sekolah", "paud_tk", "sd", "smp", "sma_smk"];
+
+/**
+ * Kombinasi data yang tidak lazim (bukan pasti salah, tapi perlu
+ * dipastikan), supaya kategori akurat. Dipakai di form jamaah (saat
+ * mengisi) dan di "Perlu dicek".
+ */
+export function cekKewajaran(
+  usia: number | null,
+  statusPernikahan: string | null,
+  statusSekolah: string | null,
+  label: { sekolah: Record<string, string> },
+): { jenjang: string | null; lain: string[] } {
+  const namaSekolah = statusSekolah ? (label.sekolah[statusSekolah] ?? statusSekolah) : "";
+  const r = statusSekolah ? RENTANG_JENJANG[statusSekolah] : undefined;
+  const jenjang =
+    r && usia !== null && (usia < r[0] || usia > r[1])
+      ? `Usia ${usia} th tapi tercatat ${namaSekolah}. Sudah lulus/naik jenjang?`
+      : null;
+  const lain: string[] = [];
+  const menikah = statusPernikahan === "menikah" || statusPernikahan === "janda_duda";
+  if (menikah && usia !== null && usia < 16) lain.push(`Usia ${usia} th tapi tercatat sudah menikah.`);
+  if (menikah && statusSekolah && JENJANG_SEKOLAH.includes(statusSekolah)) {
+    lain.push(`Tercatat sudah menikah tapi masih ${namaSekolah}.`);
+  }
+  if ((statusSekolah === "kuliah" || statusSekolah === "bekerja") && usia !== null && usia < 15) {
+    lain.push(`Usia ${usia} th tapi tercatat ${namaSekolah.toLowerCase()}.`);
+  }
+  return { jenjang, lain };
+}

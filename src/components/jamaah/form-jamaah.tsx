@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Tags } from "lucide-react";
+import { Tags, TriangleAlert } from "lucide-react";
 import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { useFormAksi } from "@/components/pengaturan/use-form-aksi";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { cariKategori, hitungUsia, type AturanKategori } from "@/lib/jamaah/kategori";
+import { alasanKategori, cariKategori, cekKewajaran, hitungUsia, type AturanKategori } from "@/lib/jamaah/kategori";
 import { Saklar } from "@/components/ui/saklar";
 import {
   LABEL_PENDIDIKAN,
@@ -117,6 +117,8 @@ export function FormJamaah({
 
   const usia = hitungUsia(p.tanggal_lahir, p.tanggal_lahir ? null : p.tahun_lahir);
   const kategori = cariKategori(aturan, usia, p.status_pernikahan, p.status_sekolah);
+  const kewajaran = cekKewajaran(usia, p.status_pernikahan, p.status_sekolah, { sekolah: LABEL_STATUS_SEKOLAH });
+  const peringatan = [...(kewajaran.jenjang ? [kewajaran.jenjang] : []), ...kewajaran.lain];
 
   return (
     <form onSubmit={onSubmit} onChange={onChange} className="flex flex-col gap-5">
@@ -275,19 +277,33 @@ export function FormJamaah({
         className="flex items-start gap-3 rounded-control bg-surface-muted p-4 text-sm"
       >
         <Tags className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-        <p>
-          {kategori ? (
-            <>
-              Kategori: <span className="font-semibold">{kategori.nama}</span>
-              {kategori.termasuk_generus && <span className="text-primary"> · Generus</span>}
-            </>
-          ) : (
-            <span className="text-muted">
-              Belum masuk kategori mana pun. Lengkapi status sekolah, status pernikahan, atau usia.
-            </span>
+        <div className="flex flex-col gap-1">
+          <p>
+            {kategori ? (
+              <>
+                Kategori: <span className="font-semibold">{kategori.nama}</span>
+                {kategori.termasuk_generus && <span className="text-primary"> · Generus</span>}
+              </>
+            ) : (
+              <span className="text-muted">
+                Belum masuk kategori mana pun. Lengkapi status sekolah, status pernikahan, atau usia.
+              </span>
+            )}
+            {usia !== null && <span className="text-muted"> · {usia} tahun</span>}
+          </p>
+          {kategori && (
+            <p className="text-xs text-muted">
+              Karena{" "}
+              {alasanKategori(kategori, { sekolah: LABEL_STATUS_SEKOLAH, nikah: LABEL_STATUS_PERNIKAHAN })}.
+            </p>
           )}
-          {usia !== null && <span className="text-muted"> · {usia} tahun</span>}
-        </p>
+          {peringatan.map((teks) => (
+            <p key={teks} className="flex gap-1.5 text-xs font-medium">
+              <TriangleAlert className="size-3.5 shrink-0 translate-y-px text-warning" aria-hidden />
+              {teks}
+            </p>
+          ))}
+        </div>
       </div>
 
       <fieldset className="flex flex-col gap-4 border-t border-border pt-5">

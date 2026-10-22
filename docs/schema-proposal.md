@@ -161,7 +161,10 @@ Aturan pencocokan (fungsi `private.kategori_jamaah_id`):
    Contohnya: kategori dengan daftar status sekolah tidak cocok untuk jamaah
    yang status sekolahnya belum diisi.
 3. Bila lebih dari satu kategori cocok, yang dipakai adalah `urutan`
-   **terkecil**. `urutan` unik, jadi hasilnya selalu pasti.
+   **terkecil**. `urutan` unik, jadi hasilnya selalu pasti. Sejak 22 Okt
+   2026 `urutan` diatur sistem dari bentuk aturan (usia saja → berkeluarga →
+   lainnya → generus), dan kategori generus wajib khusus lajang (constraint),
+   jadi jamaah menikah tidak mungkin terhitung generus.
 4. Bila tidak ada yang cocok, jamaah tidak punya kategori. Ia muncul di view
    `jamaah_tanpa_kategori` dan tidak terlihat oleh admin generus.
 

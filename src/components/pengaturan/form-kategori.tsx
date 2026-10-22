@@ -101,6 +101,9 @@ export function FormKategori({
         opsi={LABEL_STATUS_PERNIKAHAN}
         terpilih={nilai.status_pernikahan_berlaku}
       />
+      <p className="-mt-3 text-xs text-muted">
+        Bila &ldquo;Termasuk generus&rdquo; dinyalakan, status pernikahan otomatis hanya Lajang.
+      </p>
 
       <fieldset>
         <legend className="mb-2 text-sm font-medium">Usia (tahun)</legend>

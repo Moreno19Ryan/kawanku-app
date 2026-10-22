@@ -383,6 +383,12 @@ Sudah diputuskan Reno (21 Okt 2026):
   otomatis dari aturan data (status sekolah, status pernikahan, usia untuk
   lansia) dan diubah admin desa lewat Pengaturan → Kategori jamaah (izin
   `pengaturan.kelola`) tanpa migrasi. Remaja dewasa tanpa batas atas umur.
+  Sejak 22 Okt 2026: kategori generus selalu khusus lajang (constraint
+  `kategori_jamaah_generus_lajang`); urutan pemeriksaan diatur sistem
+  (`urutanSistem()` di `src/lib/jamaah/kategori.ts`, ditulis lewat RPC
+  `atur_urutan_kategori`), tidak ada tombol Naik/Turun; aturan yang membuat
+  kategori lain tak terpakai ditolak (`masalahAturan()`). Kombinasi data tak
+  lazim diperingatkan di form jamaah & Perlu dicek (`cekKewajaran()`).
 - **Pembaruan status sekolah tahunan** (sekitar Juli): tanggung jawab
   **admin kelompok** untuk jamaah kelompoknya, lewat kolom `kelas` + halaman
   Jamaah → Kenaikan kelas (`docs/status-sekolah-tahunan.md`; jamaah naik

@@ -11,12 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { adalahAdminGenerus, punyaIzin, wajibAdmin } from "@/lib/auth/admin";
 import { analisisPrioritas, type CatatanPrioritas, type Kombinasi } from "@/lib/jamaah/kategori";
 import { LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
-import {
-  hapusKategori,
-  pindahKategori,
-  simpanKategori,
-  tambahKategori,
-} from "@/lib/pengaturan/kategori-actions";
+import { hapusKategori, simpanKategori, tambahKategori } from "@/lib/pengaturan/kategori-actions";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -40,7 +35,7 @@ export default function KategoriPage() {
       <KembaliKePengaturan />
       <PageHeader
         title="Kategori jamaah"
-        description="Kategori dihitung otomatis dari data jamaah. Aturan dicek dari atas; kategori pertama yang cocok yang dipakai."
+        description="Kategori dihitung otomatis dari data jamaah. Urutan pemeriksaan diatur sistem, jadi cukup atur syarat tiap kategori."
       />
       <Suspense fallback={<Skeleton className="h-96" />}>
         <DaftarKategori />
@@ -132,14 +127,23 @@ async function DaftarKategori() {
         </Card>
       )}
 
+      <Card className="flex gap-3 text-sm">
+        <Info className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+        <p className="text-muted">
+          <span className="font-medium text-fg">Urutan pemeriksaan diatur sistem:</span> aturan usia (mis.
+          Lansia) dulu, lalu Berkeluarga, lalu kategori lain, lalu kategori generus. Kategori generus selalu
+          khusus jamaah yang <span className="font-medium text-fg">belum menikah</span>, sehingga jamaah yang
+          sudah menikah tidak mungkin masuk generus.
+        </p>
+      </Card>
+
       {bolehUbah && adaMasalah && (
         <div role="alert" className="flex gap-3 rounded-card bg-warning/10 p-5 text-sm">
           <TriangleAlert className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
           <p>
             <span className="font-semibold">Urutan atau aturan kategori perlu dicek.</span> Ada kategori yang tidak
             pernah terpakai, atau kategori generus yang bisa memuat jamaah yang sudah menikah. Lihat tanda di bawah;
-            biasanya cukup dibetulkan dengan tombol Naik/Turun (aturan yang lebih khusus, mis. Lansia dan
-            Berkeluarga, diletakkan di atas).
+            betulkan syarat kategori yang ditandai (perubahan yang menimbulkan masalah ini tidak bisa disimpan).
           </p>
         </div>
       )}
@@ -169,16 +173,6 @@ async function DaftarKategori() {
                   )}
                   <CatatanUrutan catatan={prioritas.get(k.id)} />
                 </div>
-                {bolehUbah && (
-                  <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
-                    {i > 0 && (
-                      <TombolAksi aksi={pindahKategori.bind(null, k.id, "naik")} label="Naik" />
-                    )}
-                    {i < kategori.length - 1 && (
-                      <TombolAksi aksi={pindahKategori.bind(null, k.id, "turun")} label="Turun" />
-                    )}
-                  </div>
-                )}
               </div>
 
               {bolehUbah && (
@@ -219,7 +213,7 @@ async function DaftarKategori() {
         <Card className="mt-3">
           <h2 className="text-lg font-semibold">Tambah kategori</h2>
           <p className="mt-1 mb-5 text-sm text-muted">
-            Kategori baru ditaruh paling bawah (dicek terakhir). Ubah urutannya dengan tombol Naik.
+            Urutannya diatur sistem. Kategori yang membuat kategori lain tidak terpakai tidak bisa disimpan.
           </p>
           <FormKategori aksi={tambahKategori} labelKirim="Tambah kategori" />
         </Card>
