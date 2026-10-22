@@ -128,7 +128,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `/saya/profil`: nama panggilan, no. HP & email diubah sendiri (RPC
   `ubah_profil_saya`), alamat di `/saya/alamat` (RPC `ubah_alamat_saya`); data
   lain lewat laporan `usulan_koreksi` yang ditangani admin di Perlu dicek &
-  detail jamaah. Semua RPC ini hanya menulis baris `jamaah_saya()`. Izin/sakit
+  detail jamaah (status sekolah/pernikahan/tanggal lahir berisi nilai
+  terstruktur `nilai`/`nilai_kelas`; tombol Terapkan → RPC
+  `terapkan_usulan_koreksi`, security invoker). Semua RPC ini hanya menulis baris `jamaah_saya()`. Izin/sakit
   diajukan generus di `/saya/izin` (`pengajuan_izin`, per kejadian kalender),
   disetujui admin di `/absensi/izin` atau halaman pertemuan, lalu otomatis
   tercatat di absensi (trigger, hadir tidak ditimpa). Beranda generus:

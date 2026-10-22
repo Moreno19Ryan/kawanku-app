@@ -6,6 +6,8 @@ import { getGenerusSaatIni, pinDariTanggalLahir } from "@/lib/generus/akun";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
 import { bacaAlamat } from "@/lib/jamaah/alamat";
 import { bacaNoHp } from "@/lib/jamaah/format";
+import { bacaNilaiUsulan, labelNilaiUsulan } from "@/lib/jamaah/usulan-nilai";
+import { hariIniWib } from "@/lib/kegiatan/jadwal";
 import { LABEL_ALASAN_IZIN, LABEL_BAGIAN_USULAN, ucapanSyukur } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -101,14 +103,24 @@ export async function kirimUsulanKoreksi(_prev: StateAksi, formData: FormData): 
 
   const bagian = String(formData.get("bagian") ?? "");
   if (!(bagian in LABEL_BAGIAN_USULAN)) return { galat: "Pilih data yang salah." };
-  const isi = String(formData.get("isi") ?? "").trim().replace(/\s+/g, " ");
+  const nilai = bacaNilaiUsulan(
+    bagian,
+    String(formData.get("nilai") ?? ""),
+    String(formData.get("nilai_kelas") ?? ""),
+    hariIniWib(),
+  );
+  if (typeof nilai === "string") return { galat: nilai };
+  // Bila nilai dipilih, keterangan boleh kosong (diisi dari nilainya).
+  const isi =
+    String(formData.get("isi") ?? "").trim().replace(/\s+/g, " ") ||
+    (nilai.nilai ? labelNilaiUsulan(bagian, nilai.nilai, nilai.nilai_kelas) : "");
   if (!isi) return { galat: "Tulis data yang benar." };
   if (isi.length > 300) return { galat: "Maksimal 300 karakter." };
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("usulan_koreksi")
-    .insert({ jamaah_id: generus.jamaah.id, bagian, isi });
+    .insert({ jamaah_id: generus.jamaah.id, bagian, isi, ...nilai });
   if (error?.code === "23505") {
     return { galat: `Laporan "${LABEL_BAGIAN_USULAN[bagian]}" sebelumnya masih menunggu dicek admin.` };
   }

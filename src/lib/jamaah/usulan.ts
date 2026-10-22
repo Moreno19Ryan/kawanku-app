@@ -6,6 +6,8 @@ export type UsulanKoreksi = {
   id: string;
   bagian: string;
   isi: string;
+  nilai: string | null;
+  nilai_kelas: number | null;
   created_at: string;
   jamaah: { id: string; nama_lengkap: string; kode: string; kelompok_id: string } | null;
 };
@@ -20,7 +22,7 @@ export async function getUsulanMenunggu(jamaahId?: string): Promise<UsulanKoreks
   const supabase = await createClient();
   let q = supabase
     .from("usulan_koreksi")
-    .select("id, bagian, isi, created_at, jamaah:jamaah_id!inner(id, nama_lengkap, kode, kelompok_id)")
+    .select("id, bagian, isi, nilai, nilai_kelas, created_at, jamaah:jamaah_id!inner(id, nama_lengkap, kode, kelompok_id)")
     .eq("status", "menunggu")
     .in("jamaah.kelompok_id", akses.kelompokUbah.map((k) => k.id))
     .order("created_at");
