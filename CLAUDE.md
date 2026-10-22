@@ -153,7 +153,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `kegiatan.lihat`/`kegiatan.kelola` (`getAksesKegiatan`). Kalender rutin
   dihitung dari `kegiatan_jadwal` (`src/lib/kegiatan/jadwal.ts`, murni);
   baris `pertemuan` hanya untuk isian (pemateri, materi, batal, pindah,
-  absensi). Absensi pertemuan lewat RPC `buka_absensi_pertemuan`.
+  absensi). Absensi pertemuan lewat RPC `buka_absensi_pertemuan`. Beberapa
+  sesi pemateri per pertemuan (`pertemuan_materi`, RPC
+  `simpan_materi_pertemuan`) dipilih dari daftar pengajar rutin
+  (`/kegiatan/pengajar`, tabel `pengajar`).
 - Asisten KawanKu (`docs/asisten.md`): kartu pengingat/peringatan/saran/
   apresiasi di Beranda admin & generus, dihitung dari data yang ada
   (`src/lib/asisten/`), tanpa tabel baru.

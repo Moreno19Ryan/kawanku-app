@@ -32,8 +32,13 @@ Tes: `supabase/tests/kegiatan_rls.test.sql`.
 - **`pertemuan`**: satu kejadian, dengan kunci (kegiatan, kelompok, tanggal
   jadwal).
   - `mulai` bisa dipindah. Status `terjadwal` atau `dibatalkan` + alasan.
-  - Pemateri: `pemateri_jamaah_id` (dipilih dari jamaah berstatus muballigh/ot)
-    dan/atau `pemateri_nama` (salinan nama, atau pemateri dari luar).
+  - Pemateri: satu pertemuan bisa berisi beberapa sesi (`pertemuan_materi`:
+    urutan, pemateri, materi), ditulis sekaligus lewat RPC
+    `simpan_materi_pertemuan` (security invoker). Pemateri dipilih dari daftar
+    **pengajar rutin** (`pengajar`, per kelompok atau seluruh desa), jamaah
+    berstatus muballigh/ot, atau diketik. `pemateri_nama`/`materi`/
+    `pemateri_jamaah_id` di `pertemuan` adalah ringkasan otomatis (dipakai
+    kalender, jadwal generus, asisten). Migrasi `20261022140000_pengajar_pemateri`.
   - Juga menyimpan materi, catatan, dan `sesi_id` (absensi).
 - **Kalender rutin dihitung dari aturan jadwal** (`src/lib/kegiatan/jadwal.ts`,
   fungsi murni). Baris `pertemuan` baru dibuat bila ada isian. Mengubah jadwal
@@ -63,9 +68,12 @@ Izin: `kegiatan.lihat`, `kegiatan.kelola`. Membuka absensi juga butuh
   - kartu "Berikutnya";
   - pengingat pertemuan pekan ini yang belum ada pematerinya.
 - **`/kegiatan/pertemuan?k=&kel=&t=`**:
-  - isi pemateri (muballigh atau ketik), materi, catatan, dan pindah waktu;
+  - isi sesi-sesi pemateri & materi ("Tambah pemateri / sesi"), catatan, dan
+    pindah waktu; pemateri tetap diisi admin per pertemuan;
   - tandai libur/batal (dengan alasan cepat) atau aktifkan lagi;
   - buka atau lihat absensi.
+- **`/kegiatan/pengajar`**: daftar pengajar rutin (tambah, nonaktifkan,
+  hapus) per wilayah; pengajar nonaktif tidak muncul di pilihan pemateri.
 - **`/kegiatan/kelola`**: daftar kegiatan dan form buat (rutin dengan editor
   jadwal, atau agenda). Di `[id]`: ubah data, ubah jadwal, pertemuan 5 pekan ke
   depan, hapus.
