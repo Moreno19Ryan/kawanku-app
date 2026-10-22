@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { DaftarServiceWorker } from "@/components/pwa/daftar-sw";
 import { SKRIP_TEMA } from "@/lib/tema";
 import "./globals.css";
 
@@ -59,7 +60,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: SKRIP_TEMA }} />
       </head>
-      <body className="min-h-full bg-bg font-sans text-fg">{children}</body>
+      <body className="min-h-full bg-bg font-sans text-fg">
+        {children}
+        <DaftarServiceWorker />
+      </body>
     </html>
   );
 }

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { FormMasuk } from "@/components/auth/form-masuk";
 import Link from "next/link";
+import { TombolPasang } from "@/components/pwa/tombol-pasang";
 
 export const metadata: Metadata = {
   title: "Masuk Admin",
@@ -32,6 +33,8 @@ export default function AdminLoginPage() {
 
           <FormMasuk />
         </Card>
+
+        <TombolPasang className="mt-4" />
 
         <div className="mt-5 flex flex-col gap-2 px-1 text-center">
           <p className="text-sm text-muted">

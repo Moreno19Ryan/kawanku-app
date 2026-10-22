@@ -17,6 +17,7 @@ import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { getPengumumanTayang } from "@/lib/sistem/data";
 import { tanggalJam, waktuRelatif } from "@/lib/waktu";
+import { TombolPasang } from "@/components/pwa/tombol-pasang";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -53,6 +54,8 @@ async function BerandaGenerus() {
           {[generus.jamaah.kelompok, `@${generus.username}`].filter(Boolean).join(" · ")}
         </p>
       </div>
+
+      <TombolPasang />
 
       {pengumuman.length > 0 && (
         <div className="-mt-4">
