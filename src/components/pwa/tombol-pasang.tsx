@@ -5,7 +5,7 @@ import { Check, Copy, Download, X } from "lucide-react";
 
 type PromptPasang = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
-type Browser =
+export type Browser =
   | "ios-safari"
   | "ios-lain"
   | "samsung"
