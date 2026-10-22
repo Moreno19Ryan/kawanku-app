@@ -8,7 +8,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesJamaah } from "@/lib/jamaah/akses";
 import {
   hapusKeluarga,
@@ -19,6 +18,7 @@ import {
 } from "@/lib/jamaah/keluarga-actions";
 import { LABEL_HUBUNGAN } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Detail keluarga",
@@ -51,7 +51,7 @@ export default function DetailKeluargaPage({ params }: PageProps<"/jamaah/keluar
         fallback={
           <>
             <PageHeader title="Keluarga" />
-            <Skeleton className="h-96" />
+            <Memuat className="h-96" />
           </>
         }
       >

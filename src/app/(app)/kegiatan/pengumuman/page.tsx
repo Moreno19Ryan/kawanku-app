@@ -8,7 +8,6 @@ import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { FormPengumuman } from "@/components/sistem/form-pengumuman";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   buatPengumumanGenerus,
   hapusPengumumanGenerus,
@@ -18,6 +17,7 @@ import { getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { KOLOM_PENGUMUMAN, type Pengumuman } from "@/lib/sistem/data";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Pengumuman Generus",
@@ -34,7 +34,7 @@ export default function PengumumanGenerusPage() {
         title="Pengumuman generus"
         description="Kabar untuk generus, tampil di beranda akun generus di wilayahnya (mis. jadwal pindah, bawa perlengkapan, agenda baru)."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <Isi />
       </Suspense>
     </>

@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   bolehCatatSesi,
   bolehKelolaSesi,
@@ -26,6 +25,7 @@ import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { keInputWib, tanggalJam } from "@/lib/waktu";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Sesi absensi",
@@ -61,7 +61,7 @@ export default function SesiPage({ params, searchParams }: PageProps<"/absensi/[
         <ArrowLeft className="size-4" aria-hidden />
         Absensi
       </Link>
-      <Suspense fallback={<Skeleton className="mt-6 h-96" />}>
+      <Suspense fallback={<Memuat className="mt-6 h-96" />}>
         <DetailSesi params={params} cari={searchParams as Promise<Cari>} />
       </Suspense>
     </>

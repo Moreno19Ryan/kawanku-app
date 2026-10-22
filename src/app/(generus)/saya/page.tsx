@@ -9,7 +9,6 @@ import { DaftarPengumuman } from "@/components/sistem/daftar-pengumuman";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { wajibGenerus } from "@/lib/generus/akun";
 import { getKehadiranSaya } from "@/lib/generus/data";
 import { labelKehadiran, ringkasKehadiran } from "@/lib/generus/kehadiran";
@@ -20,6 +19,7 @@ import { tanggalJam, waktuRelatif } from "@/lib/waktu";
 import { KartuAsisten } from "@/components/asisten/kartu-asisten";
 import { getSaranGenerus } from "@/lib/asisten/data";
 import { TombolPasang } from "@/components/pwa/tombol-pasang";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function SayaPage() {
   return (
-    <Suspense fallback={<Skeleton className="mt-8 h-96" />}>
+    <Suspense fallback={<Memuat className="mt-8 h-96" />}>
       <BerandaGenerus />
     </Suspense>
   );

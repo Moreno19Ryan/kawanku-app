@@ -4,9 +4,9 @@ import { Check, Minus } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Peran & izin",
@@ -35,7 +35,7 @@ export default function PeranPage() {
         title="Peran & izin"
         description="Hanya dibaca. Detail hak akses masih menunggu keputusan pengurus."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <MatriksIzin />
       </Suspense>
     </>

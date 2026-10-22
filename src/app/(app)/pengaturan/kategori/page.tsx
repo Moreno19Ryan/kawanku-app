@@ -7,12 +7,12 @@ import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { adalahAdminGenerus, punyaIzin, wajibAdmin } from "@/lib/auth/admin";
 import { analisisPrioritas, type CatatanPrioritas, type Kombinasi } from "@/lib/jamaah/kategori";
 import { LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
 import { hapusKategori, simpanKategori, tambahKategori } from "@/lib/pengaturan/kategori-actions";
 import { createClient } from "@/lib/supabase/server";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Kategori jamaah",
@@ -37,7 +37,7 @@ export default function KategoriPage() {
         title="Kategori jamaah"
         description="Kategori dihitung otomatis dari data jamaah. Urutan pemeriksaan diatur sistem, jadi cukup atur syarat tiap kategori."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <DaftarKategori />
       </Suspense>
     </>

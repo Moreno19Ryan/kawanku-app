@@ -4,12 +4,12 @@ import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { FormAlamat, type NilaiPribadi } from "@/components/jamaah/form-data-sensitif";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { simpanAlamatSaya } from "@/lib/generus/actions";
 import { wajibGenerus } from "@/lib/generus/akun";
 import { hitungUsia } from "@/lib/jamaah/kategori";
 import { dokumenIdentitas } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Alamat Saya",
@@ -25,7 +25,7 @@ export default function AlamatSayaPage() {
         <ArrowLeft className="size-4" aria-hidden />
         Profil saya
       </Link>
-      <Suspense fallback={<Skeleton className="mt-4 h-96" />}>
+      <Suspense fallback={<Memuat className="mt-4 h-96" />}>
         <AlamatSaya />
       </Suspense>
     </>

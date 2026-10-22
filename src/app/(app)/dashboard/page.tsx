@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 import { waktuRelatif } from "@/lib/waktu";
 import { KartuAsisten } from "@/components/asisten/kartu-asisten";
 import { getSaranAdmin } from "@/lib/asisten/data";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -47,7 +48,7 @@ export default function DashboardPage() {
               <Skeleton key={i} className="h-28" />
             ))}
           </div>
-          <Skeleton className="mt-4 h-72" />
+          <Memuat className="mt-4 h-72" />
         </>
       }
     >

@@ -29,6 +29,10 @@
   --kk-grafik-2: #eb6834;
   --kk-grafik-3: #1baf7a;
   --kk-grafik-4: #eda100;
+  /* Logo "K" (sama dengan public/brand/mark.svg & mark-dark.svg). */
+  --kk-logo-batang: #858585;
+  --kk-logo-kaki: #6b6b6b;
+  --kk-logo-lengan: #0290c8;
 }
 
 /*
@@ -63,6 +67,9 @@
     --kk-grafik-2: #d95926;
     --kk-grafik-3: #199e70;
     --kk-grafik-4: #c98500;
+    --kk-logo-batang: #9aa3ab;
+    --kk-logo-kaki: #7d868e;
+    --kk-logo-lengan: #2bb3ea;
   }
 }
 
@@ -85,6 +92,9 @@
   --kk-grafik-2: #d95926;
   --kk-grafik-3: #199e70;
   --kk-grafik-4: #c98500;
+  --kk-logo-batang: #9aa3ab;
+  --kk-logo-kaki: #7d868e;
+  --kk-logo-lengan: #2bb3ea;
 }
 
 /* Varian dark: ikut tema aplikasi, bukan hanya media query perangkat. */
@@ -142,6 +152,96 @@ html {
 body {
   background: var(--kk-bg);
   color: var(--kk-fg);
+}
+
+/*
+ * Animasi memuat: logo "K" KawanKu tersusun bagian demi bagian (batang,
+ * lengan biru, kaki), berhenti sejenak, lalu memudar dan berulang. Hanya
+ * geser/skala/opasitas; warna & arah logo tidak diubah.
+ */
+.kk-k-batang,
+.kk-k-lengan,
+.kk-k-kaki {
+  animation-duration: 2.2s;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.22, 0.25, 0, 1);
+  animation-fill-mode: both;
+  transform-box: fill-box;
+}
+.kk-k-batang {
+  transform-origin: 50% 100%;
+  animation-name: kk-k-batang;
+}
+.kk-k-lengan {
+  transform-origin: 0% 100%;
+  animation-name: kk-k-lengan;
+}
+.kk-k-kaki {
+  transform-origin: 0% 0%;
+  animation-name: kk-k-kaki;
+}
+@keyframes kk-k-batang {
+  0% { opacity: 0; transform: scaleY(0.2); }
+  18%, 78% { opacity: 1; transform: scaleY(1); }
+  94%, 100% { opacity: 0; transform: scale(0.92); }
+}
+@keyframes kk-k-lengan {
+  0%, 14% { opacity: 0; transform: translate(-30%, 30%) scale(0.6); }
+  36%, 78% { opacity: 1; transform: translate(0, 0) scale(1); }
+  94%, 100% { opacity: 0; transform: scale(0.92); }
+}
+@keyframes kk-k-kaki {
+  0%, 26% { opacity: 0; transform: translate(-30%, -30%) scale(0.6); }
+  48%, 78% { opacity: 1; transform: translate(0, 0) scale(1); }
+  94%, 100% { opacity: 0; transform: scale(0.92); }
+}
+.kk-memuat-teks {
+  animation: kk-memuat-teks 2.2s ease-in-out infinite;
+}
+@keyframes kk-memuat-teks {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+/*
+ * Perpindahan halaman: isi halaman memudar halus sambil naik sedikit.
+ * Pembaruan otomatis (Realtime), pencarian, dan simpan form ditandai "diam"
+ * sehingga tidak beranimasi (lihat ViewTransition di layout).
+ */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(.kk-halaman) {
+  animation: 140ms cubic-bezier(0.4, 0, 1, 1) both kk-halaman-keluar;
+}
+::view-transition-new(.kk-halaman) {
+  animation: 320ms cubic-bezier(0.22, 0.25, 0, 1) 60ms both kk-halaman-masuk;
+}
+@keyframes kk-halaman-keluar {
+  to { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes kk-halaman-masuk {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kk-k-batang,
+  .kk-k-lengan,
+  .kk-k-kaki,
+  .kk-memuat-teks {
+    animation: none;
+  }
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

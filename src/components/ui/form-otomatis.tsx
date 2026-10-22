@@ -2,7 +2,7 @@
 
 import { useRef, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { LoaderCircle } from "lucide-react";
+import { LogoMemuat } from "@/components/ui/memuat";
 
 /** Kolom ketik (dicari setelah jeda), selain itu (pilihan, tanggal) langsung. */
 const KETIK = new Set(["text", "search"]);
@@ -38,7 +38,7 @@ export function FormOtomatis({
     const qs = param.toString();
     const tujuan = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     if (tujuan === window.location.pathname + window.location.search) return;
-    startTransition(() => router.replace(tujuan, { scroll: false }));
+    startTransition(() => router.replace(tujuan, { scroll: false, transitionTypes: ["diam"] }));
   }
 
   function onChange(e: FormEvent<HTMLFormElement>) {
@@ -72,7 +72,7 @@ export function FormOtomatis({
         aria-live="polite"
         className={`pointer-events-none absolute -top-2 right-3 flex items-center gap-1.5 rounded-pill bg-primary-soft px-2.5 py-1 text-xs font-medium text-primary transition-opacity duration-200 ease-oneui ${pending ? "opacity-100" : "opacity-0"}`}
       >
-        <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
+        <LogoMemuat ukuran={14} />
         {pending ? "Mencari…" : ""}
       </span>
     </form>

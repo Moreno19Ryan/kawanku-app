@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TautanIzin } from "@/components/generus/tautan-izin";
 import { DaftarKejadian } from "@/components/kegiatan/daftar-kejadian";
-import { Skeleton } from "@/components/ui/skeleton";
 import { wajibGenerus } from "@/lib/generus/akun";
 import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Jadwal",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function JadwalPage() {
   return (
-    <Suspense fallback={<Skeleton className="mt-8 h-96" />}>
+    <Suspense fallback={<Memuat className="mt-8 h-96" />}>
       <Jadwal />
     </Suspense>
   );

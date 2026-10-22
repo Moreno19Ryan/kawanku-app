@@ -7,12 +7,12 @@ import { JamaahBelumMenyala } from "@/components/jamaah/belum-menyala";
 import { KembaliKeJamaah } from "@/components/jamaah/kembali";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesJamaah } from "@/lib/jamaah/akses";
 import { labelTahunAjaran, tahunAjaran } from "@/lib/jamaah/kenaikan";
 import { terapkanKenaikanKelas } from "@/lib/jamaah/kenaikan-actions";
 import { getCalonKenaikan, getCatatanKenaikan } from "@/lib/jamaah/kenaikan-data";
 import { tanggalJam } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Kenaikan kelas",
@@ -26,7 +26,7 @@ export default function KenaikanKelasPage({ searchParams }: PageProps<"/jamaah/k
         title="Kenaikan kelas"
         description="Naikkan kelas jamaah bersekolah sekaligus tiap tahun ajaran baru; kategori ikut menyesuaikan."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <Isi cari={searchParams} />
       </Suspense>
     </>

@@ -6,12 +6,12 @@ import { FormProfil, FormUsulanKoreksi } from "@/components/generus/form-profil"
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { batalkanUsulanKoreksi } from "@/lib/generus/actions";
 import { wajibGenerus } from "@/lib/generus/akun";
 import { LABEL_BAGIAN_USULAN, LABEL_PENDIDIKAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalPanjang, waktuRelatif } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Profil Saya",
@@ -44,7 +44,7 @@ export default function ProfilSayaPage() {
         <ArrowLeft className="size-4" aria-hidden />
         Beranda
       </Link>
-      <Suspense fallback={<Skeleton className="mt-4 h-96" />}>
+      <Suspense fallback={<Memuat className="mt-4 h-96" />}>
         <ProfilSaya />
       </Suspense>
     </>

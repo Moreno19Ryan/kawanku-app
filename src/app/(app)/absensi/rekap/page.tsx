@@ -8,11 +8,11 @@ import { FilterRekap } from "@/components/absensi/filter-rekap";
 import { PageHeader } from "@/components/layout/page-header";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesAbsensi, KOLOM_SESI, type Sesi } from "@/lib/absensi/akses";
 import { bacaParamRekap, bolehEksporRekap, getRekap, pilihanWilayah, queryRekap } from "@/lib/absensi/rekap";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Rekap absensi",
@@ -29,7 +29,7 @@ export default function RekapPage({ searchParams }: PageProps<"/absensi/rekap">)
         title="Rekap absensi"
         description="Bulanan atau per kegiatan. Lihat pratinjau dulu, lalu cetak (PDF) atau unduh untuk Excel."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <Rekap cari={searchParams} />
       </Suspense>
     </>

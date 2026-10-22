@@ -7,12 +7,12 @@ import { FormBuatKegiatan } from "@/components/kegiatan/form-kegiatan";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { buatKegiatan } from "@/lib/kegiatan/actions";
 import { KOLOM_KEGIATAN } from "@/lib/kegiatan/data";
 import { ringkasJadwal, type Jadwal, type Kegiatan } from "@/lib/kegiatan/jadwal";
 import { createClient } from "@/lib/supabase/server";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Kelola kegiatan",
@@ -26,7 +26,7 @@ export default function KelolaKegiatanPage() {
         Kegiatan
       </Link>
       <PageHeader title="Kelola kegiatan" description="Kegiatan rutin berjadwal dan agenda sekali jalan." />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <Daftar />
       </Suspense>
     </>

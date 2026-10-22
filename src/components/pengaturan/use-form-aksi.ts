@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, type FormEvent } from "react";
+import { addTransitionType, startTransition, useActionState, type FormEvent } from "react";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 
 type Aksi = (prev: StateAksi, formData: FormData) => Promise<StateAksi>;
@@ -18,7 +18,11 @@ export function useFormAksi(aksi: Aksi, sebelumKirim?: (form: HTMLFormElement) =
     e.preventDefault();
     if (sebelumKirim && !sebelumKirim(e.currentTarget)) return;
     const data = new FormData(e.currentTarget);
-    startTransition(() => kirim(data));
+    startTransition(() => {
+      // Simpan form tidak memicu animasi pindah halaman.
+      addTransitionType("diam");
+      kirim(data);
+    });
   }
 
   return [state, onSubmit, pending] as const;

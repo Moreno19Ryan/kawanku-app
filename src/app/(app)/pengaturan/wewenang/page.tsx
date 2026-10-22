@@ -5,9 +5,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { pengelolaAkun, wajibAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Peran & wewenang saya",
@@ -32,7 +32,7 @@ export default function WewenangPage() {
         title="Peran & wewenang saya"
         description="Wilayah tugasmu dan apa saja yang boleh kamu lakukan di KawanKu."
       />
-      <Suspense fallback={<Skeleton className="h-80" />}>
+      <Suspense fallback={<Memuat className="h-80" />}>
         <DaftarWewenang />
       </Suspense>
     </>

@@ -4,7 +4,6 @@ import { KartuKontakPengembang } from "@/components/bantuan/kontak-pengembang";
 import { PageHeader } from "@/components/layout/page-header";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   adalahAdminGenerus,
   pengelolaAkun,
@@ -12,6 +11,7 @@ import {
   wajibAdmin,
   type AdminSaatIni,
 } from "@/lib/auth/admin";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Bantuan",
@@ -92,7 +92,7 @@ export default function BantuanPage() {
     <>
       <KembaliKePengaturan />
       <PageHeader title="Bantuan" description="Pertanyaan yang sering muncul." />
-      <Suspense fallback={<Skeleton className="h-80" />}>
+      <Suspense fallback={<Memuat className="h-80" />}>
         <DaftarBantuan />
       </Suspense>
     </>

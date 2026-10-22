@@ -8,11 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { cariPemeriksaan, getPerluDicek } from "@/lib/jamaah/periksa";
 import { createClient } from "@/lib/supabase/server";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Jamaah",
@@ -41,7 +41,7 @@ export default function JamaahPage({ searchParams }: PageProps<"/jamaah">) {
       fallback={
         <>
           <PageHeader title="Jamaah" />
-          <Skeleton className="h-96" />
+          <Memuat className="h-96" />
         </>
       }
     >

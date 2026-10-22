@@ -6,12 +6,12 @@ import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { FormPengumuman } from "@/components/sistem/form-pengumuman";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
 import { hapusPengumuman, ubahStatusPengumuman } from "@/lib/sistem/actions";
 import { KOLOM_PENGUMUMAN, type Pengumuman } from "@/lib/sistem/data";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Pengumuman",
@@ -25,7 +25,7 @@ export default function PengumumanPage() {
         title="Pengumuman"
         description="Banner di atas aplikasi untuk admin, generus, atau keduanya."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <IsiPengumuman />
       </Suspense>
     </>

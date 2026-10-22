@@ -8,11 +8,11 @@ import { KembaliKeJamaah } from "@/components/jamaah/kembali";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesJamaah } from "@/lib/jamaah/akses";
 import { buatKeluarga } from "@/lib/jamaah/keluarga-actions";
 import { createClient } from "@/lib/supabase/server";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Keluarga",
@@ -27,7 +27,7 @@ export default function KeluargaPage({ searchParams }: PageProps<"/jamaah/keluar
     <>
       <KembaliKeJamaah />
       <PageHeader title="Keluarga" description="Kelompokkan jamaah ke dalam keluarga (kepala keluarga, pasangan, anak, …)." />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <DaftarKeluarga cari={searchParams as Promise<Cari>} />
       </Suspense>
     </>

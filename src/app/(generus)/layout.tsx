@@ -1,3 +1,4 @@
+import { ViewTransition } from "react";
 import { LogOut } from "lucide-react";
 import { AppFooter } from "@/components/layout/app-footer";
 import { BrandMark } from "@/components/layout/brand-mark";
@@ -26,7 +27,9 @@ export default function GenerusLayout({ children }: LayoutProps<"/">) {
           </form>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-gutter pb-8">{children}</main>
+      <ViewTransition update={{ diam: "none", default: "kk-halaman" }} default="none">
+        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-gutter pb-8">{children}</main>
+      </ViewTransition>
       <AppFooter className="mx-auto mt-6 w-full max-w-lg px-gutter pb-[calc(var(--spacing-bottomnav)+env(safe-area-inset-bottom)+1.5rem)]" />
       <NavGenerus />
       <SegarkanLangsung />

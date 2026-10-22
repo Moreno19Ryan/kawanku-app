@@ -3,11 +3,11 @@ import { Suspense } from "react";
 import { KartuKehadiran } from "@/components/generus/kartu-kehadiran";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { wajibGenerus } from "@/lib/generus/akun";
 import { getKehadiranSaya } from "@/lib/generus/data";
 import { bulanWib, labelKehadiran, ringkasKehadiran, type CatatanKehadiran } from "@/lib/generus/kehadiran";
 import { tanggalJam } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Kehadiran",
@@ -20,7 +20,7 @@ const judulBulan = (bulan: string) =>
 
 export default function KehadiranPage() {
   return (
-    <Suspense fallback={<Skeleton className="mt-8 h-96" />}>
+    <Suspense fallback={<Memuat className="mt-8 h-96" />}>
       <Kehadiran />
     </Suspense>
   );
