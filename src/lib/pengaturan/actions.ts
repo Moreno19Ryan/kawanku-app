@@ -67,6 +67,17 @@ async function bolehBeriPeran(
 
 const TIDAK_DIKELOLA: StateAksi = { galat: "Akun ini tidak bisa kamu kelola." };
 
+/** Pesan pengaman pengembang dari database (jaga_penugasan_sistem / jaga_admin_sistem). */
+function pesanJagaPengembang(error: { hint?: string | null } | null): StateAksi | null {
+  if (error?.hint === "pengembang_sendiri") {
+    return { galat: "Peran pengembang milikmu sendiri tidak bisa kamu cabut. Minta pengembang lain bila perlu." };
+  }
+  if (error?.hint === "pengembang_terakhir") {
+    return { galat: "Ini pengembang terakhir. Tambahkan pengembang lain dulu supaya sistem tetap ada yang mengelola." };
+  }
+  return null;
+}
+
 /**
  * Jumlah admin aktif yang tetap bisa mengelola akses (izin global
  * akses.kelola) seandainya perubahan dijalankan. Dipakai supaya akses desa
@@ -234,7 +245,7 @@ export async function ubahStatusAdmin(
     .update({ aktif })
     .eq("user_id", userId)
     .select("user_id");
-  if (error || data.length === 0) return GAGAL;
+  if (error || data.length === 0) return pesanJagaPengembang(error) ?? GAGAL;
 
   refresh();
   return { pesan: aktif ? "Admin diaktifkan." : "Admin dinonaktifkan." };
@@ -309,7 +320,7 @@ export async function hapusPenugasan(
     .delete()
     .eq("id", penugasanId)
     .select("id");
-  if (error || data.length === 0) return GAGAL;
+  if (error || data.length === 0) return pesanJagaPengembang(error) ?? GAGAL;
 
   refresh();
   return { pesan: "Peran dicabut." };
