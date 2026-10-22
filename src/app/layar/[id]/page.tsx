@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { LayarQr } from "@/components/absensi/layar-qr";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { bolehCatatSesi, getAksesAbsensi, KOLOM_SESI, type Sesi } from "@/lib/absensi/akses";
-import { tokenLayar } from "@/lib/absensi/actions";
+import { hadirLayar, tokenLayar } from "@/lib/absensi/actions";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
 
@@ -47,7 +47,7 @@ async function Layar({ params }: { params: Promise<{ id: string }> }) {
         <h1 className="text-3xl font-semibold tracking-tight">{sesi.nama}</h1>
         <p className="text-muted">{tanggalJam(sesi.mulai)}</p>
       </div>
-      <LayarQr ambil={tokenLayar.bind(null, sesi.id)} />
+      <LayarQr sesiId={sesi.id} ambil={tokenLayar.bind(null, sesi.id)} hitung={hadirLayar.bind(null, sesi.id)} />
     </div>
   );
 }

@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Maximize } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
-import type { tokenLayar } from "@/lib/absensi/actions";
+import type { hadirLayar, tokenLayar } from "@/lib/absensi/actions";
+import { createClient } from "@/lib/supabase/client";
+import { langganan } from "@/lib/supabase/realtime";
 
 const GANTI_DETIK = 60;
 
@@ -13,7 +15,15 @@ const GANTI_DETIK = 60;
  * detik (token berlaku 90 detik, jadi yang sedang scan saat pergantian
  * tetap tercatat). Isi QR = URL /absen?t=... (bisa dibuka kamera HP).
  */
-export function LayarQr({ ambil }: { ambil: () => ReturnType<typeof tokenLayar> }) {
+export function LayarQr({
+  sesiId,
+  ambil,
+  hitung,
+}: {
+  sesiId: string;
+  ambil: () => ReturnType<typeof tokenLayar>;
+  hitung: () => ReturnType<typeof hadirLayar>;
+}) {
   const [svg, setSvg] = useState<string>();
   const [status, setStatus] = useState<"memuat" | "ok" | "ditutup" | "galat">("memuat");
   const [hadir, setHadir] = useState(0);
@@ -50,6 +60,31 @@ export function LayarQr({ ambil }: { ambil: () => ReturnType<typeof tokenLayar> 
     };
   }, [ambil]);
 
+  // Angka hadir naik langsung setiap ada yang scan (Supabase Realtime pada
+  // absensi sesi ini; tetap RLS). Perubahan beruntun digabung sekali hitung.
+  useEffect(() => {
+    const supabase = createClient();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const perbarui = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const n = await hitung().catch(() => null);
+        if (n !== null) setHadir(n);
+      }, 250);
+    };
+    const berhenti = langganan(supabase, `layar-${sesiId}`, (kanal) =>
+      kanal.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "absensi", filter: `sesi_id=eq.${sesiId}` },
+        perbarui,
+      ),
+    );
+    return () => {
+      clearTimeout(timer);
+      berhenti();
+    };
+  }, [sesiId, hitung]);
+
   return (
     <div className="flex flex-col items-center gap-5">
       <div className="flex aspect-square w-[min(80vw,62vh)] items-center justify-center rounded-card bg-paper p-4 text-paper-fg">
@@ -71,7 +106,13 @@ export function LayarQr({ ambil }: { ambil: () => ReturnType<typeof tokenLayar> 
       </p>
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-muted">
         <span>QR berganti dalam {sisa} detik</span>
-        <span className="font-semibold text-success">{hadir} hadir</span>
+        <span className="font-semibold text-success" aria-live="polite">
+          {/* key: animasi "naik" setiap angka berubah */}
+          <span key={hadir} className="kk-angka-naik inline-block tabular-nums">
+            {hadir}
+          </span>{" "}
+          hadir
+        </span>
         <button
           type="button"
           onClick={() => void document.documentElement.requestFullscreen?.()}
