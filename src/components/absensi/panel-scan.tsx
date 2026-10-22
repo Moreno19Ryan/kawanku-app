@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState, useTransition, type FormEvent } from "react";
-import { CircleAlert, CircleCheck, ScanLine } from "lucide-react";
+import { Camera, CircleAlert, CircleCheck, ScanLine, X } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
+import { KameraQr } from "@/components/ui/kamera-qr";
 import type { HasilScan } from "@/lib/absensi/actions";
 import { bunyi, type JenisBunyi } from "@/lib/absensi/bunyi";
 import { ucapanSyukur } from "@/lib/label";
@@ -34,9 +35,13 @@ function jenis(h: HasilScan["hasil"]): JenisBunyi {
   return h === "tercatat" ? "berhasil" : h === "sudah" ? "sudah" : "gagal";
 }
 
+/** Kartu yang sama baru dibaca lagi setelah tidak terlihat kamera selama ini. */
+const JEDA_KODE_SAMA_MS = 2500;
+
 /**
  * Kolom scan untuk scanner barcode USB (mengetik kode + Enter) atau ketik
  * kode jamaah (KW-XXXXXX). Fokus selalu kembali ke kolom setelah scan.
+ * Di HP (tanpa scanner): "Scan pakai kamera" membaca kartu satu per satu.
  */
 export function PanelScan({
   catat,
@@ -48,8 +53,22 @@ export function PanelScan({
   const input = useRef<HTMLInputElement>(null);
   const [riwayat, setRiwayat] = useState<Riwayat[]>([]);
   const [suara, setSuara] = useState(true);
+  const [kamera, setKamera] = useState(false);
   const [pending, startTransition] = useTransition();
+  const sibuk = useRef(false);
+  const kodeKamera = useRef<{ kode: string; waktu: number } | null>(null);
   const terakhir = riwayat[0];
+
+  function kirim(kode: string, fokus: boolean) {
+    sibuk.current = true;
+    startTransition(async () => {
+      const hasil = await catat(kode);
+      if (suara) bunyi(jenis(hasil.hasil));
+      setRiwayat((r) => [{ ...hasil, no: (r[0]?.no ?? 0) + 1, kodeAsal: kode }, ...r].slice(0, 8));
+      sibuk.current = false;
+      if (fokus) input.current?.focus();
+    });
+  }
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -57,12 +76,23 @@ export function PanelScan({
     const kode = el?.value.trim() ?? "";
     if (!el || !kode) return;
     el.value = "";
-    startTransition(async () => {
-      const hasil = await catat(kode);
-      if (suara) bunyi(jenis(hasil.hasil));
-      setRiwayat((r) => [{ ...hasil, no: (r[0]?.no ?? 0) + 1, kodeAsal: kode }, ...r].slice(0, 8));
-      el.focus();
-    });
+    kirim(kode, true);
+  }
+
+  /** QR dari kamera: satu per satu, kartu yang sama tidak dicatat berulang. */
+  function bacaKamera(isi: string) {
+    const kode = isi.trim();
+    const kini = Date.now();
+    const lalu = kodeKamera.current;
+    if (lalu && lalu.kode === kode && kini - lalu.waktu < JEDA_KODE_SAMA_MS) {
+      // Kartu masih di depan kamera: perpanjang jedanya, jangan dicatat lagi.
+      lalu.waktu = kini;
+      return "lanjut" as const;
+    }
+    if (!kode || sibuk.current) return "lanjut" as const;
+    kodeKamera.current = { kode, waktu: kini };
+    kirim(kode, false);
+    return "lanjut" as const;
   }
 
   const nadaTerakhir = !terakhir
@@ -75,12 +105,32 @@ export function PanelScan({
 
   return (
     <div className="flex flex-col gap-4">
+      {kamera && (
+        <div className="mx-auto w-full max-w-sm">
+          <KameraQr
+            onBaca={bacaKamera}
+            className="aspect-[4/3] w-full"
+            catatanGagal="Masih tidak bisa? Ketik kode jamaah (KW-…) di kolom bawah, atau tandai hadir dari daftar peserta."
+            keterangan={
+              <p className="text-center text-sm text-muted">Arahkan kartu ke kamera satu per satu. Hasil tampil di bawah.</p>
+            }
+          />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setKamera((k) => !k)}
+        className={buttonClass(kamera ? "netral" : "kedua", "self-start")}
+      >
+        {kamera ? <X className="size-4" aria-hidden /> : <Camera className="size-4" aria-hidden />}
+        {kamera ? "Tutup kamera" : "Scan pakai kamera HP"}
+      </button>
       <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row">
         <div className="relative sm:flex-1">
           <ScanLine className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted" aria-hidden />
           <input
             ref={input}
-            autoFocus
+            autoFocus={!kamera}
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
@@ -130,7 +180,9 @@ export function PanelScan({
           </>
         ) : (
           <span className="text-sm">
-            Arahkan kursor ke kolom di atas, lalu scan kartu satu per satu. Hasil tampil di sini.
+            {kamera
+              ? "Arahkan kartu ke kamera. Hasil tampil di sini."
+              : "Arahkan kursor ke kolom di atas, lalu scan kartu satu per satu. Hasil tampil di sini."}
           </span>
         )}
       </div>

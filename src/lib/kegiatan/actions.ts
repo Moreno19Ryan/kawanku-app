@@ -241,7 +241,9 @@ export async function bukaAbsensiPertemuan(k: KunciPertemuan & { mulai: string }
     return {
       galat: error?.message.includes("dibatalkan")
         ? "Pertemuan ini dibatalkan; aktifkan lagi dulu."
-        : "Gagal membuka absensi. Pastikan kamu pengelola absensi wilayah ini.",
+        : error?.hint === "belum_waktunya"
+          ? "Absensi baru bisa dibuka paling cepat 2 jam sebelum pertemuan dimulai."
+          : "Gagal membuka absensi. Pastikan kamu pengelola absensi wilayah ini.",
     };
   }
   redirect(`/absensi/${data}`);

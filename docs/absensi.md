@@ -69,14 +69,23 @@ sudah punya catatan.
 
 ## Alur di aplikasi
 
-1. **Absensi → Buat sesi** (nama, wilayah, peserta, mulai/selesai).
+1. **Buka absensi**: pertemuan hari ini tampil di Beranda admin ("Hari ini")
+   dan di atas halaman Absensi, dengan tombol Buka absensi / Lanjut absensi.
+   Sesi (dari pertemuan maupun manual) hanya bisa dibuat **paling cepat 2 jam
+   sebelum mulai** (trigger `cek_waktu_sesi`, migrasi
+   `20261022130000_absensi_tepat_waktu`); sesi yang sudah lewat tetap boleh
+   (susulan). "Acara di luar jadwal?" → Buat sesi manual (nama, wilayah,
+   peserta, mulai/selesai), hanya untuk acara yang tidak ada di Kegiatan.
 2. **Absensi → Kartu QR**:
    - "Buat kartu yang belum ada" per kelompok.
    - "Cetak semua" membuka lembar A4 berisi 2 × 5 kartu ukuran KTP dengan kop
      desa. Cetak dengan skala 100%.
    - "Ganti kartu" bila kartu hilang atau rusak.
 3. **Halaman sesi**: fokus di kolom scan, lalu scan kartu dengan scanner
-   barcode USB (scanner mengetik token lalu Enter).
+   barcode USB (scanner mengetik token lalu Enter). Tanpa scanner (mis. di
+   HP): **Scan pakai kamera HP** membaca kartu satu per satu; kartu yang masih
+   di depan kamera tidak dicatat berulang (`KameraQr`, sama dengan pemindai
+   generus).
    - Kode jamaah `KW-XXXXXX` yang tercetak di kartu bisa diketik bila scan
      gagal.
    - Hasilnya tampil besar, berwarna, dan berbunyi (nada tinggi; bisa
