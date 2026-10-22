@@ -60,6 +60,9 @@ export async function buatSesi(_prev: StateAksi, formData: FormData): Promise<St
   if (!target.umum) isian.hanya_generus = true;
 
   const { data, error } = await ctx.supabase.from("sesi_absensi").insert(isian).select("id").maybeSingle();
+  if (error?.hint === "belum_waktunya") {
+    return { galat: "Sesi baru bisa dibuat paling cepat 2 jam sebelum waktu mulainya." };
+  }
   if (error || !data) return GAGAL;
   redirect(`/absensi/${data.id}`);
 }
