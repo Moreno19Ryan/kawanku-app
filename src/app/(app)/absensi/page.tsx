@@ -26,29 +26,40 @@ export default function AbsensiPage() {
         title="Absensi"
         description="Sesi absensi, scan kartu QR, dan rekap kehadiran."
         actions={
-          <>
-            <Link href="/absensi/laporan" className={buttonClass("kedua")}>
-              <ChartLine className="size-4" aria-hidden />
-              Laporan
-            </Link>
-            <Link href="/absensi/rekap" className={buttonClass("kedua")}>
-              <ChartColumn className="size-4" aria-hidden />
-              Rekap
-            </Link>
-            <Link href="/absensi/akun" className={buttonClass("kedua")}>
-              <UserRound className="size-4" aria-hidden />
-              Akun generus
-            </Link>
-            <Link href="/absensi/kartu" className={buttonClass("kedua")}>
-              <IdCard className="size-4" aria-hidden />
-              Kartu QR
-            </Link>
-          </>
+          <Suspense fallback={null}>
+            <AksiAbsensi />
+          </Suspense>
         }
       />
       <Suspense fallback={<Skeleton className="h-96" />}>
         <DaftarSesi />
       </Suspense>
+    </>
+  );
+}
+
+/** Tombol ke halaman lain hanya bila modul Absensi tersedia untuk admin ini. */
+async function AksiAbsensi() {
+  const akses = await getAksesAbsensi();
+  if (!akses?.bolehLihat) return null;
+  return (
+    <>
+      <Link href="/absensi/laporan" className={buttonClass("kedua")}>
+        <ChartLine className="size-4" aria-hidden />
+        Laporan
+      </Link>
+      <Link href="/absensi/rekap" className={buttonClass("kedua")}>
+        <ChartColumn className="size-4" aria-hidden />
+        Rekap
+      </Link>
+      <Link href="/absensi/akun" className={buttonClass("kedua")}>
+        <UserRound className="size-4" aria-hidden />
+        Akun generus
+      </Link>
+      <Link href="/absensi/kartu" className={buttonClass("kedua")}>
+        <IdCard className="size-4" aria-hidden />
+        Kartu QR
+      </Link>
     </>
   );
 }
