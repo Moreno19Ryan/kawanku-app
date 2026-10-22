@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import QRCode from "qrcode";
 import { TombolCetak } from "@/components/absensi/tombol-cetak";
@@ -52,7 +53,17 @@ async function LembarKartu({ cari }: { cari: Promise<Cari> }) {
     .eq("jamaah.aktif", true);
   if (UUID.test(jamaah)) query = query.eq("jamaah_id", jamaah);
   else if (akses.kelompokKelola.some((k) => k.id === kelompok)) query = query.eq("jamaah.kelompok_id", kelompok);
-  else return <p className="text-sm">Pilih kelompok dari halaman Kartu QR.</p>;
+  else {
+    return (
+      <p className="text-sm">
+        Pilih kelompok dulu dari halaman{" "}
+        <Link href="/absensi/kartu" className="font-medium underline">
+          Kartu QR
+        </Link>
+        .
+      </p>
+    );
+  }
 
   const { data } = await query.returns<Baris[]>();
   const kartu = (data ?? []).sort((a, b) => a.jamaah.nama_lengkap.localeCompare(b.jamaah.nama_lengkap, "id"));
