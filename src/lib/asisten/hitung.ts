@@ -7,6 +7,7 @@
 import type { Laporan } from "@/lib/absensi/laporan-hitung";
 import { namaBulan } from "@/lib/absensi/laporan-hitung";
 import { hariIniWib, tambahHari, type Kejadian } from "@/lib/kegiatan/jadwal";
+import type { Kelengkapan } from "@/lib/generus/kelengkapan";
 
 export type JenisSaran = "peringatan" | "pengingat" | "saran" | "apresiasi";
 
@@ -181,11 +182,10 @@ export function saranLaporan(l: Laporan): Saran[] {
   return hasil;
 }
 
-/** Untuk generus: hasil pengajuan izin 7 hari terakhir & kelengkapan data. */
+/** Untuk generus: hasil pengajuan izin 7 hari terakhir & ajakan melengkapi data diri. */
 export function saranGenerus(opsi: {
   izin: { id: string; status: "disetujui" | "ditolak"; kegiatan: string; tanggal: string; tanggapan: string | null }[];
-  adaNoHp: boolean;
-  adaAlamat: boolean;
+  kelengkapan: Kelengkapan;
   /** Jadwal beberapa hari ke depan (untuk pengingat H-1). */
   jadwal?: Kejadian[];
   sekarang?: Date;
@@ -214,22 +214,14 @@ export function saranGenerus(opsi: {
       href: "/saya/izin",
     });
   }
-  if (!opsi.adaNoHp) {
+  const { persen, kurang, hanyaAlamat } = opsi.kelengkapan;
+  if (kurang.length) {
     hasil.push({
-      kode: "lengkapi-hp",
+      kode: `lengkapi-data:${persen}`,
       jenis: "saran",
-      judul: "Lengkapi no. HP/WA-mu",
-      isi: "Supaya pengurus mudah menghubungimu bila ada kabar penting.",
-      href: "/saya/profil",
-    });
-  }
-  if (!opsi.adaAlamat) {
-    hasil.push({
-      kode: "lengkapi-alamat",
-      jenis: "saran",
-      judul: "Alamatmu belum diisi",
-      isi: "Isi alamat sesuai KTP/KIA dan tempat tinggalmu sekarang.",
-      href: "/saya/alamat",
+      judul: `Data dirimu baru ${persen}% lengkap`,
+      isi: `Yuk lengkapi: ${kurang.join(", ")}. Supaya pengurus punya data yang benar dan mudah menghubungimu.`,
+      href: hanyaAlamat ? "/saya/alamat" : "/saya/profil",
     });
   }
   return hasil;

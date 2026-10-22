@@ -259,6 +259,22 @@ export async function tanganiUsulanKoreksi(id: string, _prev: StateAksi, formDat
   return { pesan: status === "selesai" ? "Ditandai sudah dibetulkan." : "Laporan ditolak." };
 }
 
+/** Tandai perubahan data oleh generus (satu jamaah) sudah dicek admin. */
+export async function tandaiPerubahanDicek(jamaahId: string): Promise<StateAksi> {
+  const akses = await getAksesJamaah();
+  if (!akses?.kelompokUbah.length) return TIDAK_BERHAK;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("perubahan_data_generus")
+    .update({ diperiksa_at: new Date().toISOString() })
+    .eq("jamaah_id", jamaahId)
+    .is("diperiksa_at", null)
+    .select("id");
+  if (error || !data?.length) return { galat: "Sudah dicek atau di luar wewenangmu." };
+  refresh();
+  return { pesan: "Ditandai sudah dicek." };
+}
+
 /** Keterangan janda/duda (izin janda_duda.kelola). Kosong = belum diketahui. */
 export async function aturJandaDuda(
   id: string,

@@ -10,6 +10,7 @@ import {
   NomorTersamar,
   type NilaiPribadi,
 } from "@/components/jamaah/form-data-sensitif";
+import { DaftarPerubahan } from "@/components/jamaah/daftar-perubahan";
 import { DaftarUsulan } from "@/components/jamaah/daftar-usulan";
 import { FormJandaDuda } from "@/components/jamaah/form-janda-duda";
 import { FormHubungkan } from "@/components/jamaah/form-keluarga";
@@ -33,6 +34,7 @@ import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { formatNoHp } from "@/lib/jamaah/format";
 import { buatKeluargaDariJamaah, hubungkanKeKeluarga } from "@/lib/jamaah/keluarga-actions";
 import { cariPemeriksaan, getPerluDicek } from "@/lib/jamaah/periksa";
+import { getPerubahanGenerus } from "@/lib/jamaah/perubahan";
 import { getUsulanMenunggu } from "@/lib/jamaah/usulan";
 import {
   dokumenIdentitas,
@@ -226,7 +228,9 @@ async function Detail({
       ? supabase.from("keluarga").select("id, nama").eq("kelompok_id", j.kelompok_id).order("nama")
       : Promise.resolve({ data: [] as { id: string; nama: string }[] }),
   ]);
-  const usulan = bolehUbah ? await getUsulanMenunggu(j.id) : [];
+  const [usulan, perubahan] = bolehUbah
+    ? await Promise.all([getUsulanMenunggu(j.id), getPerubahanGenerus(j.id)])
+    : [[], []];
   const perluDicek = ((await getPerluDicek())?.perJamaah.get(j.id) ?? [])
     .map(cariPemeriksaan)
     .filter((p) => p !== undefined);
@@ -257,6 +261,12 @@ async function Detail({
       {usulan.length > 0 && (
         <div className="mb-4 sm:mb-6">
           <DaftarUsulan usulan={usulan} tampilkanNama={false} />
+        </div>
+      )}
+
+      {perubahan.length > 0 && (
+        <div className="mb-4 sm:mb-6">
+          <DaftarPerubahan perubahan={perubahan} tampilkanNama={false} />
         </div>
       )}
 

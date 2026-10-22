@@ -6,6 +6,7 @@ import { getAksesKegiatan, bolehKelolaPertemuan } from "@/lib/kegiatan/akses";
 import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari, type Kejadian } from "@/lib/kegiatan/jadwal";
 import type { GenerusSaatIni } from "@/lib/generus/akun";
+import { hitungKelengkapan } from "@/lib/generus/kelengkapan";
 import { createClient } from "@/lib/supabase/server";
 import {
   saranGenerus,
@@ -69,7 +70,7 @@ export async function getSaranGenerus(generus: GenerusSaatIni, jadwal: Kejadian[
   return aman(async () => {
     const supabase = await createClient();
     const sepekan = new Date(Date.now() - 7 * 24 * 3600_000).toISOString();
-    const [{ data: izin }, { data: kontak }, { data: pribadi }] = await Promise.all([
+    const [{ data: izin }, { data: kontak }, { data: pribadi }, { data: diri }] = await Promise.all([
       supabase
         .from("pengajuan_izin")
         .select("id, status, tanggal, tanggapan, kegiatan:kegiatan_id(nama)")
@@ -79,18 +80,36 @@ export async function getSaranGenerus(generus: GenerusSaatIni, jadwal: Kejadian[
         .order("ditangani_at", { ascending: false })
         .limit(3)
         .returns<{ id: string; status: "disetujui" | "ditolak"; tanggal: string; tanggapan: string | null; kegiatan: { nama: string } | null }[]>(),
-      supabase.from("jamaah_kontak").select("no_hp").eq("jamaah_id", generus.jamaah.id).maybeSingle<{ no_hp: string | null }>(),
+      supabase
+        .from("jamaah_kontak")
+        .select("no_hp, no_hp_wali")
+        .eq("jamaah_id", generus.jamaah.id)
+        .maybeSingle<{ no_hp: string | null; no_hp_wali: string | null }>(),
       supabase
         .from("jamaah_pribadi")
-        .select("ktp_wilayah, ktp_jalan")
+        .select("ktp_wilayah, ktp_jalan, nama_ayah, nama_ibu")
         .eq("jamaah_id", generus.jamaah.id)
-        .maybeSingle<{ ktp_wilayah: string | null; ktp_jalan: string | null }>(),
+        .maybeSingle<{ ktp_wilayah: string | null; ktp_jalan: string | null; nama_ayah: string | null; nama_ibu: string | null }>(),
+      supabase
+        .from("jamaah")
+        .select("tanggal_lahir, tempat_lahir, status_sekolah, kelas")
+        .eq("id", generus.jamaah.id)
+        .maybeSingle<{ tanggal_lahir: string | null; tempat_lahir: string | null; status_sekolah: string | null; kelas: number | null }>(),
     ]);
     return urutkanSaran(
       saranGenerus({
         izin: (izin ?? []).map((i) => ({ ...i, kegiatan: i.kegiatan?.nama ?? "Pertemuan" })),
-        adaNoHp: Boolean(kontak?.no_hp),
-        adaAlamat: Boolean(pribadi?.ktp_wilayah || pribadi?.ktp_jalan),
+        kelengkapan: hitungKelengkapan({
+          tanggal_lahir: diri?.tanggal_lahir ?? null,
+          tempat_lahir: diri?.tempat_lahir ?? null,
+          status_sekolah: diri?.status_sekolah ?? null,
+          kelas: diri?.kelas ?? null,
+          no_hp: kontak?.no_hp ?? null,
+          no_hp_wali: kontak?.no_hp_wali ?? null,
+          nama_ayah: pribadi?.nama_ayah ?? null,
+          nama_ibu: pribadi?.nama_ibu ?? null,
+          ada_alamat: Boolean(pribadi?.ktp_wilayah || pribadi?.ktp_jalan),
+        }),
         jadwal,
       }),
     );

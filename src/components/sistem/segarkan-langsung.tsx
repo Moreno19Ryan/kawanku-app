@@ -26,6 +26,7 @@ const TABEL = [
   "pengumuman",
   "pengajuan_izin",
   "usulan_koreksi",
+  "perubahan_data_generus",
   "fitur",
   "fitur_kelompok",
   "pengaturan_sistem",

@@ -64,20 +64,30 @@ desa/kelurahan), semua kosong di awal, cakupan seluruh Indonesia.
   baris `jamaah_pribadi` miliknya sendiri; nama orang tua tidak ditampilkan
   dan tetap diubah admin. `updated_by` mencatat akun generus yang mengubah.
 
-## Diubah sendiri oleh generus (21 Okt 2026)
+## Diubah sendiri oleh generus (diperbarui 22 Okt 2026)
 
-Halaman `/saya/profil` (migrasi `20261022020000_profil_generus`):
+Halaman `/saya/profil` (migrasi `20261022020000_profil_generus`, lalu
+`20261022120000_profil_mandiri_generus`). Keputusan Reno: generus memegang
+kendali atas data dirinya supaya database cepat lengkap.
 
-- **Diubah langsung**: nama panggilan, no. HP/WA, email (RPC
-  `ubah_profil_saya`; no. HP wali tetap lewat admin) dan alamat
-  (`/saya/alamat`). Generus bisa membaca baris `jamaah_kontak` miliknya.
-- **Lewat laporan**: nama lengkap, tanggal lahir, jenis kelamin, status
-  sekolah, pendidikan, status pernikahan, kelompok, keluarga, lainnya.
-  Generus mengirim `usulan_koreksi` (satu yang menunggu per bagian); admin
-  yang boleh mengubah jamaahnya membetulkan data lalu menandai "Sudah
-  dibetulkan" atau "Tolak" dengan tanggapan. Laporan tampil di Dashboard,
-  Perlu dicek, dan detail jamaah. Generus bisa membatalkan selama menunggu.
-- Semua perubahan tercatat di `updated_by` (akun generus atau admin).
+- **Diubah langsung** (RPC `ubah_data_diri_saya`): nama panggilan, tempat &
+  tanggal lahir, status sekolah & kelas, pendidikan terakhir,
+  pekerjaan/kegiatan, no. HP/WA, email, no. HP wali, nama ayah & ibu; alamat
+  di `/saya/alamat` (`ubah_alamat_saya`). RPC lama `ubah_profil_saya` ditutup.
+- **Pengaman**: perubahan yang membuat jamaah keluar dari kategori generus
+  ditolak (hint `bukan_generus_lagi`); tanggal lahir & status sekolah tidak
+  bisa dikosongkan.
+- **Lewat laporan** (`usulan_koreksi`, satu yang menunggu per bagian): nama
+  lengkap, jenis kelamin, status pernikahan, kelompok, keluarga, lainnya.
+  Admin menerapkan/membetulkan lalu menandai "Sudah dibetulkan" atau "Tolak".
+- **NIK & No. KK** tidak tampil dan tidak bisa diubah dari akun generus.
+- **Jejak perubahan** (`perubahan_data_generus`): setiap perubahan oleh
+  generus dicatat. Data di tabel `jamaah` dicatat dengan nilai lama → baru;
+  kontak, orang tua, dan alamat hanya bagiannya (isinya tetap mengikuti izin
+  tabelnya). Admin yang boleh mengubah jamaahnya melihatnya di Dashboard,
+  Perlu dicek, dan detail jamaah, lalu menandai "Sudah dicek".
+- **Ajakan melengkapi**: persentase kelengkapan di profil dan kartu Asisten
+  di beranda (`hitungKelengkapan()`, `src/lib/generus/kelengkapan.ts`).
 
 ## Masih menunggu pengurus
 

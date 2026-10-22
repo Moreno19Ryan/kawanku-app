@@ -2,15 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowLeft, ChevronRight, KeyRound, MapPin } from "lucide-react";
-import { FormProfil, FormUsulanKoreksi } from "@/components/generus/form-profil";
+import { FormDataDiri, FormUsulanKoreksi } from "@/components/generus/form-profil";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { batalkanUsulanKoreksi } from "@/lib/generus/actions";
 import { wajibGenerus } from "@/lib/generus/akun";
-import { LABEL_BAGIAN_USULAN, LABEL_PENDIDIKAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
+import { hitungKelengkapan } from "@/lib/generus/kelengkapan";
+import { hariIniWib } from "@/lib/kegiatan/jadwal";
+import { LABEL_BAGIAN_USULAN, LABEL_STATUS_PERNIKAHAN } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
-import { tanggalPanjang, waktuRelatif } from "@/lib/waktu";
+import { waktuRelatif } from "@/lib/waktu";
 import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
@@ -22,10 +24,13 @@ type DataDiri = {
   nama_lengkap: string;
   nama_panggilan: string | null;
   jenis_kelamin: "L" | "P";
+  status_pernikahan: string | null;
+  tempat_lahir: string | null;
   tanggal_lahir: string | null;
-  tahun_lahir: number | null;
   status_sekolah: string | null;
+  kelas: number | null;
   pendidikan_terakhir: string | null;
+  kegiatan: string | null;
   kategori_jamaah_nama: string | null;
 };
 type Usulan = {
@@ -68,14 +73,14 @@ async function ProfilSaya() {
     supabase
       .from("jamaah_dengan_kategori")
       .select(
-        "kode, nama_lengkap, nama_panggilan, jenis_kelamin, tanggal_lahir, tahun_lahir, status_sekolah, pendidikan_terakhir, kategori_jamaah_nama",
+        "kode, nama_lengkap, nama_panggilan, jenis_kelamin, status_pernikahan, tempat_lahir, tanggal_lahir, status_sekolah, kelas, pendidikan_terakhir, kegiatan, kategori_jamaah_nama",
       )
       .eq("id", generus.jamaah.id)
       .maybeSingle<DataDiri>(),
-    supabase.from("jamaah_kontak").select("no_hp, email").eq("jamaah_id", generus.jamaah.id).maybeSingle(),
+    supabase.from("jamaah_kontak").select("no_hp, email, no_hp_wali").eq("jamaah_id", generus.jamaah.id).maybeSingle(),
     supabase
       .from("jamaah_pribadi")
-      .select("ktp_wilayah, ktp_jalan")
+      .select("ktp_wilayah, ktp_jalan, nama_ayah, nama_ibu")
       .eq("jamaah_id", generus.jamaah.id)
       .maybeSingle(),
     supabase
@@ -88,6 +93,17 @@ async function ProfilSaya() {
   ]);
   if (!j) return null;
   const ringkasAlamat = [alamat?.ktp_jalan, alamat?.ktp_wilayah?.split(",")[0]].filter(Boolean).join(", ");
+  const lengkap = hitungKelengkapan({
+    tanggal_lahir: j.tanggal_lahir,
+    tempat_lahir: j.tempat_lahir,
+    status_sekolah: j.status_sekolah,
+    kelas: j.kelas,
+    no_hp: kontak?.no_hp ?? null,
+    no_hp_wali: kontak?.no_hp_wali ?? null,
+    nama_ayah: alamat?.nama_ayah ?? null,
+    nama_ibu: alamat?.nama_ibu ?? null,
+    ada_alamat: Boolean(alamat?.ktp_wilayah || alamat?.ktp_jalan),
+  });
 
   return (
     <div className="flex flex-col gap-4 pt-4">
@@ -104,22 +120,48 @@ async function ProfilSaya() {
           </div>
           <Baris label="Kelompok">{generus.jamaah.kelompok ?? "–"}</Baris>
           <Baris label="Jenis kelamin">{j.jenis_kelamin === "L" ? "Laki-laki" : "Perempuan"}</Baris>
-          <Baris label="Lahir">
-            {j.tanggal_lahir ? tanggalPanjang(j.tanggal_lahir) : j.tahun_lahir ? `Tahun ${j.tahun_lahir}` : "–"}
+          <Baris label="Status pernikahan">
+            {j.status_pernikahan ? (LABEL_STATUS_PERNIKAHAN[j.status_pernikahan] ?? j.status_pernikahan) : "–"}
           </Baris>
-          <Baris label="Status sekolah">{j.status_sekolah ? LABEL_STATUS_SEKOLAH[j.status_sekolah] : "–"}</Baris>
-          {j.pendidikan_terakhir && (
-            <Baris label="Pendidikan terakhir">{LABEL_PENDIDIKAN[j.pendidikan_terakhir] ?? j.pendidikan_terakhir}</Baris>
-          )}
         </dl>
-        <p className="mt-4 text-xs text-muted">Ada yang salah? Laporkan di bagian bawah, admin yang membetulkan.</p>
+        <p className="mt-4 text-xs text-muted">Data di atas diubah admin. Ada yang salah? Laporkan di bagian bawah.</p>
       </Card>
 
       <section className="flex flex-col gap-2">
-        <h2 className="px-1 text-sm font-semibold text-muted">Kontak & sapaan</h2>
+        <div className="flex items-end justify-between gap-3 px-1">
+          <h2 className="text-sm font-semibold text-muted">Data diri</h2>
+          <span className="text-xs text-muted">{lengkap.persen}% lengkap</span>
+        </div>
+        <div
+          className="h-1.5 overflow-hidden rounded-full bg-surface-muted"
+          role="progressbar"
+          aria-label="Kelengkapan data diri"
+          aria-valuenow={lengkap.persen}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${lengkap.persen}%` }} />
+        </div>
+        {lengkap.kurang.length > 0 && (
+          <p className="px-1 text-xs text-muted">Belum diisi: {lengkap.kurang.join(", ")}.</p>
+        )}
         <Card>
-          <FormProfil
-            nilai={{ nama_panggilan: j.nama_panggilan, no_hp: kontak?.no_hp ?? null, email: kontak?.email ?? null }}
+          <FormDataDiri
+            hariIni={hariIniWib()}
+            nilai={{
+              nama_panggilan: j.nama_panggilan,
+              tempat_lahir: j.tempat_lahir,
+              tanggal_lahir: j.tanggal_lahir,
+              status_sekolah: j.status_sekolah,
+              kelas: j.kelas,
+              pendidikan_terakhir: j.pendidikan_terakhir,
+              kegiatan: j.kegiatan,
+              no_hp: kontak?.no_hp ?? null,
+              email: kontak?.email ?? null,
+              no_hp_wali: kontak?.no_hp_wali ?? null,
+              nama_ayah: alamat?.nama_ayah ?? null,
+              nama_ibu: alamat?.nama_ibu ?? null,
+            }}
           />
         </Card>
       </section>
@@ -146,7 +188,7 @@ async function ProfilSaya() {
       </Link>
 
       <section className="flex flex-col gap-2">
-        <h2 className="px-1 text-sm font-semibold text-muted">Lapor data salah</h2>
+        <h2 className="px-1 text-sm font-semibold text-muted">Lapor data yang diubah admin</h2>
         <Card>
           <FormUsulanKoreksi />
         </Card>

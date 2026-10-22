@@ -6,8 +6,10 @@ import { JamaahBelumMenyala } from "@/components/jamaah/belum-menyala";
 import { KembaliKeJamaah } from "@/components/jamaah/kembali";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
+import { DaftarPerubahan } from "@/components/jamaah/daftar-perubahan";
 import { DaftarUsulan } from "@/components/jamaah/daftar-usulan";
 import { getPerluDicek } from "@/lib/jamaah/periksa";
+import { getPerubahanGenerus } from "@/lib/jamaah/perubahan";
 import { getUsulanMenunggu } from "@/lib/jamaah/usulan";
 import { Memuat } from "@/components/ui/memuat";
 
@@ -31,7 +33,7 @@ export default function PerluDicekPage() {
 }
 
 async function DaftarPeriksa() {
-  const [periksa, usulan] = await Promise.all([getPerluDicek(), getUsulanMenunggu()]);
+  const [periksa, usulan, perubahan] = await Promise.all([getPerluDicek(), getUsulanMenunggu(), getPerubahanGenerus()]);
   if (!periksa) return <JamaahBelumMenyala />;
 
   const total = periksa.perJamaah.size;
@@ -46,6 +48,7 @@ async function DaftarPeriksa() {
   return (
     <div className="flex flex-col gap-4">
       <DaftarUsulan usulan={usulan} />
+      <DaftarPerubahan perubahan={perubahan} />
       <Card className="flex items-center gap-3">
         {total === 0 ? (
           <CircleCheck className="size-5 shrink-0 text-success" aria-hidden />

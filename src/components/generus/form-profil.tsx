@@ -5,10 +5,16 @@ import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { useFormAksi } from "@/components/pengaturan/use-form-aksi";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { kirimUsulanKoreksi, simpanProfilSaya } from "@/lib/generus/actions";
+import { kirimUsulanKoreksi, simpanDataDiri } from "@/lib/generus/actions";
 import { formatNoHp } from "@/lib/jamaah/format";
-import { bagianTerstruktur } from "@/lib/jamaah/usulan-nilai";
-import { LABEL_BAGIAN_USULAN, LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH, RENTANG_KELAS } from "@/lib/label";
+import { BAGIAN_LAPOR_GENERUS, bagianTerstruktur } from "@/lib/jamaah/usulan-nilai";
+import {
+  LABEL_BAGIAN_USULAN,
+  LABEL_PENDIDIKAN,
+  LABEL_STATUS_PERNIKAHAN,
+  LABEL_STATUS_SEKOLAH,
+  RENTANG_KELAS,
+} from "@/lib/label";
 
 function Kolom({ label, children, bantuan }: { label: string; children: React.ReactNode; bantuan?: string }) {
   return (
@@ -20,35 +26,165 @@ function Kolom({ label, children, bantuan }: { label: string; children: React.Re
   );
 }
 
-/** Nama panggilan, no. HP/WA, email: diubah generus sendiri. */
-export function FormProfil({
-  nilai,
-}: {
-  nilai: { nama_panggilan: string | null; no_hp: string | null; email: string | null };
-}) {
-  const [state, onSubmit, pending] = useFormAksi(simpanProfilSaya);
+export type NilaiDataDiri = {
+  nama_panggilan: string | null;
+  tempat_lahir: string | null;
+  tanggal_lahir: string | null;
+  status_sekolah: string | null;
+  kelas: number | null;
+  pendidikan_terakhir: string | null;
+  kegiatan: string | null;
+  no_hp: string | null;
+  email: string | null;
+  no_hp_wali: string | null;
+  nama_ayah: string | null;
+  nama_ibu: string | null;
+};
+
+function Judul({ children }: { children: React.ReactNode }) {
+  return <h3 className="text-sm font-semibold text-muted">{children}</h3>;
+}
+
+/**
+ * Data diri yang diubah generus sendiri: langsung tersimpan (tercatat di
+ * jejak perubahan untuk admin). Perubahan yang membuatnya keluar dari
+ * generus ditolak server.
+ */
+export function FormDataDiri({ nilai, hariIni }: { nilai: NilaiDataDiri; hariIni: string }) {
+  const [state, onSubmit, pending] = useFormAksi(simpanDataDiri);
+  const [sekolah, setSekolah] = useState(nilai.status_sekolah ?? "");
+  const rentang = RENTANG_KELAS[sekolah];
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <Kolom label="Nama panggilan" bantuan="Dipakai untuk menyapamu di aplikasi.">
-        <input name="nama_panggilan" maxLength={40} defaultValue={nilai.nama_panggilan ?? ""} className={INPUT_CLASS} />
-      </Kolom>
-      <Kolom label="No. HP/WhatsApp">
-        <input
-          name="no_hp"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          defaultValue={formatNoHp(nilai.no_hp)}
-          placeholder="08xx-xxxx-xxxx"
-          className={INPUT_CLASS}
-        />
-      </Kolom>
-      <Kolom label="Email">
-        <input name="email" type="email" maxLength={120} autoComplete="email" defaultValue={nilai.email ?? ""} className={INPUT_CLASS} />
-      </Kolom>
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
+        <Judul>Sapaan & kelahiran</Judul>
+        <Kolom label="Nama panggilan" bantuan="Dipakai untuk menyapamu di aplikasi.">
+          <input name="nama_panggilan" maxLength={40} defaultValue={nilai.nama_panggilan ?? ""} className={INPUT_CLASS} />
+        </Kolom>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Kolom label="Tempat lahir">
+            <input name="tempat_lahir" maxLength={80} defaultValue={nilai.tempat_lahir ?? ""} className={INPUT_CLASS} />
+          </Kolom>
+          <Kolom label="Tanggal lahir">
+            <input
+              name="tanggal_lahir"
+              type="date"
+              max={hariIni}
+              required={Boolean(nilai.tanggal_lahir)}
+              defaultValue={nilai.tanggal_lahir ?? ""}
+              className={INPUT_CLASS}
+            />
+          </Kolom>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <Judul>Sekolah & kegiatan</Judul>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Kolom label="Status sekolah">
+            <select
+              name="status_sekolah"
+              required={Boolean(nilai.status_sekolah)}
+              value={sekolah}
+              onChange={(e) => setSekolah(e.target.value)}
+              className={INPUT_CLASS}
+            >
+              <option value="" disabled>
+                Pilih…
+              </option>
+              {Object.entries(LABEL_STATUS_SEKOLAH).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </Kolom>
+          {rentang && (
+            <Kolom label="Kelas">
+              <select
+                name="kelas"
+                defaultValue={nilai.kelas && nilai.kelas >= rentang[0] && nilai.kelas <= rentang[1] ? nilai.kelas : ""}
+                className={INPUT_CLASS}
+              >
+                <option value="">Belum diisi</option>
+                {Array.from({ length: rentang[1] - rentang[0] + 1 }, (_, i) => rentang[0] + i).map((k) => (
+                  <option key={k} value={k}>
+                    Kelas {k}
+                  </option>
+                ))}
+              </select>
+            </Kolom>
+          )}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Kolom label="Pendidikan terakhir" bantuan="Jenjang terakhir yang sudah lulus.">
+            <select name="pendidikan_terakhir" defaultValue={nilai.pendidikan_terakhir ?? ""} className={INPUT_CLASS}>
+              <option value="">Belum diisi</option>
+              {Object.entries(LABEL_PENDIDIKAN).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </Kolom>
+          <Kolom label="Pekerjaan / kegiatan" bantuan="Mis. Pelajar, Mondok, Karyawan swasta.">
+            <input name="kegiatan" maxLength={120} defaultValue={nilai.kegiatan ?? ""} className={INPUT_CLASS} />
+          </Kolom>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <Judul>Kontak</Judul>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Kolom label="No. HP/WhatsApp">
+            <input
+              name="no_hp"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              defaultValue={formatNoHp(nilai.no_hp)}
+              placeholder="08xx-xxxx-xxxx"
+              className={INPUT_CLASS}
+            />
+          </Kolom>
+          <Kolom label="Email">
+            <input
+              name="email"
+              type="email"
+              maxLength={120}
+              autoComplete="email"
+              defaultValue={nilai.email ?? ""}
+              className={INPUT_CLASS}
+            />
+          </Kolom>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <Judul>Orang tua / wali</Judul>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Kolom label="Nama ayah">
+            <input name="nama_ayah" maxLength={120} defaultValue={nilai.nama_ayah ?? ""} className={INPUT_CLASS} />
+          </Kolom>
+          <Kolom label="Nama ibu">
+            <input name="nama_ibu" maxLength={120} defaultValue={nilai.nama_ibu ?? ""} className={INPUT_CLASS} />
+          </Kolom>
+        </div>
+        <Kolom label="No. HP orang tua/wali" bantuan="Dihubungi pengurus bila perlu.">
+          <input
+            name="no_hp_wali"
+            type="tel"
+            inputMode="tel"
+            defaultValue={formatNoHp(nilai.no_hp_wali)}
+            placeholder="08xx-xxxx-xxxx"
+            className={INPUT_CLASS}
+          />
+        </Kolom>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={pending} className={buttonClass("kedua", "h-10 px-5")}>
-          {pending ? "Menyimpan…" : "Simpan"}
+        <button type="submit" disabled={pending} className={buttonClass("utama", "h-11 px-6")}>
+          {pending ? "Menyimpan…" : "Simpan data diri"}
         </button>
         <PesanAksi state={state} />
       </div>
@@ -56,7 +192,7 @@ export function FormProfil({
   );
 }
 
-/** Lapor data yang salah (nama, tanggal lahir, dll.) ke admin. */
+/** Lapor data yang hanya bisa diubah admin (nama lengkap, status pernikahan, dll.). */
 export function FormUsulanKoreksi() {
   const [state, onSubmit, pending] = useFormAksi(kirimUsulanKoreksi);
   // Terkirim → form dipasang ulang (isian kosong); ditolak server → isian tetap.
@@ -73,9 +209,7 @@ function IsiUsulan({
   pending: boolean;
 }) {
   const [bagian, setBagian] = useState("");
-  const [sekolah, setSekolah] = useState("");
   const terstruktur = bagianTerstruktur(bagian);
-  const rentang = RENTANG_KELAS[sekolah];
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <Kolom label="Data yang salah">
@@ -89,48 +223,14 @@ function IsiUsulan({
           <option value="" disabled>
             Pilih…
           </option>
-          {Object.entries(LABEL_BAGIAN_USULAN).map(([k, v]) => (
+          {BAGIAN_LAPOR_GENERUS.map((k) => (
             <option key={k} value={k}>
-              {v}
+              {LABEL_BAGIAN_USULAN[k]}
             </option>
           ))}
         </select>
       </Kolom>
 
-      {bagian === "status_sekolah" && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Kolom label="Yang benar">
-            <select
-              name="nilai"
-              required
-              value={sekolah}
-              onChange={(e) => setSekolah(e.target.value)}
-              className={INPUT_CLASS}
-            >
-              <option value="" disabled>
-                Pilih…
-              </option>
-              {Object.entries(LABEL_STATUS_SEKOLAH).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </Kolom>
-          {rentang && (
-            <Kolom label="Kelas (opsional)">
-              <select name="nilai_kelas" defaultValue="" className={INPUT_CLASS}>
-                <option value="">Tidak tahu</option>
-                {Array.from({ length: rentang[1] - rentang[0] + 1 }, (_, i) => rentang[0] + i).map((k) => (
-                  <option key={k} value={k}>
-                    Kelas {k}
-                  </option>
-                ))}
-              </select>
-            </Kolom>
-          )}
-        </div>
-      )}
       {bagian === "status_pernikahan" && (
         <Kolom label="Yang benar">
           <select name="nilai" required defaultValue="" className={INPUT_CLASS}>
@@ -145,17 +245,11 @@ function IsiUsulan({
           </select>
         </Kolom>
       )}
-      {bagian === "tanggal_lahir" && (
-        <Kolom label="Tanggal lahir yang benar">
-          <input name="nilai" type="date" required className={INPUT_CLASS} />
-        </Kolom>
-      )}
-
       <Kolom
         label={terstruktur ? "Keterangan (opsional)" : "Seharusnya"}
         bantuan={
           terstruktur
-            ? "Mis. “Lulus SMA Juni kemarin, sekarang kuliah di …”."
+            ? "Mis. “Sudah menikah sejak Agustus”."
             : "Tulis data yang benar, mis. “Nama lengkap: Muhammad Fajar Ramadhan”."
         }
       >

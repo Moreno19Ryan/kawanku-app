@@ -6,9 +6,16 @@ import { getGenerusSaatIni, pinDariTanggalLahir } from "@/lib/generus/akun";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
 import { bacaAlamat } from "@/lib/jamaah/alamat";
 import { bacaNoHp } from "@/lib/jamaah/format";
-import { bacaNilaiUsulan, labelNilaiUsulan } from "@/lib/jamaah/usulan-nilai";
+import { BAGIAN_LAPOR_GENERUS, bacaNilaiUsulan, labelNilaiUsulan } from "@/lib/jamaah/usulan-nilai";
 import { hariIniWib } from "@/lib/kegiatan/jadwal";
-import { LABEL_ALASAN_IZIN, LABEL_BAGIAN_USULAN, ucapanSyukur } from "@/lib/label";
+import {
+  LABEL_ALASAN_IZIN,
+  LABEL_BAGIAN_USULAN,
+  LABEL_PENDIDIKAN,
+  LABEL_STATUS_SEKOLAH,
+  RENTANG_KELAS,
+  ucapanSyukur,
+} from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -69,30 +76,77 @@ export async function simpanAlamatSaya(_prev: StateAksi, formData: FormData): Pr
   return { pesan: `Alamat tersimpan. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
 
-/** Generus mengubah nama panggilan, no. HP/WA, dan email sendiri. */
-export async function simpanProfilSaya(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
+/** Teks bebas: spasi dirapikan; terlalu panjang → pesan galat. */
+function teks(formData: FormData, nama: string, maks: number, label: string): string | { galat: string } {
+  const isi = String(formData.get(nama) ?? "").trim().replace(/\s+/g, " ");
+  return isi.length > maks ? { galat: `${label} maksimal ${maks} karakter.` } : isi;
+}
+
+/**
+ * Generus mengubah data dirinya sendiri (langsung tersimpan & tercatat di
+ * jejak perubahan). Nama lengkap, jenis kelamin, status pernikahan,
+ * kelompok, dan keluarga tetap lewat laporan ke admin.
+ */
+export async function simpanDataDiri(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
   const generus = await getGenerusSaatIni();
   if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
   if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu." };
 
-  const panggilan = String(formData.get("nama_panggilan") ?? "").trim().replace(/\s+/g, " ");
-  if (panggilan.length > 40) return { galat: "Nama panggilan maksimal 40 karakter." };
+  const panggilan = teks(formData, "nama_panggilan", 40, "Nama panggilan");
+  const tempat = teks(formData, "tempat_lahir", 80, "Tempat lahir");
+  const kegiatan = teks(formData, "kegiatan", 120, "Pekerjaan/kegiatan");
+  const ayah = teks(formData, "nama_ayah", 120, "Nama ayah");
+  const ibu = teks(formData, "nama_ibu", 120, "Nama ibu");
+  for (const t of [panggilan, tempat, kegiatan, ayah, ibu]) if (typeof t !== "string") return t;
+
+  const tanggal = String(formData.get("tanggal_lahir") ?? "");
+  if (tanggal && (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal) || tanggal <= "1900-01-01" || tanggal > hariIniWib())) {
+    return { galat: "Isi tanggal lahir yang benar." };
+  }
+  const sekolah = String(formData.get("status_sekolah") ?? "");
+  if (sekolah && !(sekolah in LABEL_STATUS_SEKOLAH)) return { galat: "Pilih status sekolah yang benar." };
+  const rentang = RENTANG_KELAS[sekolah];
+  const kelasTeks = String(formData.get("kelas") ?? "");
+  const kelas = rentang && kelasTeks ? Number(kelasTeks) : null;
+  if (kelas !== null && (!Number.isInteger(kelas) || kelas < rentang[0] || kelas > rentang[1])) {
+    return { galat: `Kelas ${LABEL_STATUS_SEKOLAH[sekolah]} antara ${rentang[0]} dan ${rentang[1]}.` };
+  }
+  const pendidikan = String(formData.get("pendidikan_terakhir") ?? "");
+  if (pendidikan && !(pendidikan in LABEL_PENDIDIKAN)) return { galat: "Pilih pendidikan terakhir yang benar." };
+
   const noHp = bacaNoHp(formData.get("no_hp"));
   if (noHp === undefined) return { galat: "No. HP harus nomor Indonesia yang valid, mis. 0812-3456-7890." };
+  const noHpWali = bacaNoHp(formData.get("no_hp_wali"));
+  if (noHpWali === undefined) return { galat: "No. HP wali harus nomor Indonesia yang valid." };
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (email && (email.length > 120 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))) {
     return { galat: "Format email tidak valid." };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("ubah_profil_saya", {
-    p_nama_panggilan: panggilan,
+  const { error } = await supabase.rpc("ubah_data_diri_saya", {
+    p_nama_panggilan: panggilan as string,
+    p_tempat_lahir: tempat as string,
+    p_tanggal_lahir: tanggal || null,
+    p_status_sekolah: sekolah,
+    p_kelas: kelas,
+    p_pendidikan_terakhir: pendidikan,
+    p_kegiatan: kegiatan as string,
     p_no_hp: noHp ?? "",
     p_email: email,
+    p_no_hp_wali: noHpWali ?? "",
+    p_nama_ayah: ayah as string,
+    p_nama_ibu: ibu as string,
   });
-  if (error) return { galat: "Gagal menyimpan. Coba lagi." };
+  if (error?.hint === "bukan_generus_lagi") {
+    return {
+      galat:
+        "Perubahan ini membuatmu tidak lagi termasuk generus, jadi tidak bisa disimpan sendiri. Bila datanya memang begitu, laporkan ke admin di bagian bawah.",
+    };
+  }
+  if (error) return { galat: "Gagal menyimpan. Periksa isianmu lalu coba lagi." };
   refresh();
-  return { pesan: `Profil tersimpan. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
+  return { pesan: `Data diri tersimpan. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
 
 /** Generus melaporkan data yang salah; admin yang membetulkan. */
@@ -102,7 +156,7 @@ export async function kirimUsulanKoreksi(_prev: StateAksi, formData: FormData): 
   if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu." };
 
   const bagian = String(formData.get("bagian") ?? "");
-  if (!(bagian in LABEL_BAGIAN_USULAN)) return { galat: "Pilih data yang salah." };
+  if (!(BAGIAN_LAPOR_GENERUS as readonly string[]).includes(bagian)) return { galat: "Pilih data yang salah." };
   const nilai = bacaNilaiUsulan(
     bagian,
     String(formData.get("nilai") ?? ""),
