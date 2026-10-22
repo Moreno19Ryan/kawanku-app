@@ -6,9 +6,9 @@ import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { DaftarPengajuan } from "@/components/absensi/daftar-pengajuan";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Pengajuan Izin",
@@ -25,7 +25,7 @@ export default function PengajuanIzinPage() {
         title="Pengajuan izin"
         description="Izin dan sakit yang diajukan generus dari HP-nya. Yang disetujui otomatis tercatat di absensi pertemuannya."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <Daftar />
       </Suspense>
     </>

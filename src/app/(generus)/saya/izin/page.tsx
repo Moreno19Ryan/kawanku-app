@@ -6,7 +6,6 @@ import { FormIzin } from "@/components/generus/form-izin";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { labelPengajuan, type PengajuanIzin } from "@/lib/absensi/izin";
 import { batalkanIzin } from "@/lib/generus/actions";
 import { wajibGenerus } from "@/lib/generus/akun";
@@ -14,6 +13,7 @@ import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { createClient } from "@/lib/supabase/server";
 import { jam } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Ajukan Izin",
@@ -33,7 +33,7 @@ export default function IzinPage({ searchParams }: PageProps<"/saya/izin">) {
         <ArrowLeft className="size-4" aria-hidden />
         Beranda
       </Link>
-      <Suspense fallback={<Skeleton className="mt-4 h-96" />}>
+      <Suspense fallback={<Memuat className="mt-4 h-96" />}>
         <AjukanIzin cari={searchParams} />
       </Suspense>
     </>

@@ -9,7 +9,6 @@ import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
 import {
   aturAkunAktif,
@@ -23,6 +22,7 @@ import { usulanUsername } from "@/lib/generus/username";
 import { createClient } from "@/lib/supabase/server";
 import { jam, waktuRelatif } from "@/lib/waktu";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Akun generus",
@@ -52,7 +52,7 @@ export default function AkunGenerusPage({ searchParams }: PageProps<"/absensi/ak
         title="Akun generus"
         description="Akun login generus (username + PIN) untuk absen lewat QR di layar admin."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <DaftarAkun cari={searchParams as Promise<Cari>} />
       </Suspense>
     </>

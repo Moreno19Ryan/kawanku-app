@@ -9,12 +9,12 @@ import { FormJadwal, FormUbahKegiatan } from "@/components/kegiatan/form-kegiata
 import { PageHeader } from "@/components/layout/page-header";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { bolehKelolaPertemuan, getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { hapusKegiatan, simpanJadwal, ubahKegiatan } from "@/lib/kegiatan/actions";
 import { getKalender, KOLOM_KEGIATAN } from "@/lib/kegiatan/data";
 import { hariIniWib, ringkasJadwal, tambahHari, type Jadwal, type Kegiatan } from "@/lib/kegiatan/jadwal";
 import { createClient } from "@/lib/supabase/server";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Kegiatan",
@@ -27,7 +27,7 @@ export default function KegiatanDetailPage({ params }: PageProps<"/kegiatan/kelo
         <ArrowLeft className="size-4" aria-hidden />
         Kelola kegiatan
       </Link>
-      <Suspense fallback={<Skeleton className="mt-6 h-96" />}>
+      <Suspense fallback={<Memuat className="mt-6 h-96" />}>
         <Detail params={params} />
       </Suspense>
     </>

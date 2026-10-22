@@ -8,12 +8,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { bolehKelolaPertemuan, getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { jam, waktuRelatif } from "@/lib/waktu";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Kegiatan",
@@ -26,7 +26,7 @@ const RENTANG = { "7": "7 hari", "14": "14 hari", "30": "30 hari" } as const;
 
 export default function KegiatanPage({ searchParams }: PageProps<"/kegiatan">) {
   return (
-    <Suspense fallback={<Skeleton className="mt-10 h-96" />}>
+    <Suspense fallback={<Memuat className="mt-10 h-96" />}>
       <Kalender cari={searchParams as Promise<Cari>} />
     </Suspense>
   );

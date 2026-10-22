@@ -7,9 +7,9 @@ import { GrafikTren } from "@/components/absensi/grafik-tren";
 import { DaftarBatang, FilterLaporan, TabelJamaah, Ubin } from "@/components/absensi/laporan-bagian";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { namaBulan, type StatusJamaah } from "@/lib/absensi/laporan-hitung";
 import { bacaParamLaporan, getLaporan, queryLaporan } from "@/lib/absensi/laporan";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Laporan kehadiran",
@@ -29,7 +29,7 @@ export default function LaporanPage({ searchParams }: PageProps<"/absensi/lapora
         title="Laporan kehadiran"
         description="Tren beberapa bulan, perbandingan kelompok & kegiatan, dan siapa yang perlu disapa."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <Isi cari={searchParams} />
       </Suspense>
     </>

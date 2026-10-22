@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { AkunAdmin } from "@/components/auth/akun-admin";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { AppFooter } from "@/components/layout/app-footer";
@@ -9,7 +9,7 @@ import { TombolTema } from "@/components/tema/tombol-tema";
 import { BannerPengumuman } from "@/components/sistem/banner-pengumuman";
 import { GerbangPerawatan } from "@/components/sistem/gerbang-perawatan";
 import { SegarkanLangsung } from "@/components/sistem/segarkan-langsung";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Memuat } from "@/components/ui/memuat";
 
 /**
  * Kerangka area admin: sidebar di desktop, bottom nav di HP.
@@ -46,11 +46,14 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <BannerPengumuman />
         </Suspense>
-        <div className="flex-1">
-          <Suspense fallback={<Skeleton className="mt-10 h-64" />}>
-            <GerbangPerawatan>{children}</GerbangPerawatan>
-          </Suspense>
-        </div>
+        {/* Perpindahan halaman: isi memudar halus (globals.css, .kk-halaman). */}
+        <ViewTransition update={{ diam: "none", default: "kk-halaman" }} default="none">
+          <div className="flex-1">
+            <Suspense fallback={<Memuat className="mt-10 h-64" />}>
+              <GerbangPerawatan>{children}</GerbangPerawatan>
+            </Suspense>
+          </div>
+        </ViewTransition>
         <AppFooter className="mt-12" />
       </main>
 

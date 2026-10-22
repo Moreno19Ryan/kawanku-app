@@ -155,6 +155,12 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   halaman → tambahkan ke migrasi publikasi & daftar `TABEL`. Pencarian/filter
   memakai `FormOtomatis` (tanpa tombol: ketik → cari setelah jeda, pilihan →
   langsung).
+- Memuat & transisi: fallback data besar & `loading.tsx` memakai `Memuat`
+  (logo "K" beranimasi, `src/components/ui/memuat.tsx`, CSS `.kk-k-*` di
+  `globals.css`). Isi halaman dibungkus `<ViewTransition>` di layout
+  (memudar halus saat pindah halaman); pembaruan yang bukan pindah halaman
+  (Realtime, pencarian, simpan form) ditandai `addTransitionType("diam")`
+  supaya tidak beranimasi.
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
   diketahui saat runtime.

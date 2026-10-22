@@ -9,12 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { buatKartuKelompok, gantiKartu } from "@/lib/absensi/actions";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Kartu QR",
@@ -37,7 +37,7 @@ export default function KartuPage({ searchParams }: PageProps<"/absensi/kartu">)
         title="Kartu QR"
         description="Kartu absensi jalur 1 (ukuran KTP), discan dengan scanner barcode USB."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <DaftarKartu cari={searchParams as Promise<Cari>} />
       </Suspense>
     </>

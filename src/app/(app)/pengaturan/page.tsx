@@ -5,8 +5,8 @@ import { ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { BAGIAN_PENGATURAN } from "@/components/pengaturan/bagian";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { punyaIzin, punyaIzinDiManaPun, wajibAdmin } from "@/lib/auth/admin";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Pengaturan",
@@ -16,7 +16,7 @@ export default function PengaturanPage() {
   return (
     <>
       <PageHeader title="Pengaturan" description="Akun, admin, dan data dasar desa." />
-      <Suspense fallback={<Skeleton className="h-64" />}>
+      <Suspense fallback={<Memuat className="h-64" />}>
         <DaftarBagian />
       </Suspense>
     </>

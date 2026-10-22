@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { HasilAbsen } from "@/components/generus/hasil-absen";
-import { Skeleton } from "@/components/ui/skeleton";
 import { wajibGenerus } from "@/lib/generus/akun";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Absen",
@@ -14,7 +14,7 @@ export default function AbsenPage({ searchParams }: PageProps<"/absen">) {
   return (
     <div className="flex flex-col gap-4 pt-6">
       <h1 className="text-2xl font-semibold tracking-tight">Absen</h1>
-      <Suspense fallback={<Skeleton className="h-64" />}>
+      <Suspense fallback={<Memuat className="h-64" />}>
         <Absen cari={searchParams} />
       </Suspense>
     </div>

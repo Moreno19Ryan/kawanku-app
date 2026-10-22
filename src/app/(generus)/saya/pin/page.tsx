@@ -4,9 +4,9 @@ import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { FormGantiPin } from "@/components/generus/form-ganti-pin";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { wajibGenerus } from "@/lib/generus/akun";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Ganti PIN",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function PinPage({ searchParams }: PageProps<"/saya/pin">) {
   return (
-    <Suspense fallback={<Skeleton className="mt-8 h-80" />}>
+    <Suspense fallback={<Memuat className="mt-8 h-80" />}>
       <GantiPin cari={searchParams} />
     </Suspense>
   );

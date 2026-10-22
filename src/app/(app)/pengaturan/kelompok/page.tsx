@@ -6,10 +6,10 @@ import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
 import { ubahNamaKelompok, ubahStatusKelompok } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Kelompok",
@@ -23,7 +23,7 @@ export default function KelompokPage() {
         title="Kelompok"
         description="Nama resmi tiap kelompok tampil di seluruh aplikasi dan dokumen."
       />
-      <Suspense fallback={<Skeleton className="h-80" />}>
+      <Suspense fallback={<Memuat className="h-80" />}>
         <DaftarKelompok />
       </Suspense>
     </>

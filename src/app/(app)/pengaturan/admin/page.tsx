@@ -10,7 +10,6 @@ import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { TombolAturUlangSandi } from "@/components/pengaturan/tombol-atur-ulang-sandi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { punyaIzin, punyaIzinDi, wajibKelolaAkun } from "@/lib/auth/admin";
 import {
   aturUlangKataSandi,
@@ -22,6 +21,7 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam, waktuRelatif } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Admin & akses",
@@ -58,7 +58,7 @@ export default function AdminPage() {
         title="Admin & akses"
         description="Buat akun admin, aktifkan atau nonaktifkan, dan atur peran serta wilayahnya. Yang tampil hanya akun yang menjadi wewenangmu."
       />
-      <Suspense fallback={<Skeleton className="h-96" />}>
+      <Suspense fallback={<Memuat className="h-96" />}>
         <DaftarAdmin />
       </Suspense>
     </>

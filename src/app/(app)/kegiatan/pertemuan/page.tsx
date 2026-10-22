@@ -10,7 +10,6 @@ import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { DaftarPengajuan } from "@/components/absensi/daftar-pengajuan";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
@@ -21,6 +20,7 @@ import { kunciKejadian } from "@/lib/kegiatan/jadwal";
 import { labelJenisMuballigh } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { keInputWib, tanggalJam } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Pertemuan",
@@ -35,7 +35,7 @@ export default function PertemuanPage({ searchParams }: PageProps<"/kegiatan/per
         <ArrowLeft className="size-4" aria-hidden />
         Kegiatan
       </Link>
-      <Suspense fallback={<Skeleton className="mt-6 h-96" />}>
+      <Suspense fallback={<Memuat className="mt-6 h-96" />}>
         <Detail cari={searchParams} />
       </Suspense>
     </>

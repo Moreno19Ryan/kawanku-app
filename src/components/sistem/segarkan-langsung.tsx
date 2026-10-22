@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { addTransitionType, startTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -53,7 +53,11 @@ export function SegarkanLangsung() {
     const muatUlang = () => {
       tertunda = false;
       terakhir = Date.now();
-      router.refresh();
+      // Pembaruan diam-diam: tanpa animasi pindah halaman.
+      startTransition(() => {
+        addTransitionType("diam");
+        router.refresh();
+      });
     };
     const adaPerubahan = () => {
       clearTimeout(timer);

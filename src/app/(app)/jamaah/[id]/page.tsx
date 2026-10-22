@@ -19,7 +19,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   aturJandaDuda,
   aturKeringanan,
@@ -46,6 +45,7 @@ import {
 } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalPanjang, waktuRelatif } from "@/lib/waktu";
+import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
   title: "Detail jamaah",
@@ -121,7 +121,7 @@ export default function DetailJamaahPage({ params, searchParams }: PageProps<"/j
         fallback={
           <>
             <PageHeader title="Jamaah" />
-            <Skeleton className="h-96" />
+            <Memuat className="h-96" />
           </>
         }
       >
