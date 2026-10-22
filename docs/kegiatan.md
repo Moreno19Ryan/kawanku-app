@@ -96,5 +96,9 @@ Scan · Kehadiran · Profil.
   kegiatan (`kegiatan.kelola`) menulis pengumuman **untuk generus** di
   wilayahnya di `/kegiatan/pengumuman`. Akun generus hanya membaca pengumuman
   generus/semua di desa atau kelompoknya; banner admin hanya admin/semua.
+  Bila isi pengumuman generus tampak mengabarkan perubahan jadwal (pindah,
+  libur, batal, diundur, …; `sepertiPerubahanJadwal()` di
+  `src/lib/kegiatan/pengumuman.ts`), form mengingatkan pengurus mengubah
+  pertemuannya juga, supaya jadwal di HP generus tidak bertentangan.
 - **Jadwal** `/saya/jadwal`: 30 hari, pemateri & materi bila sudah diisi,
   tautan "Izin" per pertemuan yang belum lewat.
