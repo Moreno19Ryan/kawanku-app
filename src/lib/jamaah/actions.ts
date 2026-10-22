@@ -224,11 +224,30 @@ export async function tanganiUsulanKoreksi(id: string, _prev: StateAksi, formDat
   const akses = await getAksesJamaah();
   if (!akses?.kelompokUbah.length) return TIDAK_BERHAK;
   const status = formData.get("status");
-  if (status !== "selesai" && status !== "ditolak") return GAGAL;
+  if (status !== "selesai" && status !== "ditolak" && status !== "terapkan") return GAGAL;
   const tanggapan = String(formData.get("tanggapan") ?? "").trim().replace(/\s+/g, " ");
   if (tanggapan.length > 300) return { galat: "Tanggapan maksimal 300 karakter." };
 
   const supabase = await createClient();
+  if (status === "terapkan") {
+    // Ubah data jamaah + tandai selesai dalam satu transaksi (tetap RLS).
+    const { error } = await supabase.rpc("terapkan_usulan_koreksi", {
+      p_id: id,
+      p_tanggapan: tanggapan || null,
+    });
+    if (error) {
+      return {
+        galat:
+          error.code === "42501"
+            ? "Tidak bisa diterapkan: hasilnya di luar wewenangmu (mis. admin generus tidak bisa membuat jamaah keluar dari generus). Minta admin kelompok menanganinya."
+            : error.hint === "tidak_ada"
+              ? "Laporan ini sudah ditangani."
+              : "Tidak bisa diterapkan otomatis. Betulkan lewat Ubah data, lalu tandai “Sudah dibetulkan”.",
+      };
+    }
+    refresh();
+    return { pesan: "Diterapkan. Kategori jamaah ikut menyesuaikan otomatis." };
+  }
   const { data, error } = await supabase
     .from("usulan_koreksi")
     .update({ status, tanggapan: tanggapan || null })
