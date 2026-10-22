@@ -35,7 +35,7 @@ async function GantiPin({ cari }: { cari: Promise<Record<string, string | string
       {generus.pinAwal && (
         <p className="rounded-card bg-primary-soft px-4 py-3 text-sm text-primary">
           Kamu masih memakai PIN awal dari admin (tanggal lahir). Ganti dulu dengan PIN pilihanmu supaya akunmu
-          aman.
+          aman. Menu lain terbuka setelah PIN diganti.
         </p>
       )}
       <Card>

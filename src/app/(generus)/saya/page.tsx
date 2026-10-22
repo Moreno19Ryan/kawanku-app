@@ -58,13 +58,10 @@ async function BerandaGenerus() {
         </p>
       </div>
 
-      <KartuAsisten saran={saran} />
-      <TombolPasang />
-
+      {/* Urutan: yang paling perlu diketahui dulu (pengajian terdekat &
+          pengumuman), baru saran & ajakan pasang aplikasi. */}
       {pengumuman.length > 0 && (
-        <div className="-mt-4">
-          <DaftarPengumuman pengumuman={pengumuman.map(({ id, pesan, nada }) => ({ id, pesan, nada }))} />
-        </div>
+        <DaftarPengumuman pengumuman={pengumuman.map(({ id, pesan, nada }) => ({ id, pesan, nada }))} />
       )}
 
       {berikut && (
@@ -108,6 +105,9 @@ async function BerandaGenerus() {
       )}
 
       <KartuKehadiran ringkasan={ringkasan} />
+
+      <KartuAsisten saran={saran} />
+      <TombolPasang />
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3 px-1">
