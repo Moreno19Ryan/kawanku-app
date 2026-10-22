@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
+import { TombolPasang } from "@/components/pwa/tombol-pasang";
 import { PilihTema } from "@/components/tema/pilih-tema";
 import { Card } from "@/components/ui/card";
 
@@ -21,6 +22,7 @@ export default function TampilanPage() {
         </p>
         <PilihTema />
       </Card>
+      <TombolPasang className="mt-4" />
     </>
   );
 }
