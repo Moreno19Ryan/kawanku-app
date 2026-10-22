@@ -16,23 +16,35 @@ const MENU = [
 const aktif = (pathname: string, href: string) =>
   href === "/saya" ? pathname === "/saya" : pathname === href || pathname.startsWith(`${href}/`);
 
-/** Navigasi bawah area generus (HP), dengan tombol Scan menonjol di tengah. */
+/**
+ * Navigasi bawah area generus (HP), dengan tombol Scan menonjol di tengah.
+ * Tidak tampil di halaman Ganti PIN: saat PIN awal belum diganti, menu lain
+ * memang belum bisa dibuka (wajibGenerus mengarahkan kembali ke sana).
+ */
 export function NavGenerus() {
+  // usePathname di dalam Suspense: path rute dinamis baru diketahui saat runtime.
+  return (
+    <Suspense fallback={<Bilah pathname="" />}>
+      <BilahAktif />
+    </Suspense>
+  );
+}
+
+function BilahAktif() {
+  const pathname = usePathname();
+  if (pathname === "/saya/pin") return null;
+  return <Bilah pathname={pathname} />;
+}
+
+function Bilah({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Menu generus"
       className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg"
     >
-      {/* usePathname di dalam Suspense: path rute dinamis baru diketahui saat runtime. */}
-      <Suspense fallback={<Menu pathname="" />}>
-        <MenuAktif />
-      </Suspense>
+      <Menu pathname={pathname} />
     </nav>
   );
-}
-
-function MenuAktif() {
-  return <Menu pathname={usePathname()} />;
 }
 
 function Menu({ pathname }: { pathname: string }) {
