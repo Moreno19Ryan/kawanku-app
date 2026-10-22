@@ -15,6 +15,8 @@ import { getPerluDicek } from "@/lib/jamaah/periksa";
 import { getUsulanMenunggu } from "@/lib/jamaah/usulan";
 import { createClient } from "@/lib/supabase/server";
 import { waktuRelatif } from "@/lib/waktu";
+import { KartuAsisten } from "@/components/asisten/kartu-asisten";
+import { getSaranAdmin } from "@/lib/asisten/data";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -293,6 +295,10 @@ async function Ringkasan() {
         </Link>
       )}
 
+      <Suspense fallback={<Skeleton className="mt-4 h-28 sm:mt-6" />}>
+        <AsistenAdmin />
+      </Suspense>
+
       {belumNaik > 0 && (
         <Link
           href="/jamaah/kenaikan-kelas"
@@ -338,6 +344,12 @@ async function Ringkasan() {
       )}
     </>
   );
+}
+
+/** Asisten KawanKu: dimuat terpisah supaya angka utama tampil lebih dulu. */
+async function AsistenAdmin() {
+  const saran = await getSaranAdmin();
+  return <KartuAsisten saran={saran} className="mt-4 sm:mt-6" />;
 }
 
 function TerbaruKartu({
