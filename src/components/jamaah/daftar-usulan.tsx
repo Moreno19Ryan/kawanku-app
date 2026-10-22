@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MessageSquareWarning } from "lucide-react";
 import { tanganiUsulanKoreksi } from "@/lib/jamaah/actions";
 import type { UsulanKoreksi } from "@/lib/jamaah/usulan";
+import { labelNilaiUsulan } from "@/lib/jamaah/usulan-nilai";
 import { LABEL_BAGIAN_USULAN } from "@/lib/label";
 import { waktuRelatif } from "@/lib/waktu";
 import { TanganiUsulan } from "./usulan-koreksi";
@@ -26,16 +27,26 @@ export function DaftarUsulan({ usulan, tampilkanNama = true }: { usulan: UsulanK
               )}
               <p className={tampilkanNama ? "mt-1" : ""}>
                 <span className="font-medium">{LABEL_BAGIAN_USULAN[u.bagian] ?? u.bagian}</span> seharusnya:{" "}
-                <span className="text-fg">“{u.isi}”</span>
+                {u.nilai ? (
+                  <span className="font-semibold">{labelNilaiUsulan(u.bagian, u.nilai, u.nilai_kelas)}</span>
+                ) : (
+                  <span className="text-fg">“{u.isi}”</span>
+                )}
               </p>
+              {u.nilai && u.isi !== labelNilaiUsulan(u.bagian, u.nilai, u.nilai_kelas) && (
+                <p className="text-muted">Keterangan: “{u.isi}”</p>
+              )}
               <p className="text-xs text-muted">Dikirim {waktuRelatif(u.created_at)}</p>
             </div>
-            <TanganiUsulan aksi={tanganiUsulanKoreksi.bind(null, u.id)} />
+            <TanganiUsulan
+              aksi={tanganiUsulanKoreksi.bind(null, u.id)}
+              terapkan={u.nilai ? "Terapkan" : undefined}
+            />
           </li>
         ))}
       </ul>
       <p className="px-1 text-xs text-muted">
-        Betulkan datanya di Ubah data, lalu tandai “Sudah dibetulkan”. Jamaah melihat status dan tanggapanmu.
+        “Terapkan” langsung memperbarui data jamaah (kategori ikut menyesuaikan). Laporan lain: betulkan di Ubah data, lalu tandai “Sudah dibetulkan”. Jamaah melihat status dan tanggapanmu.
       </p>
     </section>
   );

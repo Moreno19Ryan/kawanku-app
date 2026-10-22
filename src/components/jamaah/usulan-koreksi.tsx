@@ -12,9 +12,12 @@ type Aksi = (prev: StateAksi, formData: FormData) => Promise<StateAksi>;
 export function TanganiUsulan({
   aksi,
   setuju = { nilai: "selesai", label: "Sudah dibetulkan" },
+  terapkan,
 }: {
   aksi: Aksi;
   setuju?: { nilai: string; label: string };
+  /** Label tombol yang langsung menerapkan nilai usulan (laporan terstruktur). */
+  terapkan?: string;
 }) {
   const [state, action, pending] = useActionState(aksi, {});
   return (
@@ -27,6 +30,11 @@ export function TanganiUsulan({
         className={`${INPUT_CLASS} h-9 flex-1 text-sm`}
       />
       <div className="flex flex-wrap gap-2">
+        {terapkan && (
+          <button type="submit" name="status" value="terapkan" disabled={pending} className={buttonClass("utama", "h-9 px-4")}>
+            {terapkan}
+          </button>
+        )}
         <button type="submit" name="status" value={setuju.nilai} disabled={pending} className={buttonClass("kedua", "h-9 px-4")}>
           {setuju.label}
         </button>
@@ -34,7 +42,7 @@ export function TanganiUsulan({
           Tolak
         </button>
       </div>
-      {state.galat && <PesanAksi state={state} />}
+      {(state.galat || state.pesan) && <PesanAksi state={state} />}
     </form>
   );
 }

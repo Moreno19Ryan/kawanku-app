@@ -34,8 +34,8 @@ export function FormMasukGenerus() {
 
     setPending(true);
     setGalat(undefined);
-    const supabase = createClient();
     try {
+      const supabase = createClient();
       const izin = await siapkanMasukGenerus(username, pin);
       if ("galat" in izin) return setGalat(izin.galat);
       const { error } = await supabase.auth.signInWithPassword({ email: izin.email, password: izin.password });
