@@ -14,6 +14,7 @@ import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { buatKartuKelompok, gantiKartu } from "@/lib/absensi/actions";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
+import { FormOtomatis } from "@/components/ui/form-otomatis";
 
 export const metadata: Metadata = {
   title: "Kartu QR",
@@ -103,7 +104,7 @@ async function DaftarKartu({ cari }: { cari: Promise<Cari> }) {
         </div>
       </Card>
 
-      <form method="get" className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
+      <FormOtomatis className="flex flex-col gap-3 rounded-card bg-surface p-4 sm:flex-row sm:p-5">
         <div className="relative sm:flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted" aria-hidden />
           <input
@@ -124,10 +125,7 @@ async function DaftarKartu({ cari }: { cari: Promise<Cari> }) {
             ))}
           </select>
         )}
-        <button type="submit" className={buttonClass("kedua", "h-12 shrink-0")}>
-          Tampilkan
-        </button>
-      </form>
+      </FormOtomatis>
 
       {daftar.length === 0 ? (
         <Card className="text-center text-sm text-muted">Tidak ada jamaah yang cocok.</Card>
