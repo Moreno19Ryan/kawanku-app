@@ -258,6 +258,8 @@ export type HasilAbsen = {
     | "kedaluwarsa"
     | "qr_tidak_sah"
     | "sesi_ditutup"
+    | "belum_waktunya"
+    | "lewat_waktu"
     | "bukan_peserta"
     | "jamaah_nonaktif"
     | "bukan_generus"

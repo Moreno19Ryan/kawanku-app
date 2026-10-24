@@ -230,8 +230,17 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
           <h2 className="font-semibold">Libur / batalkan pertemuan ini</h2>
           <p className="text-sm text-muted">
             Hanya pertemuan tanggal ini. Untuk mengubah jadwal rutinnya, buka Kelola kegiatan.
+            {k.sesiId && (
+              <>
+                {" "}
+                <span className="font-medium text-warning">
+                  Absensinya sudah dibuka ({ringkas.data?.length ?? 0} catatan); bila ditandai libur, absensi ikut
+                  terhapus.
+                </span>
+              </>
+            )}
           </p>
-          <FormBatalPertemuan aksi={batalkanPertemuan.bind(null, kunci)} />
+          <FormBatalPertemuan aksi={batalkanPertemuan.bind(null, kunci)} catatan={ringkas.data?.length ?? 0} />
         </Card>
       )}
     </div>

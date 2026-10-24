@@ -106,9 +106,11 @@ export type Sesi = {
   mulai: string;
   selesai: string | null;
   ditutup: boolean;
+  /** Pertemuan Kegiatan pemilik sesi (setiap sesi lahir dari pertemuan). */
+  pertemuan_id: string;
 };
 
-export const KOLOM_SESI = "id, nama, kelompok_id, hanya_generus, mulai, selesai, ditutup";
+export const KOLOM_SESI = "id, nama, kelompok_id, hanya_generus, mulai, selesai, ditutup, pertemuan_id";
 
 /** Boleh mengelola sesi ini (UX; batas sebenarnya RLS boleh_kelola_sesi). */
 export function bolehKelolaSesi(akses: AksesAbsensi, sesi: Pick<Sesi, "kelompok_id" | "hanya_generus">) {
@@ -138,6 +140,19 @@ export function bolehBukaAbsensi(akses: AksesAbsensi | null, kelompokId: string 
   return kelompokId === null
     ? akses.kelompokKelola.length > 0 && akses.targetSesi.some((t) => t.kelompokId === null)
     : akses.kelompokKelola.some((x) => x.id === kelompokId);
+}
+
+/** Scan kartu & QR layar diterima dari 2 jam sebelum mulai s.d. 3 jam setelah selesai (sama dengan private.waktu_scan). */
+export const SCAN_SETELAH_MS = 3 * 3600_000;
+
+/** Jendela scan sesi saat ini: null = boleh scan; selain itu belum waktunya / sudah lewat. */
+export function jendelaScan(
+  sesi: Pick<Sesi, "mulai" | "selesai">,
+  sekarang = Date.now(),
+): "belum_waktunya" | "lewat_waktu" | null {
+  if (sekarang < new Date(sesi.mulai).getTime() - BUKA_SEBELUM_MS) return "belum_waktunya";
+  if (sekarang > new Date(sesi.selesai ?? sesi.mulai).getTime() + SCAN_SETELAH_MS) return "lewat_waktu";
+  return null;
 }
 
 /** Waktu (ISO) sudah lewat. */

@@ -16,8 +16,45 @@ Tes: `supabase/tests/absensi_rls.test.sql`.
 | --- | --- |
 | Sasaran | Semua jamaah (kartu QR untuk semua). Jalur 2 khusus generus (2b). |
 | Status | Hadir, izin (kuliah / kerja / lainnya), sakit. Tanpa keterangan bebas, karena data kesehatan tidak disimpan. |
-| Pembuat sesi | Sesuai wilayah: admin desa (desa / kelompok mana pun), admin kelompok (kelompoknya), admin generus (sesi generus di wilayahnya). |
+| Pembuat sesi | Sesuai wilayah: admin desa (desa / kelompok mana pun), admin kelompok (kelompoknya), admin generus (sesi generus di wilayahnya). Sejak 24 Okt 2026 setiap sesi lahir dari pertemuan Kegiatan (lihat "Terikat pertemuan"). |
 | Tahapan | 2a lalu 2b, masing-masing satu migrasi + PR. |
+
+## Terikat pertemuan (Reno, 24 Okt 2026)
+
+"Kalau ada absensi ya ada kegiatan": menu Kegiatan dan Absensi sinkron dan
+serba otomatis. Migrasi `20261024090000_absensi_terikat_pertemuan`, tes
+`absensi_terikat_pertemuan.test.sql`.
+
+- **Setiap sesi punya satu pertemuan** (`sesi_absensi.pertemuan_id`, wajib &
+  unik; `pertemuan.sesi_id` tetap terisi sebagai tautan balik). Insert tanpa
+  pertemuan ditolak (hint `tanpa_pertemuan`), pertemuan libur ditolak (hint
+  `dibatalkan`). Nama ("Kegiatan" / "Kegiatan · Kelompok"), wilayah, sasaran,
+  mulai, dan selesai (mulai + durasi kegiatan) **diisi database dari
+  pertemuannya** (trigger `atur_sesi`), bukan dari isian.
+- **Acara di luar jadwal** → tombol "Acara baru" di halaman Absensi: RPC
+  `buat_acara_absensi` membuat agenda sekali di Kegiatan + pertemuannya, lalu
+  membuka absensinya, dalam satu transaksi (security invoker; butuh izin
+  kegiatan & absensi di wilayahnya).
+- **Libur/batal** (pilihan a): menandai pertemuan libur menghapus sesi beserta
+  semua catatannya (trigger `sinkron_sesi`); aplikasi meminta konfirmasi
+  dengan jumlah catatan. Diaktifkan lagi → absensi bisa dibuka ulang dan izin
+  yang sudah disetujui diterapkan otomatis.
+- **Pindah waktu**: mengubah waktu pertemuan menggeser mulai & selesai sesi
+  (durasi tetap). Waktu mulai sesi tidak bisa diubah langsung (hint
+  `ikut_pertemuan`); jam selesai dan tutup/buka tetap boleh.
+- **Ganti nama kegiatan** → nama sesinya ikut.
+- **Hapus**: pertemuan/kegiatan yang pernah dibuka absensinya tidak bisa
+  dihapus (hint `ada_absensi`); kegiatan dinonaktifkan saja. Menghapus sesi
+  dari halaman sesi ("Hapus absensi") tetap boleh untuk salah buka:
+  pertemuannya tetap ada dan absensi bisa dibuka lagi.
+- **Jendela scan**: kartu (`catat_absensi_kode`) & QR layar (`absen_layar`,
+  `token_layar`) hanya diterima dari 2 jam sebelum mulai sampai 3 jam setelah
+  selesai (`private.waktu_scan`; hasil `belum_waktunya` / `lewat_waktu`).
+  Koreksi manual admin (hadir/izin/sakit) tetap boleh kapan saja. Daftar
+  Absensi memindahkan sesi yang lewat jendela ke bagian "Selesai".
+- **Asisten**: "Absensi X belum ditutup" bila sesi masih terbuka setelah jam
+  selesainya.
+- **Data lama**: sesi milik pertemuan yang sudah libur dihapus saat migrasi.
 
 ## Tabel
 
@@ -74,8 +111,9 @@ sudah punya catatan.
    Sesi (dari pertemuan maupun manual) hanya bisa dibuat **paling cepat 2 jam
    sebelum mulai** (trigger `cek_waktu_sesi`, migrasi
    `20261022130000_absensi_tepat_waktu`); sesi yang sudah lewat tetap boleh
-   (susulan). "Acara di luar jadwal?" → Buat sesi manual (nama, wilayah,
-   peserta, mulai/selesai), hanya untuk acara yang tidak ada di Kegiatan.
+   (susulan). Acara yang tidak ada di jadwal → "Acara baru" (nama, wilayah,
+   peserta, mulai, lama acara): tersimpan sebagai agenda di Kegiatan dan
+   absensinya langsung dibuka.
 2. **Absensi → Kartu QR**:
    - "Buat kartu yang belum ada" per kelompok.
    - "Cetak semua" membuka lembar A4 berisi 2 × 5 kartu ukuran KTP dengan kop

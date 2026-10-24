@@ -132,7 +132,7 @@ export function FormPertemuan({
       </label>
       <label className="flex flex-col gap-1.5">
         <span className={LABEL}>
-          Waktu <span className="font-normal text-muted">(ubah bila dipindah)</span>
+          Waktu <span className="font-normal text-muted">(ubah bila dipindah; waktu absensi ikut pindah)</span>
         </span>
         <input type="datetime-local" name="mulai" defaultValue={awal.mulai} required className={INPUT_CLASS} />
       </label>
@@ -148,11 +148,29 @@ export function FormPertemuan({
 
 const ALASAN_CEPAT = ["Hari Keluarga se-Daerah", "Hasil musyawarah pengurus", "Bertepatan dengan acara desa/daerah"];
 
-export function FormBatalPertemuan({ aksi }: { aksi: Aksi }) {
+/**
+ * Tandai libur/batal. `catatan` = jumlah catatan absensi pertemuan ini; bila
+ * ada, minta konfirmasi dulu karena absensi ikut terhapus.
+ */
+export function FormBatalPertemuan({ aksi, catatan = 0 }: { aksi: Aksi; catatan?: number }) {
   const [state, onSubmit, pending] = useFormAksi(aksi);
   const [alasan, setAlasan] = useState("");
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+    <form
+      onSubmit={(e) => {
+        if (
+          catatan > 0 &&
+          !window.confirm(
+            `Absensi pertemuan ini sudah berisi ${catatan} catatan kehadiran. Bila ditandai libur/batal, absensi beserta semua catatannya ikut terhapus. Lanjutkan?`,
+          )
+        ) {
+          e.preventDefault();
+          return;
+        }
+        onSubmit(e);
+      }}
+      className="flex flex-col gap-3"
+    >
       <div className="flex flex-wrap gap-2">
         {ALASAN_CEPAT.map((a) => (
           <button
