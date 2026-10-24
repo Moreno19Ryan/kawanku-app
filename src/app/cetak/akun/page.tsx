@@ -49,11 +49,8 @@ export default function CetakInfoMasukPage({
 }
 
 async function LembarSlip({ cari }: { cari: Promise<Cari> }) {
-  const [akses, param, situs] = await Promise.all([
-    getAksesAbsensi(),
-    cari,
-    alamatSitus(),
-  ]);
+  const [akses, param] = await Promise.all([getAksesAbsensi(), cari]);
+  const situs = alamatSitus();
   const kelompok = akses?.kelompokAkun.find(
     (k) => k.id === satu(param.kelompok),
   );

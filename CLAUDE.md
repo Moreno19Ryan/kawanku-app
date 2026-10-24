@@ -56,7 +56,10 @@ cakupannya satu desa.
 - Next.js 16 (App Router, Turbopack, `cacheComponents` aktif) + TypeScript
 - Tailwind CSS v4 (token di `src/app/globals.css`)
 - Supabase (PostgreSQL, RLS, Auth) lewat `@supabase/ssr`
-- Deploy di Vercel, fungsi di region `sin1` (dekat database `ap-southeast-1`)
+- Deploy di Vercel, fungsi di region `sin1` (dekat database `ap-southeast-1`).
+  Domain produksi: https://inikawanku.com. Alamat absolut hanya dari
+  `alamatSitus()` (`src/lib/situs.ts`: env `NEXT_PUBLIC_SITE_URL`, fallback
+  `VERCEL_PROJECT_PRODUCTION_URL`, lalu localhost); jangan tulis domain di kode.
 - Ikon: `lucide-react`
 
 Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
