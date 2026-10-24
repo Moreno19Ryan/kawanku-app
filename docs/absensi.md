@@ -47,13 +47,28 @@ serba otomatis. Migrasi `20261024090000_absensi_terikat_pertemuan`, tes
   dihapus (hint `ada_absensi`); kegiatan dinonaktifkan saja. Menghapus sesi
   dari halaman sesi ("Hapus absensi") tetap boleh untuk salah buka:
   pertemuannya tetap ada dan absensi bisa dibuka lagi.
-- **Jendela scan**: kartu (`catat_absensi_kode`) & QR layar (`absen_layar`,
-  `token_layar`) hanya diterima dari 2 jam sebelum mulai sampai 3 jam setelah
-  selesai (`private.waktu_scan`; hasil `belum_waktunya` / `lewat_waktu`).
-  Koreksi manual admin (hadir/izin/sakit) tetap boleh kapan saja. Daftar
-  Absensi memindahkan sesi yang lewat jendela ke bagian "Selesai".
-- **Asisten**: "Absensi X belum ditutup" bila sesi masih terbuka setelah jam
-  selesainya.
+- **Buka & tutup absensi** (revisi Reno, 24 Okt 2026), diatur per kegiatan di
+  form kegiatan / Acara baru (`kegiatan.absensi_otomatis`,
+  `buka_sebelum_menit`, `tutup_setelah_menit`; pilihan 15/30/45/60 menit,
+  bawaan otomatis 30/30). Pengaturan disalin ke sesinya dan ikut berubah bila
+  kegiatannya diubah (trigger `sinkron_sesi_kegiatan`, hanya sesi yang belum
+  lewat).
+  - **Otomatis**: scan kartu & QR layar diterima dari N menit sebelum mulai
+    sampai N menit setelah selesai. Admin cukup menyiapkan absensinya
+    ("Siapkan absensi", paling cepat 2 jam sebelum mulai); QR layar menunggu
+    dan muncul sendiri pada jamnya.
+  - **Manual**: "Buka absensi" langsung membuka; tetap terbuka sampai admin
+    menekan Tutup.
+  - Di halaman sesi admin bisa **Buka sekarang** (`dibuka_manual`, scan
+    diterima tanpa melihat jam), **Tutup sekarang** (`ditutup`), atau **Ikuti
+    jam otomatis** lagi.
+  - Status dihitung `private.waktu_scan(sesi)` (dipakai
+    `catat_absensi_kode`, `absen_layar`, `token_layar`; hasil `sesi_ditutup` /
+    `belum_waktunya` / `lewat_waktu`) dan `statusScan()` di
+    `src/lib/absensi/akses.ts` (sama). Koreksi manual hadir/izin/sakit tetap
+    boleh kapan saja.
+- **Asisten**: "Absensi X belum ditutup" untuk sesi yang dibuka manual dan
+  masih terbuka setelah jam selesainya (yang otomatis menutup sendiri).
 - **Data lama**: sesi milik pertemuan yang sudah libur dihapus saat migrasi.
 
 ## Tabel

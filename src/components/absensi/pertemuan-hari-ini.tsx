@@ -4,7 +4,7 @@ import { hrefPertemuan } from "@/components/kegiatan/daftar-kejadian";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
-import { belumBisaDibuka, bolehBukaAbsensi, getAksesAbsensi, sudahLewat } from "@/lib/absensi/akses";
+import { belumBisaDibuka, bolehBukaAbsensi, getAksesAbsensi, jamOtomatis, sudahLewat } from "@/lib/absensi/akses";
 import { bukaAbsensiPertemuan } from "@/lib/kegiatan/actions";
 import { getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { getKalender } from "@/lib/kegiatan/data";
@@ -43,6 +43,9 @@ export async function PertemuanHariIni({
           const boleh = bolehBukaAbsensi(aksesAbsensi, k.kelompokId);
           const nanti = belumBisaDibuka(k.mulai);
           const selesai = sudahLewat(k.selesai);
+          const oto = k.kegiatan.absensi_otomatis
+            ? jamOtomatis({ mulai: k.mulai, selesai: k.selesai, ...k.kegiatan })
+            : null;
           return (
             <li key={k.kunci} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
               <Link href={hrefPertemuan(k)} className="group flex min-w-0 flex-1 items-center gap-4">
@@ -58,6 +61,9 @@ export async function PertemuanHariIni({
                     <UserRound className="size-3.5" aria-hidden />
                     {k.pemateri ?? "Pemateri belum diisi"}
                   </span>
+                  <span className="mt-0.5 block text-xs text-muted">
+                    {oto ? `Absensi otomatis ${jam(oto.buka)}–${jam(oto.tutup)}` : "Absensi dibuka & ditutup manual"}
+                  </span>
                 </span>
                 <ChevronRight className="size-5 shrink-0 text-muted sm:hidden" aria-hidden />
               </Link>
@@ -66,7 +72,7 @@ export async function PertemuanHariIni({
                   {selesai ? "Lihat absensi" : "Lanjut absensi"}
                 </Link>
               ) : !boleh ? null : nanti ? (
-                <span className="text-sm text-muted">Absensi bisa dibuka mulai {jam(nanti)}</span>
+                <span className="text-sm text-muted">Absensi bisa disiapkan mulai {jam(nanti)}</span>
               ) : (
                 <TombolAksi
                   aksi={bukaAbsensiPertemuan.bind(null, {
@@ -76,7 +82,7 @@ export async function PertemuanHariIni({
                     mulaiJadwal: k.mulaiJadwal,
                     mulai: k.mulai,
                   })}
-                  label="Buka absensi"
+                  label={oto ? "Siapkan absensi" : "Buka absensi"}
                   varian="utama"
                 />
               )}

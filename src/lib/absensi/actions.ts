@@ -9,6 +9,7 @@ import {
   KOLOM_SESI,
   type Sesi,
 } from "@/lib/absensi/akses";
+import { bacaPengaturanAbsensi } from "@/lib/absensi/pengaturan";
 import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +48,7 @@ export async function buatAcara(_prev: StateAksi, formData: FormData): Promise<S
   const target = ctx.akses.targetSesi.find((t) => t.kelompokId === kelompokId);
   if (!target) return { galat: "Pilih wilayah acara." };
   const hanyaGenerus = !target.umum || formData.get("sasaran") === "generus";
+  const atur = bacaPengaturanAbsensi(formData);
 
   const { data, error } = await ctx.supabase.rpc("buat_acara_absensi", {
     p_nama: nama,
@@ -54,6 +56,9 @@ export async function buatAcara(_prev: StateAksi, formData: FormData): Promise<S
     p_hanya_generus: hanyaGenerus,
     p_mulai: mulai,
     p_durasi_menit: durasi,
+    p_absensi_otomatis: atur.absensi_otomatis,
+    p_buka_sebelum_menit: atur.buka_sebelum_menit,
+    p_tutup_setelah_menit: atur.tutup_setelah_menit,
   });
   if (error?.hint === "belum_waktunya") {
     return {
@@ -68,12 +73,25 @@ export async function buatAcara(_prev: StateAksi, formData: FormData): Promise<S
   redirect(`/absensi/${data}`);
 }
 
-export async function aturSesiDitutup(id: string, ditutup: boolean): Promise<StateAksi> {
+/**
+ * Buka / tutup absensi dari halaman sesi:
+ * - "buka": scan diterima sekarang juga sampai ditutup (tanpa melihat jam);
+ * - "tutup": scan ditolak;
+ * - "otomatis": ikuti jam buka/tutup otomatis kegiatannya lagi.
+ */
+export async function aturBukaSesi(id: string, mode: "buka" | "tutup" | "otomatis"): Promise<StateAksi> {
   const ctx = await konteks();
   if (!ctx) return TIDAK_BERHAK;
   const sesi = await bacaSesi(ctx.supabase, id);
   if (!sesi || !bolehKelolaSesi(ctx.akses, sesi)) return TIDAK_BERHAK;
-  const { error } = await ctx.supabase.from("sesi_absensi").update({ ditutup }).eq("id", id);
+  if (mode === "otomatis" && !sesi.buka_otomatis) return { galat: "Kegiatan ini memakai buka/tutup manual." };
+  const isi =
+    mode === "buka"
+      ? { ditutup: false, dibuka_manual: true }
+      : mode === "tutup"
+        ? { ditutup: true, dibuka_manual: false }
+        : { ditutup: false, dibuka_manual: false };
+  const { error } = await ctx.supabase.from("sesi_absensi").update(isi).eq("id", id);
   if (error) return GAGAL;
   refresh();
   return {};

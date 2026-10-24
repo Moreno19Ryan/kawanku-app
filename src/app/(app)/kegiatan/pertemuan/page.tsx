@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DaftarPengajuan } from "@/components/absensi/daftar-pengajuan";
-import { belumBisaDibuka, bolehBukaAbsensi, getAksesAbsensi } from "@/lib/absensi/akses";
+import { belumBisaDibuka, bolehBukaAbsensi, getAksesAbsensi, jamOtomatis } from "@/lib/absensi/akses";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { bolehKelolaPertemuan, getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { aktifkanPertemuan, batalkanPertemuan, bukaAbsensiPertemuan, simpanPertemuan } from "@/lib/kegiatan/actions";
@@ -122,6 +122,10 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
   const bolehAbsensi = bolehBukaAbsensi(aksesAbsensi, k.kelompokId);
   const hadir = ringkas.data?.filter((r) => r.status === "hadir").length ?? 0;
   const bisaDibukaMulai = belumBisaDibuka(k.mulai);
+  const oto = k.kegiatan.absensi_otomatis ? jamOtomatis({ mulai: k.mulai, selesai: k.selesai, ...k.kegiatan }) : null;
+  const caraBuka = oto
+    ? `Absensi otomatis: dibuka ${tanggalJam(oto.buka)}, ditutup ${tanggalJam(oto.tutup)}.`
+    : "Absensi manual: dibuka & ditutup oleh admin.";
 
   return (
     <div className="flex flex-col gap-5">
@@ -152,16 +156,19 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
           <div className="flex-1 text-sm">
             {k.sesiId ? (
               <>
-                <span className="font-semibold">Absensi sudah dibuka</span> · {hadir} hadir tercatat.
+                <span className="font-semibold">Absensi sudah disiapkan</span> · {hadir} hadir tercatat.
               </>
             ) : bisaDibukaMulai ? (
               <>
-                Absensi belum dibuka. Bisa dibuka mulai{" "}
+                Absensi belum disiapkan. Bisa disiapkan mulai{" "}
                 <span className="font-semibold">{tanggalJam(bisaDibukaMulai)}</span> (2 jam sebelum mulai).
               </>
             ) : (
-              <>Absensi belum dibuka. Buka saat pertemuan dimulai, lalu scan kartu / tampilkan QR layar.</>
+              <>Absensi belum disiapkan. Siapkan sebelum pertemuan, lalu scan kartu / tampilkan QR layar.</>
             )}
+            <span className="mt-0.5 block text-muted">
+              {caraBuka} Diatur di Kelola kegiatan.
+            </span>
           </div>
           {k.sesiId ? (
             <Link href={`/absensi/${k.sesiId}`} className={buttonClass("utama", "h-9 px-4")}>
@@ -169,10 +176,14 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
             </Link>
           ) : bolehAbsensi && bisaDibukaMulai ? (
             <button type="button" disabled className={buttonClass("utama", "h-9 px-4")}>
-              Belum bisa dibuka
+              Belum bisa disiapkan
             </button>
           ) : bolehAbsensi ? (
-            <TombolAksi aksi={bukaAbsensiPertemuan.bind(null, { ...kunci, mulai: k.mulai })} label="Buka absensi" varian="utama" />
+            <TombolAksi
+              aksi={bukaAbsensiPertemuan.bind(null, { ...kunci, mulai: k.mulai })}
+              label={oto ? "Siapkan absensi" : "Buka absensi"}
+              varian="utama"
+            />
           ) : null}
         </Card>
       )}

@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getAksesAbsensi, jendelaScan, KOLOM_SESI, type Sesi } from "@/lib/absensi/akses";
+import { getAksesAbsensi, KOLOM_SESI, statusScan, type Sesi } from "@/lib/absensi/akses";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { buatAcara } from "@/lib/absensi/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -96,8 +96,11 @@ async function DaftarSesi() {
   for (const c of catatan ?? []) hadir.set(c.sesi_id, (hadir.get(c.sesi_id) ?? 0) + 1);
 
   const izinMenunggu = (await getPengajuanIzin({ menunggu: true })).filter((p) => p.bolehTangani).length;
-  // Sesi yang belum ditutup tapi sudah lewat jendela scan (3 jam setelah selesai) dianggap selesai.
-  const masihDibuka = (s: Sesi) => !s.ditutup && jendelaScan(s) !== "lewat_waktu";
+  // "Sedang dibuka" = sedang menerima scan atau menunggu jam buka otomatis.
+  const masihDibuka = (s: Sesi) => {
+    const st = statusScan(s);
+    return st === "dibuka" || st === "belum_waktunya";
+  };
   const berjalan = daftar.filter(masihDibuka);
   const selesai = daftar.filter((s) => !masihDibuka(s));
 

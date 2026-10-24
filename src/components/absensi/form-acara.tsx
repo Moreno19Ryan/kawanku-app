@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { useFormAksi } from "@/components/pengaturan/use-form-aksi";
 import { buttonClass } from "@/components/ui/button";
+import { PengaturanAbsensi } from "@/components/kegiatan/pengaturan-absensi";
 import { INPUT_CLASS } from "@/components/ui/input";
 import type { TargetSesi } from "@/lib/absensi/akses";
 import type { StateAksi } from "@/lib/pengaturan/actions";
@@ -73,6 +74,7 @@ export function FormAcara({ aksi, target, mulaiAwal }: { aksi: Aksi; target: Tar
           ))}
         </select>
       </label>
+      <PengaturanAbsensi className="sm:col-span-2" />
 
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
         <button type="submit" disabled={pending} className={buttonClass("utama")}>

@@ -90,7 +90,7 @@ export function saranKegiatan(kejadian: Kejadian[], bolehKelola: (k: Kejadian) =
   return hasil;
 }
 
-/** Absensi yang belum ditutup padahal pertemuannya sudah selesai. */
+/** Absensi yang dibuka manual dan belum ditutup padahal pertemuannya sudah selesai. */
 export function saranSesiTerbuka(
   sesi: { id: string; nama: string; mulai: string; selesai: string | null }[],
   sekarang = new Date(),

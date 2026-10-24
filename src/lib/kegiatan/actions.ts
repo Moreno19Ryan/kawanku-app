@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { KOLOM_KEGIATAN } from "@/lib/kegiatan/data";
 import type { Kegiatan } from "@/lib/kegiatan/jadwal";
+import { bacaPengaturanAbsensi } from "@/lib/absensi/pengaturan";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 import { dariInputWib } from "@/lib/waktu";
@@ -81,6 +82,7 @@ export async function buatKegiatan(_prev: StateAksi, fd: FormData): Promise<Stat
       lokasi: teks(fd, "lokasi", 120),
       keterangan: teks(fd, "keterangan", 500),
       durasi_menit: durasi,
+      ...bacaPengaturanAbsensi(fd),
     })
     .select("id, kelompok_id")
     .maybeSingle();
@@ -121,6 +123,8 @@ export async function ubahKegiatan(id: string, _prev: StateAksi, fd: FormData): 
         keterangan: teks(fd, "keterangan", 500),
         durasi_menit: Math.min(720, Math.max(15, Number(fd.get("durasi")) || 90)),
         aktif: fd.get("aktif") === "on",
+        // Sesi absensi yang belum lewat ikut memakai pengaturan baru (trigger sinkron_sesi_kegiatan).
+        ...bacaPengaturanAbsensi(fd),
       },
       { count: "exact" },
     )

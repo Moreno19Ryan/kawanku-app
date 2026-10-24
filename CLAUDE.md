@@ -129,8 +129,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `20261024090000_absensi_terikat_pertemuan`): dibuka lewat
   `buka_absensi_pertemuan` / "Acara baru" (`buat_acara_absensi`), libur
   menghapus absensinya, pindah waktu & ganti nama ikut otomatis, kegiatan
-  berriwayat absensi hanya bisa dinonaktifkan, scan hanya 2 jam sebelum mulai
-  s.d. 3 jam setelah selesai. Lembar
+  berriwayat absensi hanya bisa dinonaktifkan. Buka/tutup absensi per
+  kegiatan: otomatis (15/30/45/60 menit sebelum mulai & sesudah selesai) atau
+  manual, plus Buka/Tutup sekarang per sesi (`private.waktu_scan` =
+  `statusScan()`). Lembar
   cetak kartu di `/cetak/kartu` (di luar layout admin). Sesi absensi paling
   cepat dibuat 2 jam sebelum mulai (trigger `cek_waktu_sesi`); pertemuan hari
   ini (`PertemuanHariIni`) tampil di Beranda admin & Absensi. Kamera QR
