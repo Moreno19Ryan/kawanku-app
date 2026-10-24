@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { DaftarServiceWorker } from "@/components/pwa/daftar-sw";
+import { alamatSitus } from "@/lib/situs";
 import { SKRIP_TEMA } from "@/lib/tema";
 import "./globals.css";
 
@@ -15,6 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Dasar tautan absolut (gambar pratinjau og-image, dll.).
+  metadataBase: new URL(alamatSitus()),
   title: {
     default: "KawanKu",
     template: "%s · KawanKu",

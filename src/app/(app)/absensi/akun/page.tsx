@@ -109,17 +109,15 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
   ]);
   const petaAkun = new Map((akun ?? []).map((a) => [a.jamaah_id, a]));
   // No. HP untuk tombol WhatsApp (RLS: hanya bila boleh melihat kontak).
-  const [{ data: kontak }, situs] = await Promise.all([
-    supabase
-      .from("jamaah_kontak")
-      .select("jamaah_id, no_hp")
-      .in(
-        "jamaah_id",
-        (generus ?? []).filter((g) => petaAkun.has(g.id)).map((g) => g.id),
-      )
-      .returns<{ jamaah_id: string; no_hp: string | null }[]>(),
-    alamatSitus(),
-  ]);
+  const situs = alamatSitus();
+  const { data: kontak } = await supabase
+    .from("jamaah_kontak")
+    .select("jamaah_id, no_hp")
+    .in(
+      "jamaah_id",
+      (generus ?? []).filter((g) => petaAkun.has(g.id)).map((g) => g.id),
+    )
+    .returns<{ jamaah_id: string; no_hp: string | null }[]>();
   const noHp = new Map((kontak ?? []).map((k) => [k.jamaah_id, k.no_hp]));
   const semua = generus ?? [];
   const daftar = semua.filter(
