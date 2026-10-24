@@ -45,7 +45,11 @@ Tes: `supabase/tests/kegiatan_rls.test.sql`.
   langsung mengubah kalender, dan pertemuan yang sudah tersimpan tetap ada.
 - **`buka_absensi_pertemuan()`**: membuat sesi absensi untuk pertemuan
   (nama "Kegiatan · Kelompok") lalu menautkannya. Kalau dipanggil lagi,
-  hasilnya sesi yang sama.
+  hasilnya sesi yang sama. Sejak 24 Okt 2026 absensi **terikat** pada
+  pertemuan: libur menghapus absensinya, pindah waktu menggeser waktunya,
+  ganti nama kegiatan mengganti nama sesinya, dan kegiatan yang pernah
+  diabsen tidak bisa dihapus (nonaktifkan saja). Detail di `docs/absensi.md`
+  bagian "Terikat pertemuan".
 - **Data awal**: dua kegiatan rutin di atas, bisa diubah lewat aplikasi.
 
 ## Hak akses (RLS)
@@ -70,13 +74,15 @@ Izin: `kegiatan.lihat`, `kegiatan.kelola`. Membuka absensi juga butuh
 - **`/kegiatan/pertemuan?k=&kel=&t=`**:
   - isi sesi-sesi pemateri & materi ("Tambah pemateri / sesi"), catatan, dan
     pindah waktu; pemateri tetap diisi admin per pertemuan;
-  - tandai libur/batal (dengan alasan cepat) atau aktifkan lagi;
+  - tandai libur/batal (dengan alasan cepat; bila absensi sudah berisi
+    catatan, minta konfirmasi karena absensinya ikut terhapus) atau aktifkan
+    lagi;
   - buka atau lihat absensi.
 - **`/kegiatan/pengajar`**: daftar pengajar rutin (tambah, nonaktifkan,
   hapus) per wilayah; pengajar nonaktif tidak muncul di pilihan pemateri.
 - **`/kegiatan/kelola`**: daftar kegiatan dan form buat (rutin dengan editor
   jadwal, atau agenda). Di `[id]`: ubah data, ubah jadwal, pertemuan 5 pekan ke
-  depan, hapus.
+  depan, hapus (atau nonaktifkan bila sudah punya riwayat absensi).
 - **`/saya`** (generus): jadwal 7 hari ke depan.
 
 ## Beranda generus (21 Okt 2026)

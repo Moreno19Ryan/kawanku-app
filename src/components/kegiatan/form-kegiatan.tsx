@@ -8,6 +8,7 @@ import { INPUT_CLASS } from "@/components/ui/input";
 import type { TargetKegiatan } from "@/lib/kegiatan/akses";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { EditorJadwal, type BarisJadwal } from "./editor-jadwal";
+import { PengaturanAbsensi } from "./pengaturan-absensi";
 
 type Aksi = (prev: StateAksi, formData: FormData) => Promise<StateAksi>;
 const LABEL = "text-sm font-medium";
@@ -106,6 +107,7 @@ export function FormBuatKegiatan({ aksi, target }: { aksi: Aksi; target: TargetK
         </span>
         <textarea name="keterangan" maxLength={500} rows={2} className={`${INPUT_CLASS} h-auto py-3`} />
       </label>
+      <PengaturanAbsensi className="sm:col-span-2" />
 
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
         <button type="submit" disabled={pending} className={buttonClass("utama")}>
@@ -122,7 +124,16 @@ export function FormUbahKegiatan({
   awal,
 }: {
   aksi: Aksi;
-  awal: { nama: string; lokasi: string | null; keterangan: string | null; durasi_menit: number; aktif: boolean };
+  awal: {
+    nama: string;
+    lokasi: string | null;
+    keterangan: string | null;
+    durasi_menit: number;
+    aktif: boolean;
+    absensi_otomatis: boolean;
+    buka_sebelum_menit: number;
+    tutup_setelah_menit: number;
+  };
 }) {
   const [state, onSubmit, pending] = useFormAksi(aksi);
   return (
@@ -143,6 +154,7 @@ export function FormUbahKegiatan({
         <span className={LABEL}>Keterangan</span>
         <textarea name="keterangan" maxLength={500} rows={2} defaultValue={awal.keterangan ?? ""} className={`${INPUT_CLASS} h-auto py-3`} />
       </label>
+      <PengaturanAbsensi className="sm:col-span-2" awal={awal} />
       <label className="flex items-center gap-2 text-sm sm:col-span-2">
         <input type="checkbox" name="aktif" defaultChecked={awal.aktif} className="size-4" />
         Aktif (nonaktif = tidak muncul lagi di kalender)

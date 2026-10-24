@@ -90,16 +90,21 @@ export function saranKegiatan(kejadian: Kejadian[], bolehKelola: (k: Kejadian) =
   return hasil;
 }
 
-/** Sesi absensi yang lupa ditutup (sudah lewat 6 jam dari mulainya). */
-export function saranSesiTerbuka(sesi: { id: string; nama: string; mulai: string }[], sekarang = new Date()): Saran[] {
-  const lama = sesi.filter((s) => new Date(s.mulai).getTime() < sekarang.getTime() - 6 * 3600_000);
+/** Absensi yang dibuka manual dan belum ditutup padahal pertemuannya sudah selesai. */
+export function saranSesiTerbuka(
+  sesi: { id: string; nama: string; mulai: string; selesai: string | null }[],
+  sekarang = new Date(),
+): Saran[] {
+  const lama = sesi.filter(
+    (s) => new Date(s.selesai ?? new Date(s.mulai).getTime() + 2 * 3600_000).getTime() < sekarang.getTime(),
+  );
   if (!lama.length) return [];
   return [
     {
       kode: "sesi-terbuka",
       jenis: "peringatan",
-      judul: lama.length === 1 ? `Sesi "${lama[0].nama}" masih terbuka` : `${lama.length} sesi absensi masih terbuka`,
-      isi: "Tutup sesi yang sudah selesai supaya kartu tidak bisa discan lagi dan rekapnya rapi.",
+      judul: lama.length === 1 ? `Absensi ${lama[0].nama} belum ditutup` : `${lama.length} absensi belum ditutup`,
+      isi: "Pengajiannya sudah selesai. Tutup absensinya supaya rekap rapi dan tidak ada scan susulan.",
       href: lama.length === 1 ? `/absensi/${lama[0].id}` : "/absensi",
     },
   ];

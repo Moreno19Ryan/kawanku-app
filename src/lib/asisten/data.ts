@@ -46,6 +46,8 @@ export async function getSaranAdmin(): Promise<Saran[]> {
         .from("sesi_absensi")
         .select(KOLOM_SESI)
         .eq("ditutup", false)
+        // Yang otomatis menutup sendiri; pengingat hanya untuk yang dibuka manual.
+        .eq("dibuka_manual", true)
         .order("mulai")
         .limit(50)
         .returns<Sesi[]>();

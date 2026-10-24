@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChartColumn, ChartLine, ChevronRight, IdCard, MailQuestion, UserRound } from "lucide-react";
+import { CalendarPlus, ChartColumn, ChartLine, ChevronRight, IdCard, MailQuestion, UserRound } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
-import { FormSesi } from "@/components/absensi/form-sesi";
+import { FormAcara } from "@/components/absensi/form-acara";
 import { PertemuanHariIni } from "@/components/absensi/pertemuan-hari-ini";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getAksesAbsensi, KOLOM_SESI, type Sesi } from "@/lib/absensi/akses";
+import { getAksesAbsensi, KOLOM_SESI, statusScan, type Sesi } from "@/lib/absensi/akses";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
-import { buatSesi } from "@/lib/absensi/actions";
+import { buatAcara } from "@/lib/absensi/actions";
 import { createClient } from "@/lib/supabase/server";
 import { keInputWib, tanggalJam } from "@/lib/waktu";
 import { Memuat } from "@/components/ui/memuat";
@@ -25,7 +25,7 @@ export default function AbsensiPage() {
     <>
       <PageHeader
         title="Absensi"
-        description="Sesi absensi, scan kartu QR, dan rekap kehadiran."
+        description="Absensi setiap pertemuan kegiatan, scan kartu QR, dan rekap kehadiran."
         actions={
           <Suspense fallback={null}>
             <AksiAbsensi />
@@ -96,8 +96,13 @@ async function DaftarSesi() {
   for (const c of catatan ?? []) hadir.set(c.sesi_id, (hadir.get(c.sesi_id) ?? 0) + 1);
 
   const izinMenunggu = (await getPengajuanIzin({ menunggu: true })).filter((p) => p.bolehTangani).length;
-  const berjalan = daftar.filter((s) => !s.ditutup);
-  const selesai = daftar.filter((s) => s.ditutup);
+  // "Sedang dibuka" = sedang menerima scan atau menunggu jam buka otomatis.
+  const masihDibuka = (s: Sesi) => {
+    const st = statusScan(s);
+    return st === "dibuka" || st === "belum_waktunya";
+  };
+  const berjalan = daftar.filter(masihDibuka);
+  const selesai = daftar.filter((s) => !masihDibuka(s));
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,29 +126,26 @@ async function DaftarSesi() {
         <Card>
           <details className="group">
             <summary className="flex cursor-pointer list-none items-center gap-3">
+              <CalendarPlus className="size-5 shrink-0 text-primary" aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold">Acara di luar jadwal?</span>
+                <span className="block font-semibold">Acara baru</span>
                 <span className="block text-sm text-muted">
-                  Pengajian rutin & agenda dibuka dari daftar pertemuan di atas (atau dari Kegiatan) supaya masuk
-                  laporan per kegiatan. Buat sesi manual hanya untuk acara yang tidak ada di jadwal.
+                  Untuk acara yang tidak ada di jadwal. Acara tersimpan sebagai agenda di Kegiatan dan absensinya
+                  langsung dibuka. Pengajian rutin cukup dibuka dari pertemuannya (Hari ini / Kegiatan).
                 </span>
               </span>
               <ChevronRight className="size-5 shrink-0 text-muted transition-transform group-open:rotate-90" aria-hidden />
             </summary>
             <div className="mt-5">
-              <FormSesi
-                aksi={buatSesi}
-                target={akses.targetSesi}
-                awal={{ nama: "", mulai: keInputWib(new Date().toISOString()), selesai: "" }}
-              />
+              <FormAcara aksi={buatAcara} target={akses.targetSesi} mulaiAwal={keInputWib(new Date().toISOString())} />
             </div>
           </details>
         </Card>
       )}
 
       {[
-        { judul: "Sedang dibuka", isi: berjalan, kosong: "Belum ada sesi yang dibuka." },
-        { judul: "Sudah ditutup", isi: selesai, kosong: "Belum ada sesi yang ditutup." },
+        { judul: "Sedang dibuka", isi: berjalan, kosong: "Belum ada absensi yang dibuka." },
+        { judul: "Selesai", isi: selesai, kosong: "Belum ada absensi yang selesai." },
       ].map((bagian) => (
         <section key={bagian.judul} className="flex flex-col gap-2">
           <h2 className="px-1 text-sm font-semibold text-muted">

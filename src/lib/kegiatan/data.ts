@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hitungKalender, type Jadwal, type Kegiatan, type Kejadian, type PertemuanTersimpan } from "./jadwal";
 
 export const KOLOM_KEGIATAN =
-  "id, nama, jenis, kelompok_id, per_kelompok, hanya_generus, lokasi, keterangan, durasi_menit, aktif, berlaku_mulai, berlaku_sampai";
+  "id, nama, jenis, kelompok_id, per_kelompok, hanya_generus, lokasi, keterangan, durasi_menit, aktif, berlaku_mulai, berlaku_sampai, absensi_otomatis, buka_sebelum_menit, tutup_setelah_menit";
 export const KOLOM_PERTEMUAN =
   "id, kegiatan_id, kelompok_id, tanggal, mulai, status, alasan_batal, pemateri_jamaah_id, pemateri_nama, materi, catatan, sesi_id";
 

@@ -15,6 +15,8 @@ const PESAN: Record<HasilAbsen["hasil"], string> = {
   kedaluwarsa: "QR sudah kedaluwarsa. Scan ulang QR yang sedang tampil di layar.",
   qr_tidak_sah: "QR tidak dikenal. Pastikan scan QR di layar admin.",
   sesi_ditutup: "Sesi absensi ini sudah ditutup.",
+  belum_waktunya: "Absensi pertemuan ini belum dibuka. Coba lagi menjelang pertemuan dimulai.",
+  lewat_waktu: "Absensi sudah lewat waktunya. Bila kamu hadir, sampaikan ke admin supaya dicatat.",
   bukan_peserta: "Kamu bukan peserta sesi ini.",
   jamaah_nonaktif: "Akunmu tidak aktif. Hubungi admin.",
   bukan_generus: "Akunmu tidak aktif. Hubungi admin.",

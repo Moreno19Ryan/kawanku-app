@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Card } from "@/components/ui/card";
 import { bolehKelolaPertemuan, getAksesKegiatan } from "@/lib/kegiatan/akses";
-import { hapusKegiatan, simpanJadwal, ubahKegiatan } from "@/lib/kegiatan/actions";
+import { aturKegiatanAktif, hapusKegiatan, simpanJadwal, ubahKegiatan } from "@/lib/kegiatan/actions";
 import { getKalender, KOLOM_KEGIATAN } from "@/lib/kegiatan/data";
 import { hariIniWib, ringkasJadwal, tambahHari, type Jadwal, type Kegiatan } from "@/lib/kegiatan/jadwal";
 import { createClient } from "@/lib/supabase/server";
@@ -38,9 +38,14 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, akses] = await Promise.all([params, getAksesKegiatan()]);
   if (!akses || akses.kelompokLihat.length === 0) return <KegiatanBelumMenyala />;
   const supabase = await createClient();
-  const [{ data: k }, { data: jadwal }] = await Promise.all([
+  const [{ data: k }, { data: jadwal }, { count: riwayatAbsensi }] = await Promise.all([
     supabase.from("kegiatan").select(KOLOM_KEGIATAN).eq("id", id).maybeSingle<Kegiatan>(),
     supabase.from("kegiatan_jadwal").select("id, kegiatan_id, hari, jam, kecuali_pekan_ke").eq("kegiatan_id", id).returns<Jadwal[]>(),
+    supabase
+      .from("pertemuan")
+      .select("id", { count: "exact", head: true })
+      .eq("kegiatan_id", id)
+      .not("sesi_id", "is", null),
   ]);
   if (!k) notFound();
   const namaKelompok = new Map(akses.kelompokFitur.map((x) => [x.id, x.nama]));
@@ -88,16 +93,31 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         />
       </section>
 
-      {kelola && (
-        <div className="flex justify-end">
-          <TombolAksi
-            aksi={hapusKegiatan.bind(null, k.id)}
-            label="Hapus kegiatan"
-            varian="bahaya"
-            konfirmasi={`Hapus "${k.nama}" beserta semua catatan pertemuannya (pemateri, materi)? Sesi absensi yang sudah ada tetap tersimpan.`}
-          />
-        </div>
-      )}
+      {kelola &&
+        (riwayatAbsensi ? (
+          <Card className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <p className="flex-1 text-sm text-muted">
+              Kegiatan ini sudah punya riwayat absensi ({riwayatAbsensi} pertemuan), jadi tidak bisa dihapus.{" "}
+              {k.aktif
+                ? "Nonaktifkan bila sudah tidak berjalan: tidak muncul lagi di jadwal, riwayatnya tetap tersimpan."
+                : "Kegiatan nonaktif: tidak muncul di jadwal."}
+            </p>
+            <TombolAksi
+              aksi={aturKegiatanAktif.bind(null, k.id, !k.aktif)}
+              label={k.aktif ? "Nonaktifkan kegiatan" : "Aktifkan lagi"}
+              varian="kedua"
+            />
+          </Card>
+        ) : (
+          <div className="flex justify-end">
+            <TombolAksi
+              aksi={hapusKegiatan.bind(null, k.id)}
+              label="Hapus kegiatan"
+              varian="bahaya"
+              konfirmasi={`Hapus "${k.nama}" beserta semua catatan pertemuannya (pemateri, materi)?`}
+            />
+          </div>
+        ))}
     </div>
   );
 }

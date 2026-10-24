@@ -10,6 +10,33 @@ select no_plan();
 
 create schema uji;
 grant usage on schema uji to anon, authenticated;
+
+-- Sesi absensi selalu lahir dari pertemuan (migrasi 20261024090000):
+-- pertemuan_baru membuat agenda + pertemuannya; sesi membuat ketiganya.
+create function uji.pertemuan_baru(p_kelompok uuid, p_generus boolean, p_mulai timestamptz default now(),
+                                   p_nama text default 'Acara uji')
+returns uuid language plpgsql security definer set search_path = '' as $$
+declare v_kegiatan uuid; v_pertemuan uuid;
+begin
+  insert into public.kegiatan (nama, jenis, kelompok_id, hanya_generus, berlaku_mulai)
+  values (p_nama, 'agenda', p_kelompok, p_generus, (p_mulai at time zone 'Asia/Jakarta')::date)
+  returning id into v_kegiatan;
+  insert into public.pertemuan (kegiatan_id, tanggal, mulai)
+  values (v_kegiatan, (p_mulai at time zone 'Asia/Jakarta')::date, p_mulai)
+  returning id into v_pertemuan;
+  return v_pertemuan;
+end $$;
+create function uji.sesi(p_id uuid, p_nama text, p_kelompok uuid, p_generus boolean, p_mulai timestamptz,
+                         p_selesai timestamptz default null, p_ditutup boolean default false)
+returns uuid language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.sesi_absensi (id, pertemuan_id, ditutup)
+  values (p_id, uji.pertemuan_baru(p_kelompok, p_generus, p_mulai, p_nama), p_ditutup);
+  if p_selesai is not null then
+    update public.sesi_absensi set selesai = p_selesai where id = p_id;
+  end if;
+  return p_id;
+end $$;
 create table uji.hasil (no serial primary key, nama text not null, lulus boolean not null, catatan text);
 grant insert, select on uji.hasil to anon, authenticated;
 grant usage on sequence uji.hasil_no_seq to anon, authenticated;
@@ -104,8 +131,7 @@ create table uji.kode_j as select id, kode from public.jamaah;
 grant select on uji.kode_j to anon, authenticated;
 
 -- e1 umum K1, e2 generus K1, e3 umum desa, e4 umum K2
-insert into public.sesi_absensi (id, nama, kelompok_id, hanya_generus, mulai)
-select v.id::uuid, v.nama, (select id from public.kelompok where nomor = v.nomor), v.generus, now()
+select uji.sesi(v.id::uuid, v.nama, (select id from public.kelompok where nomor = v.nomor), v.generus, now())
 from (values
   ('00000000-0000-0000-0000-0000000000e1', 'Pengajian K1',  1,    false),
   ('00000000-0000-0000-0000-0000000000e2', 'Generus K1',    1,    true),
@@ -131,14 +157,15 @@ select uji.sebagai('00000000-0000-0000-0000-0000000000d2');
 select uji.cek('K1: melihat sesi K1, generus K1, dan desa; TIDAK sesi K2',
   (select array_agg(nama order by nama) from public.sesi_absensi)
   = array['Generus K1', 'Pengajian Desa', 'Pengajian K1']);
-select uji.harus_berhasil('K1: membuat sesi K1',
+select uji.harus_ditolak('K1: membuat sesi tanpa pertemuan ditolak',
   $q$ insert into public.sesi_absensi (nama, kelompok_id, mulai)
       select 'X', id, now() from public.kelompok where nomor = 1 returning 1 $q$);
-select uji.harus_ditolak('K1: membuat sesi K2 ditolak',
-  $q$ insert into public.sesi_absensi (nama, kelompok_id, mulai)
-      select 'X', id, now() from public.kelompok where nomor = 2 returning 1 $q$);
-select uji.harus_ditolak('K1: membuat sesi tingkat desa ditolak',
-  $q$ insert into public.sesi_absensi (nama, kelompok_id, mulai) values ('X', null, now()) returning 1 $q$);
+select uji.harus_berhasil('K1: membuka sesi pertemuan K1',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru((select id from public.kelompok where nomor = 1), false)) returning 1 $q$);
+select uji.harus_ditolak('K1: membuka sesi pertemuan K2 ditolak',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru((select id from public.kelompok where nomor = 2), false)) returning 1 $q$);
+select uji.harus_ditolak('K1: membuka sesi pertemuan tingkat desa ditolak',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru(null, false)) returning 1 $q$);
 select uji.harus_ditolak('K1: mengubah sesi desa ditolak',
   $q$ update public.sesi_absensi set nama = 'Y' where id = '00000000-0000-0000-0000-0000000000e3' returning 1 $q$);
 
@@ -226,12 +253,10 @@ select uji.sebagai('00000000-0000-0000-0000-0000000000d3');
 select uji.cek('Gen K1: melihat sesi K1 & desa (umum + generus), TIDAK K2',
   (select array_agg(nama order by nama) from public.sesi_absensi)
   = array['Generus K1', 'Pengajian Desa', 'Pengajian K1']);
-select uji.harus_ditolak('Gen K1: membuat sesi umum ditolak',
-  $q$ insert into public.sesi_absensi (nama, kelompok_id, mulai)
-      select 'X', id, now() from public.kelompok where nomor = 1 returning 1 $q$);
-select uji.harus_berhasil('Gen K1: membuat sesi generus K1',
-  $q$ insert into public.sesi_absensi (nama, kelompok_id, hanya_generus, mulai)
-      select 'X', id, true, now() from public.kelompok where nomor = 1 returning 1 $q$);
+select uji.harus_ditolak('Gen K1: membuka sesi pertemuan umum ditolak',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru((select id from public.kelompok where nomor = 1), false)) returning 1 $q$);
+select uji.harus_berhasil('Gen K1: membuka sesi pertemuan generus K1',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru((select id from public.kelompok where nomor = 1), true)) returning 1 $q$);
 select uji.harus_ditolak('Gen K1: mengubah sesi umum K1 ditolak',
   $q$ update public.sesi_absensi set nama = 'Y' where id = '00000000-0000-0000-0000-0000000000e1' returning 1 $q$);
 select uji.cek('Gen K1: catatan sesi K1 yang terlihat hanya generus',
@@ -252,10 +277,10 @@ select uji.cek('Gen K1: kode jamaah dewasa → tidak_dikenal (tidak terlihat)',
 select uji.sebagai('00000000-0000-0000-0000-0000000000d4');
 select uji.cek('Gen desa: melihat semua sesi',
   (select count(*) from public.sesi_absensi where id::text like '00000000-0000-0000-0000-0000000000e%') = 4);
-select uji.harus_berhasil('Gen desa: membuat sesi generus tingkat desa',
-  $q$ insert into public.sesi_absensi (nama, kelompok_id, hanya_generus, mulai) values ('X', null, true, now()) returning 1 $q$);
-select uji.harus_ditolak('Gen desa: membuat sesi umum tingkat desa ditolak',
-  $q$ insert into public.sesi_absensi (nama, kelompok_id, hanya_generus, mulai) values ('X', null, false, now()) returning 1 $q$);
+select uji.harus_berhasil('Gen desa: membuka sesi pertemuan generus tingkat desa',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru(null, true)) returning 1 $q$);
+select uji.harus_ditolak('Gen desa: membuka sesi pertemuan umum tingkat desa ditolak',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru(null, false)) returning 1 $q$);
 
 -- ---------------------------------------------------------------------
 -- Pengembang: hanya lihat
@@ -265,8 +290,8 @@ select uji.cek('Dev: melihat sesi',
   (select count(*) from public.sesi_absensi where id::text like '00000000-0000-0000-0000-0000000000e%') = 4);
 select uji.cek('Dev: melihat catatan absensi', (select count(*) from public.absensi) >= 3);
 select uji.cek('Dev: TIDAK melihat token kartu', not exists (select 1 from public.kartu_qr));
-select uji.harus_ditolak('Dev: membuat sesi ditolak',
-  $q$ insert into public.sesi_absensi (nama, kelompok_id, mulai) values ('X', null, now()) returning 1 $q$);
+select uji.harus_ditolak('Dev: membuka sesi ditolak',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru(null, false)) returning 1 $q$);
 select uji.harus_ditolak('Dev: mencatat absensi ditolak',
   $q$ insert into public.absensi (sesi_id, jamaah_id)
       values ('00000000-0000-0000-0000-0000000000e3', '00000000-0000-0000-0000-0000000000f3') returning 1 $q$);
@@ -283,8 +308,8 @@ select uji.sebagai('00000000-0000-0000-0000-0000000000d1');
 select uji.cek('Desa: anggota K2 di sesi K1 → bukan_peserta',
   uji.catat('00000000-0000-0000-0000-0000000000e4',
     (select kode from uji.kode_j where id = '00000000-0000-0000-0000-0000000000f1')) = 'bukan_peserta');
-select uji.harus_berhasil('Desa: membuat sesi tingkat desa',
-  $q$ insert into public.sesi_absensi (nama, kelompok_id, mulai) values ('X', null, now()) returning 1 $q$);
+select uji.harus_berhasil('Desa: membuka sesi pertemuan tingkat desa',
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (uji.pertemuan_baru(null, false)) returning 1 $q$);
 select uji.harus_berhasil('Desa: menghapus sesi (catatan ikut terhapus)',
   $q$ delete from public.sesi_absensi where id = '00000000-0000-0000-0000-0000000000e3' returning 1 $q$);
 
