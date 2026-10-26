@@ -1,7 +1,7 @@
 /**
  * Sambutan Beranda generus yang "ingat": salam sesuai waktu, lalu satu
- * kalimat paling relevan (milad, baru kembali hadir, baru sakit, atau
- * pengajian terdekat). Fungsi murni; semua tanggal dalam WIB.
+ * kalimat paling relevan (baru kembali hadir, baru sakit, atau pengajian
+ * terdekat). Fungsi murni; semua tanggal dalam WIB.
  */
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import type { CatatanKehadiran } from "./kehadiran";
@@ -32,7 +32,6 @@ export function salamWaktu(sekarang = new Date()): string {
 
 export function sambutan(opsi: {
   catatan: CatatanKehadiran[];
-  tanggalLahir: string | null;
   berikut?: Berikut;
   sekarang?: Date;
 }): Sambutan {
@@ -44,23 +43,18 @@ export function sambutan(opsi: {
     .sort((a, b) => b.mulai.localeCompare(a.mulai));
   const hariSejak = (iso: string) => (sekarang.getTime() - new Date(iso).getTime()) / 86_400_000;
 
-  // 1. Milad (tanggal & bulan lahir sama dengan hari ini).
-  if (opsi.tanggalLahir && opsi.tanggalLahir.slice(5, 10) === hariIni.slice(5, 10)) {
-    return { salam, pesan: "Selamat milad! Semoga barokah selalu, ya.", nada: "syukur" };
-  }
-
-  // 2. Baru kembali hadir setelah ≥ 2 pertemuan terlewat berturut-turut.
+  // 1. Baru kembali hadir setelah ≥ 2 pertemuan terlewat berturut-turut.
   const [a, b, c] = selesai;
   if (a?.status === "hadir" && b?.status === "alpa" && c?.status === "alpa" && hariSejak(a.mulai) <= 7) {
     return { salam, pesan: "Alhamdulillah, senang kamu hadir lagi! Semoga istiqomah, ya.", nada: "syukur" };
   }
 
-  // 3. Baru sakit (pertemuan terakhir, ≤ 14 hari).
+  // 2. Baru sakit (pertemuan terakhir, ≤ 14 hari).
   if (a?.status === "sakit" && hariSejak(a.mulai) <= 14) {
     return { salam, pesan: "Semoga sudah sehat, ya. Kami tunggu di pengajian berikutnya.", nada: "biasa" };
   }
 
-  // 4. Pengajian terdekat hari ini / besok.
+  // 3. Pengajian terdekat hari ini / besok.
   const k = opsi.berikut;
   if (k && k.mulai > sekarang.toISOString()) {
     if (k.tanggal === hariIni) {

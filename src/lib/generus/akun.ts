@@ -14,7 +14,6 @@ export type GenerusSaatIni = {
     nama: string;
     panggilan: string | null;
     jenisKelamin: "L" | "P";
-    tanggalLahir: string | null;
     kelompokId: string;
     kelompok: string | null;
   };
@@ -29,7 +28,6 @@ type Baris = {
     nama_lengkap: string;
     nama_panggilan: string | null;
     jenis_kelamin: "L" | "P";
-    tanggal_lahir: string | null;
     kelompok_id: string;
     aktif: boolean;
     kelompok: { nama: string } | null;
@@ -46,7 +44,7 @@ export const getGenerusSaatIni = cache(async (): Promise<GenerusSaatIni | null> 
   if (!auth.user) return null;
   const { data } = await supabase
     .from("akun_generus")
-    .select("username, pin_awal, jamaah:jamaah_id(id, kode, nama_lengkap, nama_panggilan, jenis_kelamin, tanggal_lahir, kelompok_id, aktif, kelompok:kelompok_id(nama))")
+    .select("username, pin_awal, jamaah:jamaah_id(id, kode, nama_lengkap, nama_panggilan, jenis_kelamin, kelompok_id, aktif, kelompok:kelompok_id(nama))")
     .eq("user_id", auth.user.id)
     .eq("aktif", true)
     .maybeSingle<Baris>();
@@ -61,7 +59,6 @@ export const getGenerusSaatIni = cache(async (): Promise<GenerusSaatIni | null> 
       nama: data.jamaah.nama_lengkap,
       panggilan: data.jamaah.nama_panggilan,
       jenisKelamin: data.jamaah.jenis_kelamin,
-      tanggalLahir: data.jamaah.tanggal_lahir,
       kelompokId: data.jamaah.kelompok_id,
       kelompok: data.jamaah.kelompok?.nama ?? null,
     },

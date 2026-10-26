@@ -51,7 +51,6 @@ async function BerandaGenerus() {
   const namaKelompok = new Map([[generus.jamaah.kelompokId, generus.jamaah.kelompok ?? "Kelompok"]]);
   const sapa = sambutan({
     catatan: kehadiran,
-    tanggalLahir: generus.jamaah.tanggalLahir,
     berikut: berikut && { nama: berikut.kegiatan.nama, tanggal: berikut.tanggal, mulai: berikut.mulai },
   });
   // Pekan pertama tiap bulan: ajakan membuka rapor bulan lalu.

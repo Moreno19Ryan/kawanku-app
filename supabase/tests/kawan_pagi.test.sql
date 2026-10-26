@@ -86,7 +86,7 @@ select uji.beri('00000000-0000-0000-0000-0000000000a4', 'admin_generus', 1);
 
 update public.kegiatan set aktif = false;
 
--- Jamaah: generus K1 (milad hari ini, berakun), jamaah dewasa K1 (milad hari ini), generus K2.
+-- Jamaah: generus K1 (berakun), jamaah dewasa K1, generus K2.
 insert into public.jamaah (id, kelompok_id, nama_lengkap, nama_panggilan, jenis_kelamin, kode, status_pernikahan, status_sekolah, tanggal_lahir) values
   ('00000000-0000-0000-0000-0000000000f1', uji.kel(1), 'Fajar Generus', 'Fajar', 'L', 'g1', 'lajang', 'sma_smk', '2010-11-02'),
   ('00000000-0000-0000-0000-0000000000f2', uji.kel(1), 'Bapak Dewasa', null, 'L', 'd1', 'menikah', 'bekerja', '1980-11-02'),
@@ -144,20 +144,18 @@ select uji.cek('K1: 1 pertemuan hari ini (pengajian K1 rutin)',
   (select (r->>'pertemuan')::int = 1 from r_k1));
 select uji.cek('K1: pemateri kosong = K1 rutin hari ini', (select (r->>'tanpa_pemateri')::int = 1 from r_k1));
 select uji.cek('K1: 1 izin menunggu', (select (r->>'izin')::int = 1 from r_k1));
-select uji.cek('K1: milad Fajar & Bapak Dewasa',
-  (select r->'milad' = '["Bapak Dewasa", "Fajar"]'::jsonb from r_k1));
-select uji.cek('K2: 1 pertemuan, tanpa pemateri 0, izin 0, milad kosong',
+select uji.cek('K2: 1 pertemuan, tanpa pemateri 0, izin 0',
   (select (r->>'pertemuan')::int = 1 and (r->>'tanpa_pemateri')::int = 0 and (r->>'izin')::int = 0
-          and r->'milad' = '[]'::jsonb from r_k2));
+          from r_k2));
 select uji.cek('Desa: melihat 2 pertemuan hari ini, pemateri kosong hanya kegiatan desa (besok)',
   (select (r->>'pertemuan')::int = 2 and (r->>'tanpa_pemateri')::int = 1 from r_desa));
 select uji.cek('Desa: izin kelompok bukan wewenangnya', (select (r->>'izin')::int = 0 from r_desa));
-select uji.cek('Admin generus K1: milad hanya generus', (select r->'milad' = '["Fajar"]'::jsonb from r_gen));
+select uji.cek('Ringkasan tidak memuat data milad', (select not (r ? 'milad') from r_k1));
 select uji.cek('Akun generus: bukan admin → kosong', (select r is null from r_generus));
 select uji.cek('Kalimat ringkasan',
-  (select private.kalimat_ringkasan(r) = '1 pertemuan hari ini · 1 izin menunggu persetujuan · 1 pertemuan belum ada pemateri · Milad hari ini: Bapak Dewasa, Fajar' from r_k1));
+  (select private.kalimat_ringkasan(r) = '1 pertemuan hari ini · 1 izin menunggu persetujuan · 1 pertemuan belum ada pemateri' from r_k1));
 select uji.cek('Kalimat kosong → null',
-  private.kalimat_ringkasan('{"pertemuan":0,"izin":0,"tanpa_pemateri":0,"milad":[]}'::jsonb) is null);
+  private.kalimat_ringkasan('{"pertemuan":0,"izin":0,"tanpa_pemateri":0}'::jsonb) is null);
 
 -- Notifikasi pagi: hanya admin yang berlangganan, di jendela pagi, identitas dikembalikan.
 insert into public.langganan_notifikasi (user_id, endpoint, p256dh, auth_key) values
@@ -215,6 +213,6 @@ select uji.harus_ditolak('Anon: RPC ringkasan ditolak', $q$ select 1 from public
 reset role;
 
 select ok(lulus, nama || coalesce(' — ' || catatan, '')) from uji.hasil order by no;
-select cmp_ok((select count(*)::int from uji.hasil), '>=', 26, 'Jumlah skenario kawan');
+select cmp_ok((select count(*)::int from uji.hasil), '>=', 25, 'Jumlah skenario kawan');
 select * from finish();
 rollback;

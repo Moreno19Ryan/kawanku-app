@@ -130,7 +130,7 @@ export function SaklarNotifikasi({
     ditolak: "Notifikasi diblokir di browser ini. Izinkan lewat pengaturan situs (ikon gembok di sebelah alamat), lalu muat ulang.",
     mati: {
       pengembang: "Dapat peringatan di HP saat cadangan gagal, cadangan rusak, atau ruang database hampir penuh.",
-      admin: "Dapat ringkasan hari ini di HP tiap pagi: pertemuan, izin yang menunggu, pemateri yang belum diisi, dan jamaah yang milad.",
+      admin: "Dapat ringkasan hari ini di HP tiap pagi: pertemuan, izin yang menunggu, dan pemateri yang belum diisi.",
       generus: "Dapat pengingat di HP: malam sebelum pengajian dan sekitar 1 jam sebelum mulai.",
     }[untuk],
     nyala: {

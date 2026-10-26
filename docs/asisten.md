@@ -51,7 +51,7 @@ tabel baru). Batas data tetap RLS dan wewenang tiap admin.
 - **Ringkasan hari ini (admin)**: kartu di atas Beranda admin
   (`RingkasanHariIni`, RPC `ringkasan_hari_ini`): pertemuan hari ini,
   pertemuan hari ini/besok yang belum ada pemateri (yang dikelola admin
-  itu), izin menunggu persetujuannya, dan jamaah yang milad hari ini. Isinya
+  itu), dan izin menunggu persetujuannya (tanpa info milad, keputusan Reno). Isinya
   dihitung `private.ringkasan_hari` memakai fungsi izin yang sama dengan RLS
   (`boleh_lihat_kegiatan`, `boleh_kelola_pertemuan`, `boleh_jamaah`,
   `boleh_absensi_di`), jadi tiap admin hanya melihat wilayah & sasarannya.
@@ -59,7 +59,7 @@ tabel baru). Batas data tetap RLS dan wewenang tiap admin.
   pertemuan). Kalimat yang sama dikirim ke HP admin tiap pagi, lihat
   `docs/notifikasi.md`.
 - **Sambutan generus** (`src/lib/generus/sambutan.ts`, murni): salam sesuai
-  jam WIB, lalu satu kalimat paling relevan: milad → baru hadir lagi
+  jam WIB, lalu satu kalimat paling relevan: baru hadir lagi
   setelah ≥ 2 pertemuan terlewat (≤ 7 hari) → baru sakit (≤ 14 hari) →
   pengajian nanti/besok. Tidak ada yang khusus → hanya salam.
 - **Rapor bulanan generus** (`/saya/rapor?bulan=YYYY-MM`, `raporBulan()` di

@@ -2,8 +2,8 @@
 -- "Kawan" (F7, Reno 26 Okt 2026)
 --
 -- 1. Ringkasan hari ini untuk admin: pertemuan hari ini, pertemuan
---    hari ini/besok yang belum ada pemateri, izin menunggu persetujuan,
---    dan jamaah yang milad hari ini. Dihitung dengan fungsi izin yang
+--    hari ini/besok yang belum ada pemateri, dan izin menunggu
+--    persetujuan. Dihitung dengan fungsi izin yang
 --    sama dengan RLS (private.boleh*), jadi tiap admin hanya melihat
 --    wilayah & sasarannya. Tampil di Beranda (RPC ringkasan_hari_ini)
 --    dan dikirim ke HP admin tiap pagi (05.30–08.59 WIB, sekali sehari,
@@ -69,16 +69,7 @@ as $$
       select count(*) from public.pengajuan_izin i
       where i.status = 'menunggu'
         and private.boleh_jamaah('absensi.kelola', i.jamaah_id)
-        and private.boleh_absensi_di(i.kelompok_id)),
-    'milad', coalesce((
-      select jsonb_agg(x.nama order by x.nama) from (
-        select coalesce(j.nama_panggilan, j.nama_lengkap) as nama
-        from public.jamaah j
-        where j.aktif and j.tanggal_lahir is not null
-          and to_char(j.tanggal_lahir, 'MM-DD') = to_char(t.tgl, 'MM-DD')
-          and private.boleh_jamaah('jamaah.lihat', j.id)
-        order by 1
-        limit 10) x), '[]'::jsonb)
+        and private.boleh_absensi_di(i.kelompok_id))
   )
   from t
   where private.adalah_admin();
@@ -134,10 +125,7 @@ as $$
   select nullif(concat_ws(' · ',
     case when (r->>'pertemuan')::int > 0 then (r->>'pertemuan') || ' pertemuan hari ini' end,
     case when (r->>'izin')::int > 0 then (r->>'izin') || ' izin menunggu persetujuan' end,
-    case when (r->>'tanpa_pemateri')::int > 0 then (r->>'tanpa_pemateri') || ' pertemuan belum ada pemateri' end,
-    case when jsonb_array_length(r->'milad') > 0 then 'Milad hari ini: '
-      || (select string_agg(v, ', ') from (select jsonb_array_elements_text(r->'milad') v limit 3) x)
-      || case when jsonb_array_length(r->'milad') > 3 then ' dkk.' else '' end end
+    case when (r->>'tanpa_pemateri')::int > 0 then (r->>'tanpa_pemateri') || ' pertemuan belum ada pemateri' end
   ), '');
 $$;
 revoke all on function private.kalimat_ringkasan(jsonb) from public, anon, authenticated;

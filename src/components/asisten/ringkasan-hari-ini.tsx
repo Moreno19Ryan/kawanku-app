@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { CakeSlice, CalendarDays, ChevronRight, ClipboardCheck, Sunrise, UserRound } from "lucide-react";
+import { CalendarDays, ChevronRight, ClipboardCheck, Sunrise, UserRound } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 
-type Ringkasan = { pertemuan: number; tanpa_pemateri: number; izin: number; milad: string[] };
+type Ringkasan = { pertemuan: number; tanpa_pemateri: number; izin: number };
 
 /**
  * Ringkasan hari ini untuk admin (RPC ringkasan_hari_ini: aturan izin sama
@@ -23,11 +23,6 @@ export async function RingkasanHariIni({ className = "" }: { className?: string 
       ikon: UserRound,
       teks: `${r.tanpa_pemateri} pertemuan hari ini/besok belum ada pemateri`,
       href: "/kegiatan",
-    },
-    r.milad.length > 0 && {
-      ikon: CakeSlice,
-      teks: `Milad hari ini: ${r.milad.join(", ")}`,
-      href: null,
     },
   ].filter((b) => !!b);
 
