@@ -5,6 +5,7 @@ import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { useFormAksi } from "@/components/pengaturan/use-form-aksi";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
+import { PILIHAN_JENDELA } from "@/lib/absensi/jendela";
 import type { TargetKegiatan } from "@/lib/kegiatan/akses";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { EditorJadwal, type BarisJadwal } from "./editor-jadwal";
@@ -91,6 +92,10 @@ export function FormBuatKegiatan({ aksi, target }: { aksi: Aksi; target: TargetK
         <input type="number" name="durasi" min={15} max={720} defaultValue={90} className={INPUT_CLASS} />
       </label>
       <label className="flex flex-col gap-1.5">
+        <span className={LABEL}>Absensi terbuka</span>
+        <PilihJendela awal={30} />
+      </label>
+      <label className="flex flex-col gap-1.5">
         <span className={LABEL}>
           Lokasi <span className="font-normal text-muted">(opsional)</span>
         </span>
@@ -118,7 +123,14 @@ export function FormUbahKegiatan({
   awal,
 }: {
   aksi: Aksi;
-  awal: { nama: string; lokasi: string | null; keterangan: string | null; durasi_menit: number; aktif: boolean };
+  awal: {
+    nama: string;
+    lokasi: string | null;
+    keterangan: string | null;
+    durasi_menit: number;
+    jendela_menit: number;
+    aktif: boolean;
+  };
 }) {
   const [state, onSubmit, pending] = useFormAksi(aksi);
   return (
@@ -130,6 +142,10 @@ export function FormUbahKegiatan({
       <label className="flex flex-col gap-1.5">
         <span className={LABEL}>Durasi (menit)</span>
         <input type="number" name="durasi" min={15} max={720} defaultValue={awal.durasi_menit} className={INPUT_CLASS} />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className={LABEL}>Absensi terbuka</span>
+        <PilihJendela awal={awal.jendela_menit} />
       </label>
       <label className="flex flex-col gap-1.5">
         <span className={LABEL}>Lokasi</span>
@@ -150,6 +166,19 @@ export function FormUbahKegiatan({
         <PesanAksi state={state} />
       </div>
     </form>
+  );
+}
+
+/** Jendela absensi otomatis: N menit sebelum mulai s.d. N menit setelah selesai. */
+function PilihJendela({ awal }: { awal: number }) {
+  return (
+    <select name="jendela" defaultValue={String(awal)} className={INPUT_CLASS}>
+      {PILIHAN_JENDELA.map((m) => (
+        <option key={m} value={m}>
+          {m} menit sebelum & sesudah
+        </option>
+      ))}
+    </select>
   );
 }
 

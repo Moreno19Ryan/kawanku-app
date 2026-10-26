@@ -98,7 +98,7 @@ async function DaftarSesi() {
   for (const c of catatan ?? []) hadir.set(c.sesi_id, (hadir.get(c.sesi_id) ?? 0) + 1);
 
   const izinMenunggu = (await getPengajuanIzin({ menunggu: true })).filter((p) => p.bolehTangani).length;
-  // Sesi yang sudah lewat jendela absensi (30 menit setelah selesai) dianggap selesai.
+  // Sesi yang sudah lewat jendela absensinya dianggap selesai.
   const masihDibuka = (s: Sesi) => !s.ditutup && jendelaScan(s) !== "lewat_waktu";
   const berjalan = daftar.filter(masihDibuka);
   const selesai = daftar.filter((s) => !masihDibuka(s));
@@ -124,8 +124,8 @@ async function DaftarSesi() {
       <p className="flex items-start gap-2 px-1 text-sm text-muted">
         <CalendarPlus className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>
-          Absensi terbuka otomatis untuk setiap pertemuan di Kegiatan, 30 menit sebelum mulai sampai 30 menit setelah
-          selesai. Ada acara di luar jadwal?{" "}
+          Absensi terbuka otomatis untuk setiap pertemuan di Kegiatan, sesuai jendela kegiatannya (bawaan 30 menit
+          sebelum mulai sampai 30 menit setelah selesai). Ada acara di luar jadwal?{" "}
           <Link href="/kegiatan/kelola" className="font-medium text-primary hover:underline">
             Buat agendanya di Kegiatan
           </Link>

@@ -15,6 +15,8 @@ export type Kegiatan = {
   lokasi: string | null;
   keterangan: string | null;
   durasi_menit: number;
+  /** Jendela absensi (menit) sebelum mulai & setelah selesai. */
+  jendela_menit: number;
   aktif: boolean;
   berlaku_mulai: string;
   berlaku_sampai: string | null;

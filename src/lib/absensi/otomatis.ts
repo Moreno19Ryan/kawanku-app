@@ -4,11 +4,11 @@ import type { Kejadian } from "@/lib/kegiatan/jadwal";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Absensi serba otomatis: pertemuan terjadwal yang sedang di jendela absensi
- * (30 menit sebelum mulai s.d. 30 menit setelah selesai) dan belum punya
- * absensi langsung dibuatkan lewat RPC buka_absensi_pertemuan (idempoten;
- * batas tetap RLS). Dipanggil saat admin membuka Beranda, Absensi, atau
- * halaman pertemuan, jadi admin tidak perlu menekan tombol apa pun.
+ * Absensi serba otomatis: database membukanya sendiri tiap menit (pg_cron,
+ * private.buka_absensi_otomatis). Ini cadangan di aplikasi: pertemuan
+ * terjadwal yang sedang di jendela absensinya dan belum punya sesi langsung
+ * dibuatkan lewat RPC buka_absensi_pertemuan (idempoten; batas tetap RLS)
+ * saat admin membuka Beranda, Absensi, atau halaman pertemuan.
  * Mengembalikan kejadian yang sama dengan sesiId terisi.
  */
 export async function siapkanAbsensiOtomatis(
