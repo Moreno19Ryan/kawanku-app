@@ -1,5 +1,5 @@
 import "server-only";
-import { getAksesAbsensi, bolehKelolaSesi, KOLOM_SESI, type Sesi } from "@/lib/absensi/akses";
+import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { bacaParamLaporan, getLaporan } from "@/lib/absensi/laporan";
 import { getAksesKegiatan, bolehKelolaPertemuan } from "@/lib/kegiatan/akses";
@@ -13,7 +13,6 @@ import {
   saranIzin,
   saranKegiatan,
   saranLaporan,
-  saranSesiTerbuka,
   urutkanSaran,
   type Saran,
 } from "./hitung";
@@ -30,7 +29,6 @@ async function aman(f: () => Promise<Saran[]>): Promise<Saran[]> {
 /** Saran untuk admin yang login, sesuai wewenang & modul yang menyala (batas data tetap RLS). */
 export async function getSaranAdmin(): Promise<Saran[]> {
   const [absensi, kegiatan] = await Promise.all([getAksesAbsensi(), getAksesKegiatan()]);
-  const supabase = await createClient();
   const sekarang = new Date();
 
   const bagian = await Promise.all([
@@ -39,17 +37,6 @@ export async function getSaranAdmin(): Promise<Saran[]> {
       const hariIni = hariIniWib(sekarang);
       const kejadian = await getKalender(hariIni, tambahHari(hariIni, 6), kegiatan.kelompokLihat.map((k) => k.id));
       return saranKegiatan(kejadian, (k) => bolehKelolaPertemuan(kegiatan, k.kelompokId, k.kegiatan.hanya_generus), sekarang);
-    }),
-    aman(async () => {
-      if (!absensi?.bolehLihat || absensi.kelompokKelola.length === 0) return [];
-      const { data } = await supabase
-        .from("sesi_absensi")
-        .select(KOLOM_SESI)
-        .eq("ditutup", false)
-        .order("mulai")
-        .limit(50)
-        .returns<Sesi[]>();
-      return saranSesiTerbuka((data ?? []).filter((s) => bolehKelolaSesi(absensi, s)), sekarang);
     }),
     aman(async () => {
       if (!absensi?.bolehLihat) return [];

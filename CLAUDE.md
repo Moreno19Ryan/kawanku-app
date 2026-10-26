@@ -124,9 +124,17 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   dari keluarganya saat pindah kelompok.
 - Absensi (`/absensi`, `docs/absensi.md`) dibuka lewat saklar fitur `absensi`
   dan izin `absensi.lihat`/`absensi.kelola` (`getAksesAbsensi`). Pencatatan
-  lewat RPC `catat_absensi_kode` (security invoker, batas tetap RLS). Lembar
-  cetak kartu di `/cetak/kartu` (di luar layout admin). Sesi absensi paling
-  cepat dibuat 2 jam sebelum mulai (trigger `cek_waktu_sesi`); pertemuan hari
+  lewat RPC `catat_absensi_kode` (security invoker, batas tetap RLS). Setiap
+  sesi terikat satu pertemuan Kegiatan (`sesi_absensi.pertemuan_id`, migrasi
+  `20261024090000_absensi_terikat_pertemuan`): dibuka lewat
+  `buka_absensi_pertemuan`, libur menghapus absensinya, pindah waktu & ganti
+  nama ikut otomatis, kegiatan berriwayat absensi hanya bisa dinonaktifkan.
+  Tidak ada "buat sesi" di menu Absensi (acara di luar jadwal = agenda di
+  Kegiatan). Serba otomatis: absensi terbuka 30 menit sebelum mulai s.d. 30
+  menit setelah selesai (`private.waktu_scan` = `jendelaScan()`, trigger
+  `cek_waktu_sesi`); sesinya dibuat `siapkanAbsensiOtomatis()` saat admin
+  membuka Beranda/Absensi/pertemuan, tanpa tombol buka/tutup. Lembar
+  cetak kartu di `/cetak/kartu` (di luar layout admin). Pertemuan hari
   ini (`PertemuanHariIni`) tampil di Beranda admin & Absensi. Kamera QR
   (`KameraQr`, jsQR + bantuan izin per browser) dipakai pemindai generus dan
   "Scan pakai kamera HP" di halaman sesi.
@@ -201,7 +209,7 @@ src/
                         # periksa/ (Perlu dicek: kelengkapan data untuk dirapikan admin),
                         # kenaikan-kelas/ (naik kelas tahunan per kelompok),
                         # keluarga/ (daftar KK) & keluarga/[id]/ (anggota & hubungan)
-      absensi/          # daftar & buat sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
+      absensi/          # daftar sesi, [id]/ (scan + rekap), kartu/ (kartu QR),
                         # akun/ (akun generus), rekap/ (pratinjau rekap bulanan/per kegiatan),
                         # laporan/ (tren, per kelompok/kegiatan/kategori, perlu disapa),
                         # izin/ (pengajuan izin generus)
@@ -225,7 +233,7 @@ src/
     globals.css         # design token
     favicon.ico, icon.svg, apple-icon.png   # ikon tab & iPhone (otomatis)
   components/
-    absensi/            # FormSesi, PanelScan (scanner USB), PilihStatus, TombolCetak,
+    absensi/            # PertemuanHariIni, PanelScan (scanner USB), PilihStatus, TombolCetak,
                         # LayarQr, form akun generus
     kegiatan/           # DaftarKejadian, EditorJadwal, form kegiatan & pertemuan
     generus/            # FormMasukGenerus, FormGantiPin, PemindaiQr (jsQR), HasilAbsen

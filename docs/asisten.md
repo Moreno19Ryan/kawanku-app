@@ -9,8 +9,6 @@ tabel baru). Batas data tetap RLS dan wewenang tiap admin.
 
 | Jenis | Kapan muncul |
 | ----- | ------------ |
-| Peringatan | Absensi pertemuan hari ini belum dibuka (≤ 1 jam sebelum mulai) |
-| Peringatan | Sesi absensi masih terbuka > 6 jam setelah mulai |
 | Peringatan | Kehadiran (desa/kelompok) turun dua bulan berturut-turut, total ≥ 10 poin |
 | Pengingat | Pertemuan besok (yang dikelola admin itu) |
 | Pengingat | Pengajuan izin generus menunggu persetujuan admin itu |

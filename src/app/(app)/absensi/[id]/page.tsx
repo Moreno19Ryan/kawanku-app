@@ -2,28 +2,27 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ArrowLeft, ChartColumn, QrCode, Search } from "lucide-react";
+import { ArrowLeft, CalendarDays, ChartColumn, QrCode, Search } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
-import { FormSesi } from "@/components/absensi/form-sesi";
 import { PanelScan } from "@/components/absensi/panel-scan";
 import { PilihStatus } from "@/components/absensi/pilih-status";
 import { PageHeader } from "@/components/layout/page-header";
-import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
 import {
   bolehCatatSesi,
-  bolehKelolaSesi,
   getAksesAbsensi,
+  jamAbsensi,
+  jendelaScan,
   KOLOM_SESI,
   type Sesi,
 } from "@/lib/absensi/akses";
-import { aturSesiDitutup, catatKode, hapusSesi, ubahSesi, ubahStatusPeserta } from "@/lib/absensi/actions";
+import { catatKode, ubahStatusPeserta } from "@/lib/absensi/actions";
 import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
-import { keInputWib, tanggalJam } from "@/lib/waktu";
+import { tanggalJam } from "@/lib/waktu";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
 import { Memuat } from "@/components/ui/memuat";
 
@@ -89,7 +88,7 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
     .order("nama_lengkap");
   if (sesi.hanya_generus) qPeserta = qPeserta.eq("termasuk_generus", true);
 
-  const [{ data: peserta }, { data: catatan }, { data: keringanan }] = await Promise.all([
+  const [{ data: peserta }, { data: catatan }, { data: keringanan }, { data: pertemuan }] = await Promise.all([
     qPeserta.returns<Peserta[]>(),
     supabase
       .from("absensi")
@@ -99,7 +98,17 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
     akses.bolehLihatKeringanan
       ? supabase.from("jamaah_keringanan").select("jamaah_id").eq("aktif", true).returns<{ jamaah_id: string }[]>()
       : Promise.resolve({ data: [] as { jamaah_id: string }[] }),
+    supabase
+      .from("pertemuan")
+      .select("kegiatan_id, kelompok_id, tanggal")
+      .eq("id", sesi.pertemuan_id)
+      .maybeSingle<{ kegiatan_id: string; kelompok_id: string | null; tanggal: string }>(),
   ]);
+  const hrefPertemuan = pertemuan
+    ? `/kegiatan/pertemuan?k=${pertemuan.kegiatan_id}&kel=${pertemuan.kelompok_id ?? "desa"}&t=${pertemuan.tanggal}`
+    : null;
+  const waktuScan = sesi.ditutup ? "lewat_waktu" : jendelaScan(sesi);
+  const waktuAbsensi = jamAbsensi(sesi);
 
   const petaCatatan = new Map((catatan ?? []).map((c) => [c.jamaah_id, c]));
   const daftar = [...(peserta ?? [])];
@@ -128,7 +137,6 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
     return !q || p.nama_lengkap.toLowerCase().includes(q) || p.kode.toLowerCase().includes(q);
   });
 
-  const kelola = bolehKelolaSesi(akses, sesi);
   const bolehCatat = bolehCatatSesi(akses, sesi);
   const wilayah = sesi.kelompok_id ? (namaKelompok.get(sesi.kelompok_id) ?? "Kelompok") : "Seluruh desa";
 
@@ -139,12 +147,20 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
         description={`${tanggalJam(sesi.mulai)}${sesi.selesai ? ` – ${tanggalJam(sesi.selesai)}` : ""} · ${wilayah}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {hrefPertemuan && (
+              <Link href={hrefPertemuan} className={buttonClass("netral", "h-9 px-4")}>
+                <CalendarDays className="size-4" aria-hidden />
+                Pertemuan
+              </Link>
+            )}
             <Link href={`/absensi/rekap?jenis=sesi&sesi=${sesi.id}`} className={buttonClass("netral", "h-9 px-4")}>
               <ChartColumn className="size-4" aria-hidden />
               Rekap
             </Link>
             {sesi.hanya_generus && <Badge nada="utama">Generus saja</Badge>}
-            <Badge nada={sesi.ditutup ? "netral" : "sukses"}>{sesi.ditutup ? "Ditutup" : "Dibuka"}</Badge>
+            <Badge nada={waktuScan ? "netral" : "sukses"}>
+              {waktuScan === "belum_waktunya" ? "Belum terbuka" : waktuScan ? "Tertutup" : "Terbuka"}
+            </Badge>
           </div>
         }
       />
@@ -163,7 +179,21 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
         ))}
       </div>
 
-      {bolehCatat && !sesi.ditutup && (
+      <p className="-mt-2 px-1 text-sm text-muted">
+        Absensi otomatis terbuka {tanggalJam(waktuAbsensi.buka)} dan tertutup {tanggalJam(waktuAbsensi.tutup)}.
+        Nama, waktu, dan peserta mengikuti pertemuannya di Kegiatan; bila pertemuan ditandai libur, absensi ini ikut
+        terhapus.
+      </p>
+
+      {bolehCatat && waktuScan && (
+        <Card className="text-sm text-muted">
+          {waktuScan === "lewat_waktu"
+            ? "Absensi sudah tertutup otomatis: scan kartu & QR layar tidak diterima lagi."
+            : `Scan kartu & QR layar terbuka otomatis ${tanggalJam(waktuAbsensi.buka)}.`}{" "}
+          Kehadiran yang belum tercatat tetap bisa diisi dari daftar di bawah.
+        </Card>
+      )}
+      {bolehCatat && !waktuScan && (
         <Card>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold">Scan kehadiran</h2>
@@ -173,12 +203,6 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
             </Link>
           </div>
           <PanelScan catat={catatKode.bind(null, sesi.id)} bolehLihatKeringanan={akses.bolehLihatKeringanan} />
-        </Card>
-      )}
-      {bolehCatat && sesi.ditutup && (
-        <Card className="text-sm text-muted">
-          Sesi sudah ditutup: scan kartu tidak diterima. Status izin/sakit masih bisa dikoreksi dari daftar di
-          bawah{kelola ? ", atau buka kembali sesinya." : "."}
         </Card>
       )}
 
@@ -252,28 +276,6 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
         )}
       </section>
 
-      {kelola && (
-        <Card className="flex flex-col gap-5">
-          <h2 className="font-semibold">Kelola sesi</h2>
-          <FormSesi
-            aksi={ubahSesi.bind(null, sesi.id)}
-            awal={{ nama: sesi.nama, mulai: keInputWib(sesi.mulai), selesai: keInputWib(sesi.selesai) }}
-          />
-          <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-4">
-            <TombolAksi
-              aksi={aturSesiDitutup.bind(null, sesi.id, !sesi.ditutup)}
-              label={sesi.ditutup ? "Buka kembali sesi" : "Tutup sesi"}
-              varian="kedua"
-            />
-            <TombolAksi
-              aksi={hapusSesi.bind(null, sesi.id)}
-              label="Hapus sesi"
-              varian="bahaya"
-              konfirmasi={`Hapus sesi "${sesi.nama}" beserta semua catatan kehadirannya? Tindakan ini tidak bisa dibatalkan.`}
-            />
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

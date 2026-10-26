@@ -10,6 +10,33 @@ select no_plan();
 
 create schema uji;
 grant usage on schema uji to anon, authenticated;
+
+-- Sesi absensi selalu lahir dari pertemuan (migrasi 20261024090000):
+-- pertemuan_baru membuat agenda + pertemuannya; sesi membuat ketiganya.
+create function uji.pertemuan_baru(p_kelompok uuid, p_generus boolean, p_mulai timestamptz default now(),
+                                   p_nama text default 'Acara uji')
+returns uuid language plpgsql security definer set search_path = '' as $$
+declare v_kegiatan uuid; v_pertemuan uuid;
+begin
+  insert into public.kegiatan (nama, jenis, kelompok_id, hanya_generus, berlaku_mulai)
+  values (p_nama, 'agenda', p_kelompok, p_generus, (p_mulai at time zone 'Asia/Jakarta')::date)
+  returning id into v_kegiatan;
+  insert into public.pertemuan (kegiatan_id, tanggal, mulai)
+  values (v_kegiatan, (p_mulai at time zone 'Asia/Jakarta')::date, p_mulai)
+  returning id into v_pertemuan;
+  return v_pertemuan;
+end $$;
+create function uji.sesi(p_id uuid, p_nama text, p_kelompok uuid, p_generus boolean, p_mulai timestamptz,
+                         p_selesai timestamptz default null, p_ditutup boolean default false)
+returns uuid language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.sesi_absensi (id, pertemuan_id, ditutup)
+  values (p_id, uji.pertemuan_baru(p_kelompok, p_generus, p_mulai, p_nama), p_ditutup);
+  if p_selesai is not null then
+    update public.sesi_absensi set selesai = p_selesai where id = p_id;
+  end if;
+  return p_id;
+end $$;
 create table uji.hasil (no serial primary key, nama text not null, lulus boolean not null, catatan text);
 grant insert, select on uji.hasil to anon, authenticated;
 grant usage on sequence uji.hasil_no_seq to anon, authenticated;
@@ -81,8 +108,8 @@ where id = '00000000-0000-0000-0000-0000000000f4';
 insert into public.kartu_qr (jamaah_id, token) values ('00000000-0000-0000-0000-0000000000f4', '');
 update public.jamaah set status_sekolah = 'sma_smk', status_pernikahan = 'lajang'
 where id = '00000000-0000-0000-0000-0000000000f4';
-insert into public.sesi_absensi (id, nama, kelompok_id, mulai)
-select '00000000-0000-0000-0000-0000000000e1', 'Pengajian K1', id, now() from public.kelompok where nomor = 1;
+select uji.sesi('00000000-0000-0000-0000-0000000000e1', 'Pengajian K1', id, false, now())
+from public.kelompok where nomor = 1;
 
 set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000b2');

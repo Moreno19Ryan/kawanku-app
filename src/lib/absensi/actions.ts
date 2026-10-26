@@ -1,10 +1,8 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { redirect } from "next/navigation";
 import {
   bolehCatatSesi,
-  bolehKelolaSesi,
   getAksesAbsensi,
   KOLOM_SESI,
   type Sesi,
@@ -12,7 +10,6 @@ import {
 import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
-import { dariInputWib } from "@/lib/waktu";
 
 const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
 const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
@@ -28,84 +25,6 @@ async function bacaSesi(supabase: Awaited<ReturnType<typeof createClient>>, id: 
   return data;
 }
 
-type IsianSesi = { nama: string; kelompok_id: string | null; hanya_generus: boolean; mulai: string; selesai: string | null };
-
-function bacaIsianSesi(formData: FormData): IsianSesi | { galat: string } {
-  const nama = String(formData.get("nama") ?? "").trim().replace(/\s+/g, " ");
-  if (!nama) return { galat: "Isi nama sesi, mis. Pengajian Kelompok 1." };
-  if (nama.length > 120) return { galat: "Nama sesi maksimal 120 karakter." };
-  const mulai = dariInputWib(String(formData.get("mulai") ?? ""));
-  if (!mulai) return { galat: "Isi tanggal dan jam mulai." };
-  const isiSelesai = String(formData.get("selesai") ?? "");
-  const selesai = isiSelesai ? dariInputWib(isiSelesai) : null;
-  if (isiSelesai && !selesai) return { galat: "Jam selesai tidak valid." };
-  if (selesai && selesai <= mulai) return { galat: "Jam selesai harus setelah jam mulai." };
-  const wilayah = String(formData.get("wilayah") ?? "");
-  return {
-    nama,
-    kelompok_id: wilayah === "desa" ? null : wilayah,
-    hanya_generus: formData.get("sasaran") === "generus",
-    mulai,
-    selesai,
-  };
-}
-
-export async function buatSesi(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
-  const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
-  const isian = bacaIsianSesi(formData);
-  if ("galat" in isian) return isian;
-  const target = ctx.akses.targetSesi.find((t) => t.kelompokId === isian.kelompok_id);
-  if (!target) return { galat: "Pilih wilayah sesi." };
-  if (!target.umum) isian.hanya_generus = true;
-
-  const { data, error } = await ctx.supabase.from("sesi_absensi").insert(isian).select("id").maybeSingle();
-  if (error?.hint === "belum_waktunya") {
-    return { galat: "Sesi baru bisa dibuat paling cepat 2 jam sebelum waktu mulainya." };
-  }
-  if (error || !data) return GAGAL;
-  redirect(`/absensi/${data.id}`);
-}
-
-export async function ubahSesi(id: string, _prev: StateAksi, formData: FormData): Promise<StateAksi> {
-  const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
-  const sesi = await bacaSesi(ctx.supabase, id);
-  if (!sesi || !bolehKelolaSesi(ctx.akses, sesi)) return TIDAK_BERHAK;
-  const isian = bacaIsianSesi(formData);
-  if ("galat" in isian) return isian;
-
-  // Wilayah & sasaran tidak diubah dari form ini (dikunci DB setelah ada catatan).
-  const { error } = await ctx.supabase
-    .from("sesi_absensi")
-    .update({ nama: isian.nama, mulai: isian.mulai, selesai: isian.selesai })
-    .eq("id", id);
-  if (error) return GAGAL;
-  refresh();
-  return { pesan: "Tersimpan." };
-}
-
-export async function aturSesiDitutup(id: string, ditutup: boolean): Promise<StateAksi> {
-  const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
-  const sesi = await bacaSesi(ctx.supabase, id);
-  if (!sesi || !bolehKelolaSesi(ctx.akses, sesi)) return TIDAK_BERHAK;
-  const { error } = await ctx.supabase.from("sesi_absensi").update({ ditutup }).eq("id", id);
-  if (error) return GAGAL;
-  refresh();
-  return {};
-}
-
-export async function hapusSesi(id: string): Promise<StateAksi> {
-  const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
-  const sesi = await bacaSesi(ctx.supabase, id);
-  if (!sesi || !bolehKelolaSesi(ctx.akses, sesi)) return TIDAK_BERHAK;
-  const { error, count } = await ctx.supabase.from("sesi_absensi").delete({ count: "exact" }).eq("id", id);
-  if (error || !count) return GAGAL;
-  redirect("/absensi");
-}
-
 // ---------------------------------------------------------------------
 // Pencatatan
 // ---------------------------------------------------------------------
@@ -118,6 +37,8 @@ export type HasilScan = {
     | "kartu_dicabut"
     | "pakai_akun"
     | "sesi_ditutup"
+    | "belum_waktunya"
+    | "lewat_waktu"
     | "bukan_peserta"
     | "jamaah_nonaktif"
     | "tidak_berhak"

@@ -39,30 +39,16 @@ export const hrefPertemuan = (k: Pick<Kejadian, "kegiatan" | "kelompokId" | "tan
   `/kegiatan/pertemuan?k=${k.kegiatan.id}&kel=${k.kelompokId ?? "desa"}&t=${k.tanggal}`;
 
 /**
- * Kegiatan yang dikelola admin ini: pertemuan hari ini yang absensinya
- * belum dibuka (mulai ≤ 1 jam lagi), pengingat besok, dan pemateri yang
- * belum diisi untuk 7 hari ke depan.
+ * Kegiatan yang dikelola admin ini: pengingat besok dan pemateri yang
+ * belum diisi untuk 7 hari ke depan. (Absensi terbuka & tertutup otomatis,
+ * jadi tidak ada pengingat buka/tutup absensi.)
  */
 export function saranKegiatan(kejadian: Kejadian[], bolehKelola: (k: Kejadian) => boolean, sekarang = new Date()): Saran[] {
   const hasil: Saran[] = [];
   const hariIni = hariIniWib(sekarang);
   const besok = tambahHari(hariIni, 1);
-  const kini = sekarang.getTime();
   const milik = kejadian.filter((k) => k.status === "terjadwal" && bolehKelola(k));
 
-  for (const k of milik) {
-    const mulai = new Date(k.mulai).getTime();
-    const selesai = new Date(k.selesai).getTime();
-    if (k.tanggal === hariIni && !k.sesiId && mulai - kini <= 3600_000 && selesai > kini) {
-      hasil.push({
-        kode: `buka-absensi:${k.kunci}`,
-        jenis: "peringatan",
-        judul: `Absensi ${k.kegiatan.nama} belum dibuka`,
-        isi: `Mulai pukul ${jamWib(k.mulai)}. Buka absensinya supaya jamaah bisa scan kartu atau QR layar.`,
-        href: hrefPertemuan(k),
-      });
-    }
-  }
   const besokSaja = milik.filter((k) => k.tanggal === besok);
   if (besokSaja.length) {
     const k = besokSaja[0];
@@ -88,21 +74,6 @@ export function saranKegiatan(kejadian: Kejadian[], bolehKelola: (k: Kejadian) =
     });
   }
   return hasil;
-}
-
-/** Sesi absensi yang lupa ditutup (sudah lewat 6 jam dari mulainya). */
-export function saranSesiTerbuka(sesi: { id: string; nama: string; mulai: string }[], sekarang = new Date()): Saran[] {
-  const lama = sesi.filter((s) => new Date(s.mulai).getTime() < sekarang.getTime() - 6 * 3600_000);
-  if (!lama.length) return [];
-  return [
-    {
-      kode: "sesi-terbuka",
-      jenis: "peringatan",
-      judul: lama.length === 1 ? `Sesi "${lama[0].nama}" masih terbuka` : `${lama.length} sesi absensi masih terbuka`,
-      isi: "Tutup sesi yang sudah selesai supaya kartu tidak bisa discan lagi dan rekapnya rapi.",
-      href: lama.length === 1 ? `/absensi/${lama[0].id}` : "/absensi",
-    },
-  ];
 }
 
 /** Pengajuan izin generus yang menunggu persetujuan admin ini. */

@@ -151,8 +151,21 @@ export async function hapusKegiatan(id: string): Promise<StateAksi> {
   const ctx = await konteks();
   if (!ctx) return TIDAK_BERHAK;
   const { error, count } = await ctx.supabase.from("kegiatan").delete({ count: "exact" }).eq("id", id);
+  if (error?.hint === "ada_absensi") {
+    return { galat: "Kegiatan ini sudah punya riwayat absensi, jadi tidak bisa dihapus. Nonaktifkan saja." };
+  }
   if (error || !count) return error ? GAGAL : TIDAK_BERHAK;
   redirect("/kegiatan/kelola");
+}
+
+/** Nonaktifkan / aktifkan lagi kegiatan (riwayat pertemuan & absensi tetap tersimpan). */
+export async function aturKegiatanAktif(id: string, aktif: boolean): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const { data, error } = await ctx.supabase.from("kegiatan").update({ aktif }).eq("id", id).select("id");
+  if (error || !data?.length) return error ? GAGAL : TIDAK_BERHAK;
+  refresh();
+  return {};
 }
 
 // ---------------------------------------------------------------------
@@ -215,6 +228,7 @@ export async function simpanPertemuan(k: KunciPertemuan, _prev: StateAksi, fd: F
   const isiMulai = String(fd.get("mulai") ?? "");
   const mulai = isiMulai ? dariInputWib(isiMulai) : k.mulaiJadwal;
   if (!mulai) return { galat: "Waktu pertemuan tidak valid." };
+  // Bila absensinya sudah dibuka, waktu sesi ikut pindah (trigger sinkron_sesi).
   const { error, id } = await simpan(k, { catatan: teks(fd, "catatan", 1000), mulai });
   if (error || !id) return GAGAL;
   const { error: galatSesi } = await ctx.supabase.rpc("simpan_materi_pertemuan", { p_pertemuan: id, p_sesi: sesi });
@@ -269,6 +283,7 @@ export async function batalkanPertemuan(k: KunciPertemuan, _prev: StateAksi, fd:
   if (!ctx) return TIDAK_BERHAK;
   const alasan = teks(fd, "alasan", 200);
   if (!alasan) return { galat: "Isi alasan, mis. libur Hari Keluarga atau hasil musyawarah." };
+  // Sesi absensi & catatannya ikut terhapus otomatis (trigger sinkron_sesi).
   const { error } = await simpan(k, { status: "dibatalkan", alasan_batal: alasan });
   if (error) return GAGAL;
   refresh();
@@ -284,7 +299,10 @@ export async function aktifkanPertemuan(k: KunciPertemuan): Promise<StateAksi> {
   return {};
 }
 
-/** Buat (bila belum) sesi absensi untuk pertemuan ini, lalu buka halamannya. */
+/**
+ * Buat (bila belum) sesi absensi untuk pertemuan ini, lalu buka halamannya.
+ * Biasanya otomatis (siapkanAbsensiOtomatis); tombol ini untuk susulan.
+ */
 export async function bukaAbsensiPertemuan(k: KunciPertemuan & { mulai: string }): Promise<StateAksi> {
   const ctx = await konteks();
   if (!ctx) return TIDAK_BERHAK;
@@ -296,10 +314,10 @@ export async function bukaAbsensiPertemuan(k: KunciPertemuan & { mulai: string }
   });
   if (error || !data) {
     return {
-      galat: error?.message.includes("dibatalkan")
+      galat: error?.hint === "dibatalkan"
         ? "Pertemuan ini dibatalkan; aktifkan lagi dulu."
         : error?.hint === "belum_waktunya"
-          ? "Absensi baru bisa dibuka paling cepat 2 jam sebelum pertemuan dimulai."
+          ? "Absensi baru terbuka 30 menit sebelum pertemuan dimulai."
           : "Gagal membuka absensi. Pastikan kamu pengelola absensi wilayah ini.",
     };
   }
