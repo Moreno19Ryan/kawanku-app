@@ -199,7 +199,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   lihat `docs/absensi.md`.
 - Asisten KawanKu (`docs/asisten.md`): kartu pengingat/peringatan/saran/
   apresiasi di Beranda admin & generus, dihitung dari data yang ada
-  (`src/lib/asisten/`), tanpa tabel baru.
+  (`src/lib/asisten/`), termasuk deteksi pola kegiatan & data ganda.
+  Pemantau galat: `src/instrumentation.ts` + halaman galat → RPC
+  `catat_galat` → Panel pengembang (tabel `galat_aplikasi`, hanya pengembang).
 - Realtime: `SegarkanLangsung` (di layout admin & generus) mendengarkan
   perubahan tabel lewat Supabase Realtime (publikasi `supabase_realtime`,
   migrasi `20261022100000_realtime`; tetap RLS) lalu `router.refresh()`,
@@ -324,6 +326,7 @@ src/
       admin.ts          # client secret key (melewati RLS) KHUSUS Auth Admin API, server-only
       env.ts            # baca NEXT_PUBLIC_SUPABASE_*
   proxy.ts              # Next.js proxy (dulu middleware)
+  instrumentation.ts    # onRequestError → pemantau galat (RPC catat_galat)
 public/
   brand/                # logo aplikasi KawanKu (horizontal & mark), og-image
     desa/               # logo Desa Kartika Wanasari (+ png/ untuk PDF/email/cetak)

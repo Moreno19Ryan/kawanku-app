@@ -1,9 +1,10 @@
 import "server-only";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
-import { punyaIzin } from "@/lib/auth/admin";
+import { getAdminSaatIni, punyaIzin } from "@/lib/auth/admin";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { bacaParamLaporan, getLaporan } from "@/lib/absensi/laporan";
 import { getSapaanTerakhir } from "@/lib/absensi/sapaan";
+import { getAksesJamaah } from "@/lib/jamaah/akses";
 import { getAksesKegiatan, bolehKelolaPertemuan } from "@/lib/kegiatan/akses";
 import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari, type Kejadian } from "@/lib/kegiatan/jadwal";
@@ -11,12 +12,15 @@ import type { GenerusSaatIni } from "@/lib/generus/akun";
 import { hitungKelengkapan } from "@/lib/generus/kelengkapan";
 import { createClient } from "@/lib/supabase/server";
 import {
+  saranDataGanda,
+  saranGalat,
   saranGenerus,
   saranIzin,
   saranKegiatan,
   saranLaporan,
   saranPermintaanIdentitas,
   saranLaporanBulanan,
+  saranPola,
   urutkanSaran,
   type Saran,
 } from "./hitung";
@@ -32,7 +36,7 @@ async function aman(f: () => Promise<Saran[]>): Promise<Saran[]> {
 
 /** Saran untuk admin yang login, sesuai wewenang & modul yang menyala (batas data tetap RLS). */
 export async function getSaranAdmin(): Promise<Saran[]> {
-  const [absensi, kegiatan] = await Promise.all([getAksesAbsensi(), getAksesKegiatan()]);
+  const [admin, absensi, kegiatan] = await Promise.all([getAdminSaatIni(), getAksesAbsensi(), getAksesKegiatan()]);
   const sekarang = new Date();
 
   const bagian = await Promise.all([
@@ -43,7 +47,60 @@ export async function getSaranAdmin(): Promise<Saran[]> {
       return saranKegiatan(kejadian, (k) => bolehKelolaPertemuan(kegiatan, k.kelompokId, k.kegiatan.hanya_generus), sekarang);
     }),
     aman(async () => {
-      if (!absensi || !punyaIzin(absensi.admin, "sistem.kelola")) return [];
+      if (!kegiatan || kegiatan.kelompokLihat.length === 0) return [];
+      const hariIni = hariIniWib(sekarang);
+      const kejadian = await getKalender(tambahHari(hariIni, -28), hariIni, kegiatan.kelompokLihat.map((k) => k.id));
+      let hadir: Map<string, number> | null = null;
+      const sesi = kejadian.flatMap((k) => (k.sesiId ? [k.sesiId] : []));
+      if (absensi?.bolehLihat && sesi.length) {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+          .from("absensi")
+          .select("sesi_id")
+          .in("sesi_id", sesi)
+          .eq("status", "hadir")
+          .returns<{ sesi_id: string }[]>();
+        if (!error) {
+          hadir = new Map();
+          for (const a of data) hadir.set(a.sesi_id, (hadir.get(a.sesi_id) ?? 0) + 1);
+        }
+      }
+      const nama = new Map(kegiatan.kelompokLihat.map((k) => [k.id, k.nama]));
+      return saranPola({
+        kejadian,
+        hadir,
+        namaWilayah: (id) => (id ? (nama.get(id) ?? "Kelompok") : "Desa"),
+        bolehKelola: (k) => bolehKelolaPertemuan(kegiatan, k.kelompokId, k.kegiatan.hanya_generus),
+        sekarang,
+      });
+    }),
+    aman(async () => {
+      const jamaah = await getAksesJamaah();
+      if (!jamaah || jamaah.kelompokUbah.length === 0) return [];
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("jamaah")
+        .select("id, nama_lengkap, tanggal_lahir, tahun_lahir")
+        .eq("aktif", true)
+        .in("kelompok_id", jamaah.kelompokUbah.map((k) => k.id))
+        .limit(5000)
+        .returns<{ id: string; nama_lengkap: string; tanggal_lahir: string | null; tahun_lahir: number | null }[]>();
+      return saranDataGanda(data ?? []);
+    }),
+    aman(async () => {
+      if (!admin || !punyaIzin(admin, "sistem.kelola")) return [];
+      const supabase = await createClient();
+      const sepekan = new Date(sekarang.getTime() - 7 * 24 * 3600_000).toISOString();
+      const { data } = await supabase
+        .from("galat_aplikasi")
+        .select("jumlah")
+        .is("dicek_at", null)
+        .gte("terakhir_at", sepekan)
+        .returns<{ jumlah: number }[]>();
+      return saranGalat(data?.length ?? 0, (data ?? []).reduce((n, g) => n + g.jumlah, 0));
+    }),
+    aman(async () => {
+      if (!admin || !punyaIzin(admin, "sistem.kelola")) return [];
       const supabase = await createClient();
       const { count } = await supabase
         .from("permintaan_identitas")

@@ -90,6 +90,153 @@ export function saranPermintaanIdentitas(jumlah: number): Saran[] {
   ];
 }
 
+/** Pengembang: galat aplikasi baru yang belum dicek (pemantau galat). */
+export function saranGalat(jumlah: number, kejadian: number): Saran[] {
+  if (!jumlah) return [];
+  return [
+    {
+      kode: `galat:${jumlah}:${kejadian}`,
+      jenis: "peringatan",
+      judul: `${jumlah} galat aplikasi belum dicek`,
+      isi: `Terjadi ${kejadian}× dalam 7 hari terakhir. Rinciannya di Panel pengembang → Pemantau galat.`,
+      href: "/pengaturan/sistem",
+    },
+  ];
+}
+
+function kelompokDan(nama: string[]): string {
+  return daftarNama([...new Set(nama)], 2);
+}
+
+/**
+ * Deteksi pola dari pertemuan 4 pekan terakhir yang dikelola admin ini:
+ * - 3 pertemuan berturut-turut (kegiatan & wilayah yang sama) tanpa pemateri;
+ * - pertemuan sering diliburkan (≥ 2 kali);
+ * - absensi kosong: pertemuan 7 hari terakhir yang absensinya terbuka tapi
+ *   tidak ada satu pun yang hadir (kemungkinan lupa scan).
+ * `hadir`: sesi_id → jumlah catatan hadir.
+ */
+export function saranPola(opsi: {
+  kejadian: Kejadian[];
+  /** Null bila admin tidak bisa melihat absensi (pemeriksaan absensi kosong dilewati). */
+  hadir: Map<string, number> | null;
+  namaWilayah: (kelompokId: string | null) => string;
+  bolehKelola: (k: Kejadian) => boolean;
+  sekarang?: Date;
+}): Saran[] {
+  const sekarang = opsi.sekarang ?? new Date();
+  const lalu = opsi.kejadian
+    .filter((k) => opsi.bolehKelola(k) && new Date(k.selesai) < sekarang)
+    .sort((a, b) => b.mulai.localeCompare(a.mulai));
+  const grup = new Map<string, Kejadian[]>();
+  for (const k of lalu) {
+    const kunci = `${k.kegiatan.id}:${k.kelompokId ?? "desa"}`;
+    grup.set(kunci, [...(grup.get(kunci) ?? []), k]);
+  }
+  const label = (k: Kejadian) => `${k.kegiatan.nama} (${opsi.namaWilayah(k.kelompokId)})`;
+  const hasil: Saran[] = [];
+
+  const tanpaPemateri: Kejadian[] = [];
+  const seringLibur: { k: Kejadian; n: number }[] = [];
+  for (const daftar of grup.values()) {
+    const terjadwal = daftar.filter((k) => k.status === "terjadwal").slice(0, 3);
+    if (terjadwal.length === 3 && terjadwal.every((k) => !k.pemateri)) tanpaPemateri.push(terjadwal[0]);
+    const libur = daftar.filter((k) => k.status === "dibatalkan").length;
+    if (libur >= 2) seringLibur.push({ k: daftar[0], n: libur });
+  }
+  if (tanpaPemateri.length) {
+    hasil.push({
+      kode: `pola-tanpa-pemateri:${tanpaPemateri.map((k) => k.kunci).join(",")}`,
+      jenis: "saran",
+      judul:
+        tanpaPemateri.length === 1
+          ? `3 pertemuan terakhir ${label(tanpaPemateri[0])} tanpa pemateri tercatat`
+          : `${tanpaPemateri.length} kegiatan: 3 pertemuan terakhir tanpa pemateri tercatat`,
+      isi: `${tanpaPemateri.length > 1 ? `${daftarNama(tanpaPemateri.map(label))}. ` : ""}Bila pematerinya ada, isi di halaman pertemuan supaya rekap pengajar lengkap; bila memang kosong, perlu dibicarakan bersama pengurus.`,
+      href: hrefPertemuan(tanpaPemateri[0]),
+    });
+  }
+  if (seringLibur.length) {
+    const s = seringLibur.sort((a, b) => b.n - a.n)[0];
+    hasil.push({
+      kode: `pola-libur:${seringLibur.map((x) => `${x.k.kunci}:${x.n}`).join(",")}`,
+      jenis: "saran",
+      judul:
+        seringLibur.length === 1
+          ? `${label(s.k)} diliburkan ${s.n}× dalam 4 pekan`
+          : `${seringLibur.length} kegiatan sering diliburkan dalam 4 pekan`,
+      isi: `${seringLibur.length > 1 ? `${daftarNama(seringLibur.map((x) => `${label(x.k)} ${x.n}×`))}. ` : ""}Mungkin jadwalnya perlu ditinjau ulang bersama pengurus.`,
+      href: `/kegiatan/kelola/${s.k.kegiatan.id}`,
+    });
+  }
+
+  const sepekan = new Date(sekarang.getTime() - 7 * 24 * 3600_000);
+  const hadir = opsi.hadir;
+  const kosong = hadir
+    ? lalu.filter(
+        (k) =>
+          k.status === "terjadwal" &&
+          k.sesiId &&
+          new Date(k.mulai) >= sepekan &&
+          // Jendela scan (maks. 60 menit setelah selesai) sudah lewat.
+          new Date(k.selesai).getTime() + 3600_000 < sekarang.getTime() &&
+          !hadir.get(k.sesiId),
+      )
+    : [];
+  if (kosong.length) {
+    hasil.push({
+      kode: `pola-absensi-kosong:${kosong.map((k) => k.kunci).join(",")}`,
+      jenis: "peringatan",
+      judul:
+        kosong.length === 1
+          ? `Absensi ${label(kosong[0])} kosong`
+          : `${kosong.length} pertemuan sepekan terakhir absensinya kosong`,
+      isi: `Tidak ada satu pun yang tercatat hadir${kosong.length > 1 ? ` (${kelompokDan(kosong.map(label))})` : ""}. Lupa scan? Admin masih bisa mencatat kehadiran di halaman pertemuannya.`,
+      href: hrefPertemuan(kosong[0]),
+    });
+  }
+  return hasil;
+}
+
+/** Kunci pembanding nama: huruf kecil, tanpa tanda baca & spasi ganda. */
+export function kunciNama(nama: string): string {
+  return nama
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Kemungkinan data ganda: jamaah aktif dengan nama sama (setelah
+ * dirapikan) dan tanggal lahir sama (atau tahun lahir sama bila tanggalnya
+ * kosong). Biasanya hasil impor dobel atau jamaah pindah kelompok yang
+ * didaftarkan ulang.
+ */
+export function saranDataGanda(
+  jamaah: { id: string; nama_lengkap: string; tanggal_lahir: string | null; tahun_lahir: number | null }[],
+): Saran[] {
+  const grup = new Map<string, typeof jamaah>();
+  for (const j of jamaah) {
+    const lahir = j.tanggal_lahir ?? (j.tahun_lahir ? String(j.tahun_lahir) : null);
+    if (!lahir) continue;
+    const kunci = `${kunciNama(j.nama_lengkap)}|${lahir}`;
+    grup.set(kunci, [...(grup.get(kunci) ?? []), j]);
+  }
+  const ganda = [...grup.values()].filter((g) => g.length > 1);
+  if (!ganda.length) return [];
+  return [
+    {
+      kode: `data-ganda:${ganda.map((g) => g.map((j) => j.id).sort().join("+")).join(",")}`,
+      jenis: "peringatan",
+      judul: `${ganda.length} kemungkinan data jamaah ganda`,
+      isi: `Nama & tanggal lahir sama: ${daftarNama(ganda.map((g) => `${g[0].nama_lengkap} (${g.length}×)`))}. Periksa lalu nonaktifkan/hapus yang dobel.`,
+      href: `/jamaah?q=${encodeURIComponent(ganda[0][0].nama_lengkap)}`,
+    },
+  ];
+}
+
 /** Awal bulan (tanggal 1–7): laporan bulan lalu siap dicetak untuk pengurus. */
 export function saranLaporanBulanan(sekarang = new Date()): Saran[] {
   const hariIni = hariIniWib(sekarang);
