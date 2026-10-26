@@ -29,7 +29,7 @@ async function DaftarBagian() {
     (b) =>
       (!b.izin && !b.izinWilayah) ||
       (b.izin !== undefined && punyaIzin(admin, b.izin)) ||
-      (b.izinWilayah !== undefined && punyaIzinDiManaPun(admin, b.izinWilayah)),
+      [b.izinWilayah ?? []].flat().some((izin) => punyaIzinDiManaPun(admin, izin)),
   );
 
   return (

@@ -92,14 +92,13 @@ export async function ubahNamaKeluarga(
   return { pesan: "Tersimpan." };
 }
 
-/** Hapus keluarga; anggotanya tetap ada, hanya dilepas dari keluarga ini. */
+/**
+ * Hapus keluarga ke tempat sampah (30 hari); anggotanya tetap ada, dilepas
+ * dari keluarga ini oleh database dan dipasang lagi bila dikembalikan.
+ */
 export async function hapusKeluarga(id: string): Promise<StateAksi> {
   const ctx = await konteks();
   if (!ctx) return TIDAK_BERHAK;
-  await ctx.supabase
-    .from("jamaah")
-    .update({ keluarga_id: null, hubungan_keluarga: null })
-    .eq("keluarga_id", id);
   const { data, error } = await ctx.supabase.from("keluarga").delete().eq("id", id).select("id");
   if (error || data.length === 0) return GAGAL;
   redirect("/jamaah/keluarga");

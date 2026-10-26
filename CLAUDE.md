@@ -207,6 +207,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `private.kirim_notifikasi()` → pg_net → `/api/notifikasi/kirim` (rahasia
   bersama `NOTIFIKASI_RAHASIA` = Vault `kawanku_notifikasi_rahasia`, kunci
   VAPID di env) → `web-push`. Tanpa secret key Supabase.
+- Tempat sampah (`docs/tempat-sampah.md`, Pengaturan → Tempat sampah):
+  hapus jamaah/keluarga/kegiatan → `tempat_sampah` 30 hari beserta data yang
+  ikut terhapus (trigger `ke_tempat_sampah` / `catat_ikut_terhapus`);
+  dikembalikan apa adanya lewat RPC `kembalikan_dari_sampah` oleh yang berwenang
+  menghapusnya. Tabel anak ber-FK cascade baru → tambahkan triggernya.
 - Realtime: `SegarkanLangsung` (di layout admin & generus) mendengarkan
   perubahan tabel lewat Supabase Realtime (publikasi `supabase_realtime`,
   migrasi `20261022100000_realtime`; tetap RLS) lalu `router.refresh()`,
@@ -252,7 +257,7 @@ src/
     layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
                         # pengumuman, panel pengembang, wewenang saya, kategori,
-                        # bantuan (difilter izin)
+                        # tempat sampah, bantuan (difilter izin)
     cetak/kartu/        # lembar cetak kartu QR (A4, tanpa navigasi)
     cetak/rekap/        # lembar cetak rekap absensi (KopDokumen, A4)
     cetak/laporan/      # laporan bulanan kehadiran & kegiatan (KopDokumen, A4)
