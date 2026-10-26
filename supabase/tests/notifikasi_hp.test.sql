@@ -93,6 +93,10 @@ select uji.harus_ditolak('Anon: tidak bisa menyimpan langganan',
   $q$ select public.simpan_langganan_notifikasi('https://push.example/a', 'k', 'a', null) $q$);
 reset role;
 
+-- Kegiatan bawaan migrasi dinonaktifkan supaya hasil tidak bergantung jam
+-- tes dijalankan (mis. jadwal rutin besok ikut H-1 bila tes jalan 18–22 WIB).
+update public.kegiatan set aktif = false;
+
 -- Kegiatan K1 (agenda) 40 menit lagi, kegiatan K2 besok, kegiatan K1 dibatalkan 30 menit lagi.
 insert into public.kegiatan (id, nama, jenis, kelompok_id, durasi_menit, lokasi)
 select '00000000-0000-0000-0000-0000000000c1', 'Pengajian K1', 'agenda', id, 60, 'Masjid' from public.kelompok where nomor = 1;
