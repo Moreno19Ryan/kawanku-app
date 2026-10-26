@@ -17,6 +17,7 @@ import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { getPengumumanTayang } from "@/lib/sistem/data";
 import { tanggalJam, waktuRelatif } from "@/lib/waktu";
 import { KartuAsisten } from "@/components/asisten/kartu-asisten";
+import { SaklarNotifikasi } from "@/components/generus/saklar-notifikasi";
 import { getSaranGenerus } from "@/lib/asisten/data";
 import { TombolPasang } from "@/components/pwa/tombol-pasang";
 import { Memuat } from "@/components/ui/memuat";
@@ -108,6 +109,7 @@ async function BerandaGenerus() {
 
       <KartuAsisten saran={saran} />
       <TombolPasang />
+      <SaklarNotifikasi ringkas />
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3 px-1">
