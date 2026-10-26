@@ -139,3 +139,88 @@ export function labelKehadiran(c: Pick<CatatanKehadiran, "status" | "alasan_izin
       return { label: "Berlangsung", nada: "utama" };
   }
 }
+
+export type RaporBulan = {
+  bulan: string;
+  judul: string;
+  hadir: number;
+  izin: number;
+  sakit: number;
+  alpa: number;
+  total: number;
+  persen: number | null;
+  /** Selisih persen dengan bulan sebelumnya (null bila salah satu kosong). */
+  selisih: number | null;
+  /** Hadir berturut-turut terpanjang di bulan ini (izin/sakit tidak memutus). */
+  rentetanTerpanjang: number;
+  lencana: Lencana[];
+  pesan: string;
+  catatan: CatatanKehadiran[];
+};
+
+/** "2026-10" → "Oktober 2026". */
+export function judulBulan(bulan: string): string {
+  return `${namaBulan(bulan)} ${bulan.slice(0, 4)}`;
+}
+
+/** Bulan sebelum bulan berjalan (WIB), mis. untuk rapor tanggal 1. */
+export function bulanLalu(sekarang = new Date()): string {
+  return bulanSebelum(bulanWib(sekarang.toISOString()));
+}
+
+/** Rapor kehadiran satu bulan (generus sendiri). Murni. */
+export function raporBulan(catatan: CatatanKehadiran[], bulan: string): RaporBulan {
+  const dinilai = (b: string) =>
+    catatan
+      .filter((c) => c.status !== "berjalan" && bulanWib(c.mulai) === b)
+      .sort((x, y) => x.mulai.localeCompare(y.mulai));
+  const isi = dinilai(bulan);
+  const n = (s: StatusKehadiran) => isi.filter((c) => c.status === s).length;
+  const hadir = n("hadir");
+  const persen = isi.length ? Math.round((hadir / isi.length) * 100) : null;
+  const lalu = dinilai(bulanSebelum(bulan));
+  const persenLalu = lalu.length ? Math.round((lalu.filter((c) => c.status === "hadir").length / lalu.length) * 100) : null;
+
+  let rentetanTerpanjang = 0;
+  let jalan = 0;
+  for (const c of isi) {
+    if (c.status === "hadir") rentetanTerpanjang = Math.max(rentetanTerpanjang, ++jalan);
+    else if (c.status === "alpa") jalan = 0;
+  }
+
+  const lencana: Lencana[] = [];
+  if (isi.length >= 2 && hadir === isi.length) {
+    lencana.push({ kode: "hadir-penuh", judul: "Hadir penuh", keterangan: "Hadir di semua pertemuan bulan ini", ikon: "medali" });
+  }
+  if (rentetanTerpanjang >= 3 && hadir < isi.length) {
+    lencana.push({ kode: "rentetan", judul: `${rentetanTerpanjang}× beruntun`, keterangan: "Rentetan hadir terpanjang bulan ini", ikon: "api" });
+  }
+  if (isi.length >= 2 && n("alpa") === 0 && n("izin") + n("sakit") > 0) {
+    lencana.push({ kode: "amanah", judul: "Amanah", keterangan: "Selalu memberi kabar bila berhalangan", ikon: "janji" });
+  }
+
+  const selisih = persen !== null && persenLalu !== null ? persen - persenLalu : null;
+  let pesan: string;
+  if (isi.length === 0) pesan = "Belum ada pertemuan tercatat di bulan ini.";
+  else if (hadir === isi.length) pesan = "MasyaAllah, hadir di semua pertemuan. Alhamdulillah, pertahankan, ya!";
+  else if (selisih !== null && selisih >= 10) pesan = `Alhamdulillah, kehadiranmu naik ${selisih} poin dari bulan sebelumnya. Terus semangat!`;
+  else if ((persen ?? 0) >= 75) pesan = "Alhamdulillah, kehadiranmu sudah baik. Semoga bulan depan bisa penuh.";
+  else if (selisih !== null && selisih <= -10) pesan = "Kehadiranmu turun dari bulan sebelumnya. Tidak apa-apa, yuk mulai lagi bulan ini.";
+  else pesan = "Yuk, bulan ini lebih semangat lagi ngajinya. Kami tunggu, ya.";
+
+  return {
+    bulan,
+    judul: judulBulan(bulan),
+    hadir,
+    izin: n("izin"),
+    sakit: n("sakit"),
+    alpa: n("alpa"),
+    total: isi.length,
+    persen,
+    selisih,
+    rentetanTerpanjang,
+    lencana,
+    pesan,
+    catatan: isi,
+  };
+}

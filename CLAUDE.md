@@ -200,6 +200,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Asisten KawanKu (`docs/asisten.md`): kartu pengingat/peringatan/saran/
   apresiasi di Beranda admin & generus, dihitung dari data yang ada
   (`src/lib/asisten/`), termasuk deteksi pola kegiatan & data ganda.
+  "Kawan" (F7): kartu Ringkasan hari ini di Beranda admin (RPC
+  `ringkasan_hari_ini`, aturan izin = RLS) + notifikasi pagi ke HP admin;
+  sambutan generus (`src/lib/generus/sambutan.ts`); rapor bulanan
+  `/saya/rapor` (`raporBulan()`) + notifikasi tanggal 1.
   Pemantau galat: `src/instrumentation.ts` + halaman galat → RPC
   `catat_galat` → Panel pengembang (tabel `galat_aplikasi`, hanya pengembang).
 - Notifikasi HP (`docs/notifikasi.md`): generus menyalakan Web Push
@@ -258,7 +262,7 @@ src/
                         # izin/ (pengajuan izin generus)
       kegiatan/         # agenda/kalender, pertemuan/ (pemateri, materi, batal, absensi),
                         # kelola/ & kelola/[id]/ (kegiatan & jadwal), pengumuman/ (untuk generus)
-    (generus)/          # area akun generus: saya/ (beranda, jadwal/, kehadiran/, scan/, profil/,
+    (generus)/          # area akun generus: saya/ (beranda, jadwal/, kehadiran/, rapor/, scan/, profil/,
                         # alamat/, pin/, izin/), absen/ (hasil QR)
     layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,

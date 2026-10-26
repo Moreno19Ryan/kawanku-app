@@ -44,10 +44,12 @@ async function langgananSaatIni(): Promise<PushSubscription | null> {
 export function SaklarNotifikasi({
   ringkas = false,
   untuk = "generus",
+  className = "",
 }: {
   ringkas?: boolean;
-  /** Pengembang: peringatan sistem (cadangan gagal, ruang database). */
-  untuk?: "generus" | "pengembang";
+  /** Pengembang: peringatan sistem (cadangan gagal, ruang database). Admin: ringkasan pagi. */
+  untuk?: "generus" | "pengembang" | "admin";
+  className?: string;
 }) {
   const [keadaan, setKeadaan] = useState<Keadaan>("memeriksa");
   const [state, setState] = useState<StateAksi>({});
@@ -126,24 +128,27 @@ export function SaklarNotifikasi({
       : "Notifikasi belum disiapkan pengembang.",
     "perlu-pasang": "Di iPhone, pasang dulu KawanKu ke layar utama (Bagikan → Tambah ke Layar Utama), lalu buka dari ikonnya.",
     ditolak: "Notifikasi diblokir di browser ini. Izinkan lewat pengaturan situs (ikon gembok di sebelah alamat), lalu muat ulang.",
-    mati:
-      untuk === "pengembang"
-        ? "Dapat peringatan di HP saat cadangan gagal, cadangan rusak, atau ruang database hampir penuh."
-        : "Dapat pengingat di HP: malam sebelum pengajian dan sekitar 1 jam sebelum mulai.",
-    nyala:
-      untuk === "pengembang"
-        ? "Peringatan sistem akan muncul di perangkat ini."
-        : "Pengingat pengajian akan muncul di perangkat ini: malam sebelumnya dan sekitar 1 jam sebelum mulai.",
+    mati: {
+      pengembang: "Dapat peringatan di HP saat cadangan gagal, cadangan rusak, atau ruang database hampir penuh.",
+      admin: "Dapat ringkasan hari ini di HP tiap pagi: pertemuan, izin yang menunggu, dan pemateri yang belum diisi.",
+      generus: "Dapat pengingat di HP: malam sebelum pengajian dan sekitar 1 jam sebelum mulai.",
+    }[untuk],
+    nyala: {
+      pengembang: "Peringatan sistem akan muncul di perangkat ini.",
+      admin: "Ringkasan hari ini akan muncul di perangkat ini tiap pagi (bila ada yang perlu diketahui).",
+      generus: "Pengingat pengajian akan muncul di perangkat ini: malam sebelumnya dan sekitar 1 jam sebelum mulai.",
+    }[untuk],
   }[keadaan];
+  const judul = { pengembang: "Peringatan di HP", admin: "Ringkasan pagi di HP", generus: "Pengingat di HP" }[untuk];
 
   return (
-    <Card className="flex flex-col gap-3">
+    <Card className={`flex flex-col gap-3 ${className}`}>
       <div className="flex items-start gap-3">
         <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-pill bg-primary-soft text-primary">
           {keadaan === "nyala" ? <BellRing className="size-5" aria-hidden /> : keadaan === "mati" ? <Bell className="size-5" aria-hidden /> : <BellOff className="size-5" aria-hidden />}
         </span>
         <div className="min-w-0">
-          <h2 className="font-semibold">{untuk === "pengembang" ? "Peringatan di HP" : "Pengingat di HP"} {keadaan === "nyala" && <span className="text-sm font-normal text-success">· menyala</span>}</h2>
+          <h2 className="font-semibold">{judul} {keadaan === "nyala" && <span className="text-sm font-normal text-success">· menyala</span>}</h2>
           <p className="text-sm text-muted">{isi}</p>
         </div>
       </div>

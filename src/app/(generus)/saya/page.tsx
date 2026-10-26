@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CalendarClock, CalendarX, ChevronRight, MapPin, ScanLine, UserRound } from "lucide-react";
+import { CalendarClock, CalendarX, ChevronRight, FileText, MapPin, ScanLine, UserRound } from "lucide-react";
 import { KartuKehadiran } from "@/components/generus/kartu-kehadiran";
 import { TautanIzin } from "@/components/generus/tautan-izin";
 import { DaftarKejadian } from "@/components/kegiatan/daftar-kejadian";
@@ -11,7 +11,8 @@ import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { wajibGenerus } from "@/lib/generus/akun";
 import { getKehadiranSaya } from "@/lib/generus/data";
-import { labelKehadiran, ringkasKehadiran } from "@/lib/generus/kehadiran";
+import { bulanLalu, labelKehadiran, raporBulan, ringkasKehadiran } from "@/lib/generus/kehadiran";
+import { sambutan } from "@/lib/generus/sambutan";
 import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { getPengumumanTayang } from "@/lib/sistem/data";
@@ -48,15 +49,26 @@ async function BerandaGenerus() {
   const berikut = jadwal.find((k) => k.status === "terjadwal" && k.selesai > sekarang);
   const berlangsung = berikut && berikut.mulai <= sekarang;
   const namaKelompok = new Map([[generus.jamaah.kelompokId, generus.jamaah.kelompok ?? "Kelompok"]]);
+  const sapa = sambutan({
+    catatan: kehadiran,
+    berikut: berikut && { nama: berikut.kegiatan.nama, tanggal: berikut.tanggal, mulai: berikut.mulai },
+  });
+  // Pekan pertama tiap bulan: ajakan membuka rapor bulan lalu.
+  const rapor = Number(hariIni.slice(8, 10)) <= 7 ? raporBulan(kehadiran, bulanLalu()) : null;
 
   return (
     <div className="flex flex-col gap-5 pt-6">
       <div>
-        <p className="text-sm text-muted">Assalamu&apos;alaikum,</p>
+        <p className="text-sm text-muted">Assalamu&apos;alaikum · {sapa.salam}</p>
         <h1 className="text-2xl font-semibold tracking-tight">{generus.jamaah.panggilan ?? generus.jamaah.nama}</h1>
         <p className="text-sm text-muted">
           {[generus.jamaah.kelompok, `@${generus.username}`].filter(Boolean).join(" · ")}
         </p>
+        {sapa.pesan && (
+          <p className={`mt-3 rounded-card px-4 py-3 text-sm font-medium ${sapa.nada === "syukur" ? "bg-primary-soft text-primary" : "bg-surface"}`}>
+            {sapa.pesan}
+          </p>
+        )}
       </div>
 
       {/* Urutan: yang paling perlu diketahui dulu (pengajian terdekat &
@@ -106,6 +118,22 @@ async function BerandaGenerus() {
       )}
 
       <KartuKehadiran ringkasan={ringkasan} />
+
+      {rapor && rapor.total > 0 && (
+        <Link
+          href={`/saya/rapor?bulan=${rapor.bulan}`}
+          className="flex items-center gap-3 rounded-card bg-surface p-5 transition-colors duration-200 ease-oneui hover:bg-surface-muted"
+        >
+          <FileText className="size-5 shrink-0 text-primary" aria-hidden />
+          <span className="min-w-0 flex-1 text-sm">
+            <span className="block font-medium">Rapor {rapor.judul} sudah siap</span>
+            <span className="block text-muted">
+              Hadir {rapor.hadir} dari {rapor.total} pertemuan{rapor.lencana.length ? ` · ${rapor.lencana.length} lencana` : ""}
+            </span>
+          </span>
+          <ChevronRight className="size-4 text-muted" aria-hidden />
+        </Link>
+      )}
 
       <KartuAsisten saran={saran} />
       <TombolPasang />

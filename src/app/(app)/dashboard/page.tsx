@@ -19,6 +19,8 @@ import { waktuRelatif } from "@/lib/waktu";
 import { KartuAsisten } from "@/components/asisten/kartu-asisten";
 import { getSaranAdmin } from "@/lib/asisten/data";
 import { PertemuanHariIni } from "@/components/absensi/pertemuan-hari-ini";
+import { RingkasanHariIni } from "@/components/asisten/ringkasan-hari-ini";
+import { SaklarNotifikasi } from "@/components/generus/saklar-notifikasi";
 import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
@@ -174,6 +176,10 @@ async function Ringkasan() {
       <>
         {header}
         <Suspense fallback={null}>
+          <RingkasanHariIni className="mb-4 sm:mb-6" />
+        </Suspense>
+        <SaklarNotifikasi ringkas untuk="admin" className="mb-4 sm:mb-6" />
+        <Suspense fallback={null}>
           <PertemuanHariIni judul="Hari ini" className="mb-4 sm:mb-6" />
         </Suspense>
         <Card className="flex items-start gap-4">
@@ -260,6 +266,10 @@ async function Ringkasan() {
     <>
       {header}
 
+      <Suspense fallback={null}>
+        <RingkasanHariIni className="mb-4 sm:mb-6" />
+      </Suspense>
+      <SaklarNotifikasi ringkas untuk="admin" className="mb-4 sm:mb-6" />
       <Suspense fallback={null}>
         <PertemuanHariIni judul="Hari ini" className="mb-4 sm:mb-6" />
       </Suspense>
