@@ -41,7 +41,14 @@ async function langgananSaatIni(): Promise<PushSubscription | null> {
  * Nyalakan/matikan pengingat pengajian di perangkat ini (Web Push).
  * `ringkas`: hanya tampil sebagai ajakan bila belum menyala (Beranda).
  */
-export function SaklarNotifikasi({ ringkas = false }: { ringkas?: boolean }) {
+export function SaklarNotifikasi({
+  ringkas = false,
+  untuk = "generus",
+}: {
+  ringkas?: boolean;
+  /** Pengembang: peringatan sistem (cadangan gagal, ruang database). */
+  untuk?: "generus" | "pengembang";
+}) {
   const [keadaan, setKeadaan] = useState<Keadaan>("memeriksa");
   const [state, setState] = useState<StateAksi>({});
   const [pending, mulai] = useTransition();
@@ -119,8 +126,14 @@ export function SaklarNotifikasi({ ringkas = false }: { ringkas?: boolean }) {
       : "Notifikasi belum disiapkan pengembang.",
     "perlu-pasang": "Di iPhone, pasang dulu KawanKu ke layar utama (Bagikan → Tambah ke Layar Utama), lalu buka dari ikonnya.",
     ditolak: "Notifikasi diblokir di browser ini. Izinkan lewat pengaturan situs (ikon gembok di sebelah alamat), lalu muat ulang.",
-    mati: "Dapat pengingat di HP: malam sebelum pengajian dan sekitar 1 jam sebelum mulai.",
-    nyala: "Pengingat pengajian akan muncul di perangkat ini: malam sebelumnya dan sekitar 1 jam sebelum mulai.",
+    mati:
+      untuk === "pengembang"
+        ? "Dapat peringatan di HP saat cadangan gagal, cadangan rusak, atau ruang database hampir penuh."
+        : "Dapat pengingat di HP: malam sebelum pengajian dan sekitar 1 jam sebelum mulai.",
+    nyala:
+      untuk === "pengembang"
+        ? "Peringatan sistem akan muncul di perangkat ini."
+        : "Pengingat pengajian akan muncul di perangkat ini: malam sebelumnya dan sekitar 1 jam sebelum mulai.",
   }[keadaan];
 
   return (
@@ -130,7 +143,7 @@ export function SaklarNotifikasi({ ringkas = false }: { ringkas?: boolean }) {
           {keadaan === "nyala" ? <BellRing className="size-5" aria-hidden /> : keadaan === "mati" ? <Bell className="size-5" aria-hidden /> : <BellOff className="size-5" aria-hidden />}
         </span>
         <div className="min-w-0">
-          <h2 className="font-semibold">Pengingat di HP {keadaan === "nyala" && <span className="text-sm font-normal text-success">· menyala</span>}</h2>
+          <h2 className="font-semibold">{untuk === "pengembang" ? "Peringatan di HP" : "Pengingat di HP"} {keadaan === "nyala" && <span className="text-sm font-normal text-success">· menyala</span>}</h2>
           <p className="text-sm text-muted">{isi}</p>
         </div>
       </div>

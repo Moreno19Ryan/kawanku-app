@@ -207,6 +207,12 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `private.kirim_notifikasi()` → pg_net → `/api/notifikasi/kirim` (rahasia
   bersama `NOTIFIKASI_RAHASIA` = Vault `kawanku_notifikasi_rahasia`, kunci
   VAPID di env) → `web-push`. Tanpa secret key Supabase.
+- Cadangan data (`docs/cadangan.md`, Pengaturan → Cadangan data, hanya
+  pengembang): lapis 1 pg_cron `kawanku-cadangan` → potret terenkripsi di
+  `private.cadangan_isi` (rotasi harian/mingguan/bulanan/tahunan, pemeriksaan
+  tiap tanggal 1, pemulihan per baris `pulihkan_dari_cadangan`); lapis 2
+  GitHub Actions `cadangan.yml` (dump terenkripsi gpg, artifact 90 hari).
+  Peringatan sistem ke HP pengembang lewat `notifikasi_sistem`.
 - Realtime: `SegarkanLangsung` (di layout admin & generus) mendengarkan
   perubahan tabel lewat Supabase Realtime (publikasi `supabase_realtime`,
   migrasi `20261022100000_realtime`; tetap RLS) lalu `router.refresh()`,
@@ -251,8 +257,8 @@ src/
                         # alamat/, pin/, izin/), absen/ (hasil QR)
     layar/[id]/         # QR layar jalur 2 (tanpa navigasi, untuk proyektor)
       pengaturan/       # akun, tampilan, admin & akses, kelompok, peran & izin,
-                        # pengumuman, panel pengembang, wewenang saya, kategori,
-                        # bantuan (difilter izin)
+                        # pengumuman, panel pengembang, cadangan data, wewenang saya,
+                        # kategori, bantuan (difilter izin)
     cetak/kartu/        # lembar cetak kartu QR (A4, tanpa navigasi)
     cetak/rekap/        # lembar cetak rekap absensi (KopDokumen, A4)
     cetak/laporan/      # laporan bulanan kehadiran & kegiatan (KopDokumen, A4)
