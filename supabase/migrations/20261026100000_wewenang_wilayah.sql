@@ -24,10 +24,16 @@ alter table public.izin add column hanya_kelompok boolean not null default false
 comment on column public.izin.hanya_kelompok is
   'Izin hanya berlaku dari penugasan tingkat kelompok (bukan seluruh desa).';
 
+-- Kartu QR fisik: izin sendiri (dulu ikut absensi.kelola, yang juga
+-- dipegang desa untuk sesi desa). Scan tetap memakai absensi.kelola.
+insert into public.izin (kode, deskripsi)
+values ('kartu.kelola', 'Membuat, mengganti, dan mencabut kartu QR fisik');
+
 update public.izin set hanya_kelompok = true
 where kode in ('jamaah.tambah', 'jamaah.ubah', 'jamaah.hapus', 'keluarga.kelola',
                'kontak.kelola', 'pribadi.kelola', 'identitas.kelola',
-               'janda_duda.kelola', 'keringanan.kelola');
+               'janda_duda.kelola', 'keringanan.kelola',
+               'akun_generus.kelola', 'kartu.kelola');
 
 -- Penugasan desa tidak mendapat izin hanya_kelompok.
 create or replace function private.boleh(
@@ -65,8 +71,10 @@ as $$
   );
 $$;
 
--- Peran bawaan: admin desa melepas pengelolaan data jamaah; admin kelompok
--- memegang seluruhnya (termasuk hapus permanen & keterangan janda/duda).
+-- Peran bawaan: admin desa melepas pengelolaan data jamaah, akun generus,
+-- dan kartu QR; admin kelompok memegang seluruhnya (termasuk hapus permanen
+-- & keterangan janda/duda), admin generus tetap mengelola akun & kartu
+-- generus di kelompoknya.
 delete from public.peran_izin pi
 using public.peran p
 where pi.peran_id = p.id and p.kode = 'admin_desa'
@@ -78,6 +86,39 @@ from public.peran p
 cross join (values ('jamaah.hapus'), ('janda_duda.lihat'), ('janda_duda.kelola')) as i (kode)
 where p.kode = 'admin_kelompok'
 on conflict do nothing;
+
+insert into public.peran_izin (peran_id, izin_kode)
+select p.id, 'kartu.kelola' from public.peran p
+where p.kode in ('admin_kelompok', 'admin_generus')
+on conflict do nothing;
+
+-- Kartu QR: melihat tetap pemegang absensi.kelola (perlu untuk scan);
+-- membuat/mengganti/mencabut hanya kartu.kelola (tingkat kelompok).
+alter policy kartu_qr_insert on public.kartu_qr
+  with check (private.boleh_jamaah('kartu.kelola', jamaah_id));
+alter policy kartu_qr_update on public.kartu_qr
+  using (private.boleh_jamaah('kartu.kelola', jamaah_id))
+  with check (private.boleh_jamaah('kartu.kelola', jamaah_id));
+
+create or replace function public.buat_kartu_qr_kelompok(p_kelompok_id uuid)
+returns integer
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_jumlah integer;
+begin
+  insert into public.kartu_qr (jamaah_id, token)
+  select j.id, '' from public.jamaah j
+  where j.kelompok_id = p_kelompok_id and j.aktif
+    and private.boleh_jamaah('kartu.kelola', j.id)
+    and private.boleh_kartu_fisik(j.id)
+    and not exists (select 1 from public.kartu_qr k where k.jamaah_id = j.id and k.aktif);
+  get diagnostics v_jumlah = row_count;
+  return v_jumlah;
+end;
+$$;
 
 -- ---------------------------------------------------------------------
 -- 2. Kelola tepat di wilayahnya

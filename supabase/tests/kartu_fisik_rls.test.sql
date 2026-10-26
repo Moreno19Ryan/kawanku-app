@@ -85,8 +85,12 @@ create function uji.sebagai(p_uid text) returns void language sql as $$
 $$;
 grant execute on all functions in schema uji to anon, authenticated;
 
-insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000b2', 'kel1@uji.id');
-insert into public.admin (user_id, nama) values ('00000000-0000-0000-0000-0000000000b2', 'Kelompok 1');
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000b2', 'kel1@uji.id'),
+  ('00000000-0000-0000-0000-0000000000b1', 'desa@uji.id');
+insert into public.admin (user_id, nama) values ('00000000-0000-0000-0000-0000000000b2', 'Kelompok 1'),
+  ('00000000-0000-0000-0000-0000000000b1', 'Desa');
+insert into public.penugasan_peran (user_id, peran_id)
+select '00000000-0000-0000-0000-0000000000b1', id from public.peran where kode = 'admin_desa';
 insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
 select '00000000-0000-0000-0000-0000000000b2', p.id, k.id
 from public.peran p, public.kelompok k where p.kode = 'admin_kelompok' and k.nomor = 1;
@@ -112,6 +116,15 @@ select uji.sesi('00000000-0000-0000-0000-0000000000e1', 'Pengajian K1', id, fals
 from public.kelompok where nomor = 1;
 
 set local role authenticated;
+-- Kartu QR dikelola tingkat kelompok saja (20261026100000, izin kartu.kelola).
+select uji.sebagai('00000000-0000-0000-0000-0000000000b1');
+select uji.harus_ditolak('Desa: membuat kartu ditolak (wewenang kelompok)',
+  $q$ select (public.ganti_kartu_qr('00000000-0000-0000-0000-0000000000f3')).id $q$);
+select uji.cek('Desa: buat massal tidak membuat kartu',
+  public.buat_kartu_qr_kelompok((select id from public.kelompok where nomor = 1)) = 0);
+select uji.harus_ditolak('Desa: mencabut kartu ditolak',
+  $q$ update public.kartu_qr set aktif = false where jamaah_id = '00000000-0000-0000-0000-0000000000f4' returning 1 $q$);
+select uji.cek('Desa: tetap melihat kartu (untuk scan sesi desa)', (select count(*) from public.kartu_qr) = 1);
 select uji.sebagai('00000000-0000-0000-0000-0000000000b2');
 
 select uji.cek('boleh_kartu_fisik: generus biasa = false',

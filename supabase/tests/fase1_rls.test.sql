@@ -313,8 +313,8 @@ select uji.cek('Admin generus Kelompok 1: tidak melihat generus kelompok lain',
 
 -- Izin hanya_kelompok yang diberikan lagi ke peran desa tetap tidak berlaku
 reset role;
-select uji.cek('Izin data jamaah ditandai hanya_kelompok',
-  (select count(*) = 9 from public.izin where hanya_kelompok));
+select uji.cek('Izin data jamaah, akun generus & kartu ditandai hanya_kelompok',
+  (select count(*) = 11 from public.izin where hanya_kelompok));
 insert into public.peran_izin (peran_id, izin_kode)
   select id, 'jamaah.ubah' from public.peran where kode = 'admin_desa';
 set role authenticated;

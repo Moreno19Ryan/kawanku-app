@@ -46,9 +46,9 @@ export default function KartuPage({ searchParams }: PageProps<"/absensi/kartu">)
 
 async function DaftarKartu({ cari }: { cari: Promise<Cari> }) {
   const [akses, param] = await Promise.all([getAksesAbsensi(), cari]);
-  if (!akses || akses.kelompokKelola.length === 0) return <AbsensiBelumMenyala />;
+  if (!akses || akses.kelompokKartu.length === 0) return <AbsensiBelumMenyala />;
 
-  const pilihan = akses.kelompokKelola;
+  const pilihan = akses.kelompokKartu;
   const kelompok = pilihan.find((k) => k.id === satu(param.kelompok)) ?? pilihan[0];
   const q = satu(param.q).trim().slice(0, 60).toLowerCase();
 

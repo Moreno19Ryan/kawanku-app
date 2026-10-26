@@ -143,9 +143,11 @@ from (values
 insert into public.absensi (sesi_id, jamaah_id, jalur)
 values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000f4', 'manual');
 
-select uji.cek('Seed: akun_generus.kelola untuk admin desa/kelompok/generus',
+-- Sejak 20261026100000 akun generus dikelola tingkat kelompok saja.
+select uji.cek('Seed: akun_generus.kelola untuk admin kelompok & generus (khusus kelompok)',
   (select array_agg(p.kode order by p.kode) from public.peran_izin pi join public.peran p on p.id = pi.peran_id
-   where pi.izin_kode = 'akun_generus.kelola') = array['admin_desa', 'admin_generus', 'admin_kelompok']);
+   where pi.izin_kode = 'akun_generus.kelola') = array['admin_generus', 'admin_kelompok']
+  and (select hanya_kelompok from public.izin where kode = 'akun_generus.kelola'));
 select uji.harus_ditolak('Trigger: akun untuk jamaah dewasa ditolak',
   $q$ insert into public.akun_generus (user_id, jamaah_id, username)
       values ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000f2', 'dua') returning 1 $q$);
@@ -259,6 +261,9 @@ reset role;
 -- Token sesi K2 hanya dibuat pengurus K2 (20261026100000), bukan desa.
 set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000b1');
+select uji.harus_ditolak('Desa: kembalikan PIN ditolak (wewenang kelompok)',
+  $q$ select public.kembalikan_pin_awal('00000000-0000-0000-0000-0000000000f1', 'lupa') $q$);
+select uji.cek('Desa: tidak lagi melihat akun generus', not exists (select 1 from public.akun_generus));
 select uji.harus_ditolak('Desa: token layar sesi K2 ditolak',
   $q$ select public.token_layar('00000000-0000-0000-0000-0000000000e2') $q$);
 select uji.sebagai('00000000-0000-0000-0000-0000000000b4');

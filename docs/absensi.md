@@ -106,6 +106,10 @@ sudah punya catatan.
   desa oleh pemegang `absensi.kelola` mana pun (jamaahnya dibatasi
   `boleh_jamaah`). Persetujuan izin kegiatan kelompok juga hanya oleh
   kelompok itu.
+- Kartu QR fisik (buat, ganti, cabut, cetak) memakai izin `kartu.kelola` dan
+  akun generus memakai `akun_generus.kelola`; keduanya hanya berlaku dari
+  penugasan kelompok (`izin.hanya_kelompok`). Melihat kartu tetap
+  `absensi.kelola` (dibutuhkan saat scan).
 
 - Catatan absensi yang terlihat dibatasi per jamaah (`boleh_jamaah`), jadi
   admin generus hanya melihat catatan generus.

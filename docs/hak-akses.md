@@ -15,7 +15,8 @@ Dua sumbu yang selalu berlaku:
 `20261026100000_wewenang_wilayah`):
 
 - Mengelola data jamaah (tambah, ubah, nonaktifkan, hapus, keluarga, kontak,
-  alamat, NIK/KK, janda/duda, keringanan, kenaikan kelas, "sudah dicek")
+  alamat, NIK/KK, janda/duda, keringanan, kenaikan kelas, "sudah dicek"),
+  **akun generus, dan kartu QR fisik** (izin baru `kartu.kelola`)
   **hanya di tingkat kelompok**, karena pengurus kelompoklah yang bertemu
   dan berkomunikasi langsung. Izin seperti ini ditandai "hanya berlaku di
   tingkat kelompok" (`izin.hanya_kelompok`): penugasan desa tidak pernah
@@ -65,8 +66,8 @@ Keterangan: ✅ boleh · 👁 hanya lihat · — tidak.
 | --- | :---: | :---: | :---: | :---: | :---: |
 | Lihat sesi & rekap | ✅ semua | ✅ kelompoknya + sesi desa | ✅ generus | 👁 (tanpa ekspor) | 👁 riwayatnya |
 | Scan & catat (sesi dibuka otomatis dari pertemuan) | ✅ sesi desa | ✅ sesi kelompoknya + jamaahnya di sesi desa | ✅ generus, sesuai wilayah | — | — |
-| Kartu QR fisik | ✅ | ✅ | ✅ | — | — |
-| Akun generus (buat, kembalikan ke PIN awal, kunci) | ✅ | ✅ | ✅ | — | ganti PIN sendiri |
+| Kartu QR fisik (buat, ganti, cabut, cetak) | — | ✅ | ✅ kelompok | — | — |
+| Akun generus (buat, kembalikan ke PIN awal, kunci) | — | ✅ | ✅ kelompok | — | ganti PIN sendiri |
 | Setujui pengajuan izin | ✅ kegiatan desa | ✅ kegiatan kelompoknya + jamaahnya di kegiatan desa | ✅ generus, sesuai wilayah | 👁 | ✅ mengajukan |
 
 ## 5. Kegiatan

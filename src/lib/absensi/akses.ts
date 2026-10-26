@@ -14,7 +14,7 @@ export type AksesAbsensi = {
   kelompokFitur: KelompokRingkas[];
   /** Kelompok (yang menyala) tempat admin boleh melihat / mengelola absensi. */
   kelompokLihat: KelompokRingkas[];
-  /** Kelompok tempat admin memegang absensi.kelola (penugasan desa → semua; untuk kartu & rekap). */
+  /** Kelompok tempat admin memegang absensi.kelola (penugasan desa → semua; untuk rekap). */
   kelompokKelola: KelompokRingkas[];
   /**
    * Kelompok tempat admin boleh mencatat sesi KELOMPOK: hanya penugasan
@@ -29,8 +29,10 @@ export type AksesAbsensi = {
   /** Wilayah sesi yang boleh dibuat; umum=false → hanya sesi generus. */
   targetSesi: TargetSesi[];
   bolehLihatKeringanan: boolean;
-  /** Kelompok (yang menyala) tempat admin boleh mengelola akun generus. */
+  /** Kelompok (yang menyala) tempat admin boleh mengelola akun generus (hanya tingkat kelompok). */
   kelompokAkun: KelompokRingkas[];
+  /** Kelompok (yang menyala) tempat admin boleh mengelola kartu QR fisik (hanya tingkat kelompok). */
+  kelompokKartu: KelompokRingkas[];
 };
 
 function wilayah(admin: AdminSaatIni, izin: string): string[] | null | undefined {
@@ -104,6 +106,7 @@ export const getAksesAbsensi = cache(async (): Promise<AksesAbsensi | null> => {
     targetSesi,
     bolehLihatKeringanan: Boolean(admin.izinWilayah["keringanan.lihat"]?.length),
     kelompokAkun: saring(kelompokFitur, wilayah(admin, "akun_generus.kelola")),
+    kelompokKartu: saring(kelompokFitur, wilayah(admin, "kartu.kelola")),
   };
 });
 
