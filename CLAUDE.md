@@ -202,6 +202,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   (`src/lib/asisten/`), termasuk deteksi pola kegiatan & data ganda.
   Pemantau galat: `src/instrumentation.ts` + halaman galat → RPC
   `catat_galat` → Panel pengembang (tabel `galat_aplikasi`, hanya pengembang).
+- Notifikasi HP (`docs/notifikasi.md`): generus menyalakan Web Push
+  (`SaklarNotifikasi`); pg_cron `kawanku-kirim-notifikasi` →
+  `private.kirim_notifikasi()` → pg_net → `/api/notifikasi/kirim` (rahasia
+  bersama `NOTIFIKASI_RAHASIA` = Vault `kawanku_notifikasi_rahasia`, kunci
+  VAPID di env) → `web-push`. Tanpa secret key Supabase.
 - Realtime: `SegarkanLangsung` (di layout admin & generus) mendengarkan
   perubahan tabel lewat Supabase Realtime (publikasi `supabase_realtime`,
   migrasi `20261022100000_realtime`; tetap RLS) lalu `router.refresh()`,
@@ -253,6 +258,7 @@ src/
     cetak/laporan/      # laporan bulanan kehadiran & kegiatan (KopDokumen, A4)
     cetak/akun/         # slip info masuk akun generus (alamat + QR, username, aturan PIN)
     api/rekap/          # GET ekspor rekap absensi (CSV)
+    api/notifikasi/kirim/ # POST dari database (pg_net): kirim Web Push pengingat
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
       masuk/page.tsx    # login generus (username + PIN)

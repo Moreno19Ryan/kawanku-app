@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowLeft, ChevronRight, KeyRound, MapPin } from "lucide-react";
 import { FormDataDiri, FormUsulanKoreksi } from "@/components/generus/form-profil";
+import { SaklarNotifikasi } from "@/components/generus/saklar-notifikasi";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -126,6 +127,8 @@ async function ProfilSaya() {
         </dl>
         <p className="mt-4 text-xs text-muted">Data di atas diubah admin. Ada yang salah? Laporkan di bagian bawah.</p>
       </Card>
+
+      <SaklarNotifikasi />
 
       <section className="flex flex-col gap-2">
         <div className="flex items-end justify-between gap-3 px-1">
