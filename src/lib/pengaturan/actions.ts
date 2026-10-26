@@ -75,6 +75,13 @@ function pesanJagaPengembang(error: { hint?: string | null } | null): StateAksi 
   if (error?.hint === "pengembang_terakhir") {
     return { galat: "Ini pengembang terakhir. Tambahkan pengembang lain dulu supaya sistem tetap ada yang mengelola." };
   }
+  // Aturan minimal satu peran (jaga_peran_minimal / jaga_admin_berperan).
+  if (error?.hint === "peran_terakhir") {
+    return { galat: "Ini peran terakhir akun ini. Setiap admin aktif wajib punya minimal satu peran: tambah peran lain dulu, atau nonaktifkan akunnya." };
+  }
+  if (error?.hint === "tanpa_peran") {
+    return { galat: "Akun ini belum punya peran. Beri minimal satu peran dulu, baru aktifkan." };
+  }
   return null;
 }
 

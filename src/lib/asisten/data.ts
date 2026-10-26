@@ -1,5 +1,6 @@
 import "server-only";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
+import { punyaIzin } from "@/lib/auth/admin";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { bacaParamLaporan, getLaporan } from "@/lib/absensi/laporan";
 import { getAksesKegiatan, bolehKelolaPertemuan } from "@/lib/kegiatan/akses";
@@ -13,6 +14,7 @@ import {
   saranIzin,
   saranKegiatan,
   saranLaporan,
+  saranPermintaanIdentitas,
   urutkanSaran,
   type Saran,
 } from "./hitung";
@@ -39,6 +41,15 @@ export async function getSaranAdmin(): Promise<Saran[]> {
       return saranKegiatan(kejadian, (k) => bolehKelolaPertemuan(kegiatan, k.kelompokId, k.kegiatan.hanya_generus), sekarang);
     }),
     aman(async () => {
+      if (!absensi || !punyaIzin(absensi.admin, "sistem.kelola")) return [];
+      const supabase = await createClient();
+      const { count } = await supabase
+        .from("permintaan_identitas")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "menunggu");
+      return saranPermintaanIdentitas(count ?? 0);
+    }),
+    aman(async () => {
       if (!absensi?.bolehLihat) return [];
       const izin = await getPengajuanIzin({ menunggu: true });
       return saranIzin(izin.filter((i) => i.bolehTangani).length);
@@ -57,7 +68,8 @@ export async function getSaranGenerus(generus: GenerusSaatIni, jadwal: Kejadian[
   return aman(async () => {
     const supabase = await createClient();
     const sepekan = new Date(Date.now() - 7 * 24 * 3600_000).toISOString();
-    const [{ data: izin }, { data: kontak }, { data: pribadi }, { data: diri }] = await Promise.all([
+    const duaPekan = new Date(Date.now() - 14 * 24 * 3600_000).toISOString();
+    const [{ data: izin }, { data: kontak }, { data: pribadi }, { data: diri }, { data: pin }] = await Promise.all([
       supabase
         .from("pengajuan_izin")
         .select("id, status, tanggal, tanggapan, kegiatan:kegiatan_id(nama)")
@@ -82,6 +94,14 @@ export async function getSaranGenerus(generus: GenerusSaatIni, jadwal: Kejadian[
         .select("tanggal_lahir, tempat_lahir, status_sekolah, kelas")
         .eq("id", generus.jamaah.id)
         .maybeSingle<{ tanggal_lahir: string | null; tempat_lahir: string | null; status_sekolah: string | null; kelas: number | null }>(),
+      supabase
+        .from("riwayat_pin")
+        .select("id, created_at")
+        .eq("jamaah_id", generus.jamaah.id)
+        .gte("created_at", duaPekan)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<{ id: string; created_at: string }>(),
     ]);
     return urutkanSaran(
       saranGenerus({
@@ -98,6 +118,7 @@ export async function getSaranGenerus(generus: GenerusSaatIni, jadwal: Kejadian[
           ada_alamat: Boolean(pribadi?.ktp_wilayah || pribadi?.ktp_jalan),
         }),
         jadwal,
+        pinDikembalikan: pin,
       }),
     );
   });

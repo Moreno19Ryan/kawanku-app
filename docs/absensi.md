@@ -175,7 +175,7 @@ Tes: `supabase/tests/akun_generus_rls.test.sql`.
 | Hal | Keputusan |
 | --- | --- |
 | Username | Nama lengkap tanpa spasi/titik, huruf kecil (`abdulazizsyahputra`, maks. 30 karakter). Nama panggilan jadi usulan kedua; admin boleh mengubah. Bila sudah dipakai, ditambah angka (`…2`). |
-| PIN awal | Tanggal lahir **DDMMYY**. Wajib diganti saat login pertama, dan tidak boleh tanggal lahir lagi. Tanpa tanggal lahir lengkap → admin mengetik PIN 6 angka. |
+| PIN awal | Tanggal lahir **DDMMYY**. Wajib diganti saat login pertama, dan tidak boleh tanggal lahir lagi. Tanpa tanggal lahir lengkap → admin mengetik PIN 6 angka (hanya saat akun dibuat). |
 | Pengelola | Pengelola absensi wilayahnya (izin `akun_generus.kelola`): admin desa, admin kelompok, admin generus. |
 | Isi akun | Absen (scan QR) + riwayat kehadiran sendiri + ganti PIN. |
 
@@ -210,12 +210,22 @@ Tes: `supabase/tests/akun_generus_rls.test.sql`.
      baru dan mengirimnya ke browser.
   3. Browser login sendiri (`signInWithPassword`) supaya batas percobaan
      Supabase dihitung per perangkat, bukan per server.
-- **PIN diubah** lewat `atur_pin_generus` (pengelola akun: buat akun & atur
-  ulang PIN, sekaligus membuka kunci) dan `ganti_pin_saya` (generus sendiri).
+- **PIN diubah** lewat `atur_pin_generus` (hanya saat akun dibuat, ketika
+  belum ada PIN), `kembalikan_pin_awal` (pengelola akun), dan
+  `ganti_pin_saya` (generus sendiri).
+- **Admin tidak bisa mengganti PIN sembarangan** (Reno, 26 Okt 2026; migrasi
+  `20261026090000_keamanan_akun_identitas`). PIN tidak bisa dilihat siapa pun
+  (tersimpan teracak satu arah), supaya admin tidak bisa masuk dan absen atas
+  nama generus. Bila generus lupa/terkunci: **Kembalikan ke PIN awal**
+  (tanggal lahir DDMMYY) dengan alasan (lupa / terkunci / lainnya + catatan);
+  kunci dibuka, generus wajib mengganti PIN saat masuk, dan pengembalian
+  tercatat di `riwayat_pin` (terlihat pengelola akun & generusnya; generus
+  mendapat kartu Asisten "PIN-mu dikembalikan").
 - **Admin bisa**:
   - membuat akun massal per kelompok (yang tanggal lahirnya lengkap);
   - mengubah username;
-  - mengatur ulang PIN (kembali ke DDMMYY, sekaligus membuka kunci);
+  - mengembalikan PIN ke PIN awal (DDMMYY, dengan alasan, tercatat,
+    sekaligus membuka kunci);
   - menonaktifkan akun;
   - menghapus akun (riwayat absen tetap ada).
 - **Generus hanya bisa membaca** profilnya sendiri, catatan absensinya

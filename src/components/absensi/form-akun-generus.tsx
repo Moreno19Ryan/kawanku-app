@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { useFormAksi } from "@/components/pengaturan/use-form-aksi";
 import { buttonClass } from "@/components/ui/button";
@@ -78,14 +78,66 @@ export function FormUsername({ aksi, username }: { aksi: Aksi; username: string 
   );
 }
 
-export function FormAturUlangPin({ aksi, adaTanggal }: { aksi: Aksi; adaTanggal: boolean }) {
+/**
+ * PIN generus tidak bisa diganti sembarangan: hanya dikembalikan ke PIN awal
+ * (tanggal lahir DDMMYY) dengan alasan, dan tercatat (riwayat_pin).
+ */
+export function FormKembalikanPin({
+  aksi,
+  adaTanggal,
+  pinAwal,
+  terakhir,
+}: {
+  aksi: Aksi;
+  adaTanggal: boolean;
+  /** Generus masih memakai PIN awal (belum menggantinya). */
+  pinAwal: boolean;
+  /** Keterangan pengembalian terakhir, mis. "12 Okt 2026 (lupa)". */
+  terakhir?: string;
+}) {
   const [state, onSubmit, pending] = useFormAksi(aksi);
+  const [alasan, setAlasan] = useState("lupa");
+  if (!adaTanggal) {
+    return (
+      <p className="text-sm text-muted">
+        PIN hanya bisa dikembalikan ke PIN awal (tanggal lahir). Isi tanggal lahir jamaah ini dulu di halaman jamaah.
+      </p>
+    );
+  }
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <IsianPin adaTanggal={adaTanggal} wajib />
-      <button type="submit" disabled={pending} className={buttonClass("netral", "h-10 px-4")}>
-        Atur ulang PIN
-      </button>
+    <form onSubmit={onSubmit} className="flex flex-col gap-2">
+      <p className="text-sm text-muted">
+        {pinAwal
+          ? "Masih memakai PIN awal: tanggal lahirnya (DDMMYY). Bila lupa, cukup beri tahu PIN itu."
+          : "Sudah memakai PIN pilihannya sendiri. Bila lupa atau terkunci, kembalikan ke PIN awal (tanggal lahir DDMMYY); ia wajib menggantinya saat masuk."}
+        {terakhir && ` Terakhir dikembalikan: ${terakhir}.`}
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <select
+          name="alasan"
+          value={alasan}
+          onChange={(e) => setAlasan(e.target.value)}
+          aria-label="Alasan"
+          className={`${KECIL} w-full sm:w-44`}
+        >
+          <option value="lupa">Lupa PIN</option>
+          <option value="terkunci">Akun terkunci</option>
+          <option value="lainnya">Lainnya</option>
+        </select>
+        {alasan === "lainnya" && (
+          <input
+            name="catatan"
+            required
+            maxLength={200}
+            placeholder="Tulis alasannya"
+            aria-label="Catatan alasan"
+            className={`${KECIL} w-full sm:flex-1`}
+          />
+        )}
+        <button type="submit" disabled={pending} className={buttonClass("netral", "h-10 shrink-0 px-4")}>
+          {pending ? "Memproses…" : "Kembalikan ke PIN awal"}
+        </button>
+      </div>
       <PesanAksi state={state} />
     </form>
   );

@@ -32,6 +32,8 @@ const TABEL = [
   "fitur",
   "fitur_kelompok",
   "pengaturan_sistem",
+  "permintaan_identitas",
+  "riwayat_pin",
 ] as const;
 
 /** Jeda supaya rentetan perubahan (mis. scan beruntun) cukup sekali muat ulang. */

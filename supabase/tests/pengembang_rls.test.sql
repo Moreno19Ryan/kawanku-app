@@ -151,7 +151,7 @@ select uji.harus_berhasil('Admin desa: mengubah nama admin kelompok tetap boleh'
 select uji.harus_berhasil('Admin desa: memberi admin baru peran admin_generus tetap boleh',
   $q$ insert into public.penugasan_peran (user_id, peran_id)
       select '00000000-0000-0000-0000-0000000000a4', id from public.peran where kode = 'admin_generus' returning 1 $q$);
-select uji.harus_berhasil('Admin desa: mencabut peran admin kelompok tetap boleh',
+select uji.harus_ditolak('Admin desa: mencabut peran terakhir admin kelompok aktif ditolak (minimal satu peran)',
   $q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000a3' returning 1 $q$);
 select uji.harus_berhasil('Admin desa: mengubah izin peran admin_kelompok tetap boleh',
   $q$ insert into public.peran_izin (peran_id, izin_kode)

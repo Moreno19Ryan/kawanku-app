@@ -29,7 +29,7 @@ dilengkapi").
 | --- | --- | --- | --- |
 | `jamaah_kontak` | No. HP/WA, no. HP orang tua/wali, email | `kontak.lihat` / `kontak.kelola` | admin desa & kelompok (lihat+ubah), admin generus (lihat, jamaah generus saja) |
 | `jamaah_pribadi` | Nama ayah & ibu kandung, alamat KTP & alamat saat ini (domisili) | `pribadi.lihat` / `pribadi.kelola` | admin desa & kelompok |
-| `jamaah_identitas` | NIK, No. KK (bukan ID jamaah; ID tetap kode `KW-`) | `identitas.lihat` / `identitas.kelola` | admin desa saja |
+| `jamaah_identitas` | NIK, No. KK (bukan ID jamaah; ID tetap kode `KW-`) | `identitas.lihat` (tersamar) / `identitas.kelola` | diisi admin kelompok; tersamar untuk semua peran |
 
 - Pengembang tidak memegang izin apa pun di atas: hanya melihat profil biasa,
   tidak bisa mengubah, dan nanti tidak mendapat fitur ekspor/unduh.
@@ -37,7 +37,16 @@ dilengkapi").
   keringanan dan janda/duda). Ikut terhapus bila jamaah dihapus.
 - No. HP disimpan ternormalisasi `08…` (input `+62`, `62`, spasi, dan tanda
   hubung diterima). NIK unik; No. KK boleh sama (satu keluarga).
-- NIK/No. KK ditampilkan tersamar (`3216••••••••0001`) dengan tombol tampilkan.
+- **NIK/No. KK selalu tersamar untuk semua peran** (Reno, 26 Okt 2026; migrasi
+  `20261026090000_keamanan_akun_identitas`). Tabelnya tidak bisa dibaca/ditulis
+  langsung: tampilan lewat `identitas_tersamar()` (`••••••••••••0001`, hanya
+  4 angka terakhir, disamarkan di database), isian lewat `simpan_identitas()`
+  (admin kelompok, `identitas.kelola`; nilai lama tidak dikirim ke browser).
+  Nomor lengkap hanya lewat **permintaan** (`permintaan_identitas`, dengan
+  keperluan) yang **disetujui pengembang** (`tangani_permintaan_identitas`,
+  Panel pengembang; tidak bisa menyetujui permintaan sendiri), berlaku
+  **1 jam**, dibuka lewat `lihat_identitas()`, dan setiap pembukaan tercatat
+  di `akses_identitas`.
 - Tidak disimpan: tinggi/berat badan, golongan darah, riwayat kesehatan.
 
 ## Alamat

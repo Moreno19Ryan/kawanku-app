@@ -310,7 +310,7 @@ export async function aturJandaDuda(
 /** "0812-3456-7890", "+62 812…", "62812…" → "081234567890". Null bila kosong. */
 /** Simpan satu baris per jamaah: kosong semua → baris dihapus. */
 async function simpanBaris(
-  tabel: "jamaah_kontak" | "jamaah_pribadi" | "jamaah_identitas",
+  tabel: "jamaah_kontak" | "jamaah_pribadi",
   jamaahId: string,
   isi: Record<string, string | number | boolean | null>,
 ): Promise<StateAksi> {
@@ -392,6 +392,10 @@ export async function simpanPribadi(
   });
 }
 
+/**
+ * Isi / ganti NIK & No. KK lewat RPC simpan_identitas (tabelnya tidak bisa
+ * dibaca/ditulis langsung). Kosong = tidak diubah; "hapus" = dikosongkan.
+ */
 export async function simpanIdentitas(
   id: string,
   _prev: StateAksi,
@@ -401,10 +405,49 @@ export async function simpanIdentitas(
   if (!akses?.bolehKelolaIdentitas) return TIDAK_BERHAK;
 
   const angka = (n: string) => String(formData.get(n) ?? "").replace(/\s/g, "");
+  const hapus = formData.get("hapus") === "on";
   const nik = angka("nik");
   const kk = angka("no_kk");
   if ((nik && !/^\d{16}$/.test(nik)) || (kk && !/^\d{16}$/.test(kk))) {
     return { galat: "NIK dan No. KK masing-masing 16 angka." };
   }
-  return simpanBaris("jamaah_identitas", id, { nik: nik || null, no_kk: kk || null });
+  if (!hapus && !nik && !kk) return { galat: "Isi NIK atau No. KK yang ingin disimpan." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("simpan_identitas", {
+    p_jamaah_id: id,
+    p_nik: hapus ? "" : nik || null,
+    p_no_kk: hapus ? "" : kk || null,
+  });
+  if (error) {
+    if (error.code === "23505") return { galat: "NIK ini sudah dipakai jamaah lain." };
+    return error.code === "42501" ? TIDAK_BERHAK : GAGAL;
+  }
+  refresh();
+  return { pesan: hapus ? "NIK & No. KK dihapus." : "Tersimpan. Nomor tampil tersamar." };
+}
+
+/** Minta izin pengembang untuk melihat NIK/KK lengkap satu jamaah. */
+export async function mintaLihatIdentitas(id: string, _prev: StateAksi, formData: FormData): Promise<StateAksi> {
+  const akses = await getAksesJamaah();
+  if (!akses?.bolehLihatIdentitas) return TIDAK_BERHAK;
+  const alasan = String(formData.get("alasan") ?? "").trim().replace(/\s+/g, " ");
+  if (alasan.length < 5) return { galat: "Tulis keperluannya (minimal 5 huruf)." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("permintaan_identitas").insert({ jamaah_id: id, alasan: alasan.slice(0, 300) });
+  if (error) return error.code === "42501" ? TIDAK_BERHAK : GAGAL;
+  refresh();
+  return { pesan: "Permintaan terkirim ke pengembang." };
+}
+
+/** NIK/KK lengkap (hanya dengan permintaan disetujui yang masih berlaku; tercatat). */
+export async function lihatIdentitasLengkap(
+  id: string,
+): Promise<{ galat?: string; nik?: string | null; no_kk?: string | null; berlaku_sampai?: string }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc("lihat_identitas", { p_jamaah_id: id })
+    .maybeSingle<{ nik: string | null; no_kk: string | null; berlaku_sampai: string }>();
+  if (error?.hint === "perlu_izin") return { galat: "Izin melihat sudah berakhir. Ajukan lagi bila perlu." };
+  if (error) return { galat: "Gagal memuat. Coba lagi." };
+  return data ?? { nik: null, no_kk: null };
 }

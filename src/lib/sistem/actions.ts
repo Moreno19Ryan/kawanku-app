@@ -145,3 +145,15 @@ export async function hapusPengumuman(id: string): Promise<StateAksi> {
   refresh();
   return { pesan: "Pengumuman dihapus." };
 }
+
+/** Setujui (berlaku 1 jam) / tolak permintaan melihat NIK/KK lengkap. Hanya pengembang (RPC). */
+export async function tanganiPermintaanIdentitas(id: string, setuju: boolean): Promise<StateAksi> {
+  const ctx = await konteks("sistem.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+  const { error } = await ctx.supabase.rpc("tangani_permintaan_identitas", { p_id: id, p_setuju: setuju });
+  if (error?.hint === "sendiri") return { galat: "Tidak bisa menyetujui permintaanmu sendiri." };
+  if (error?.hint === "sudah") return { galat: "Permintaan ini sudah ditangani." };
+  if (error) return { galat: "Gagal. Pastikan kamu pengembang." };
+  refresh();
+  return { pesan: setuju ? "Disetujui (berlaku 1 jam)." : "Ditolak." };
+}

@@ -36,8 +36,10 @@ cakupannya satu desa.
 - **Data sensitif bersifat opsional dan disimpan di tabel terpisah dengan izin
   sendiri**, bukan kolom di `jamaah` (`docs/data-pribadi-jamaah.md`):
   `jamaah_kontak` (no. HP, HP wali, email), `jamaah_pribadi` (nama orang tua,
-  alamat KTP & domisili), `jamaah_identitas` (NIK & No. KK, hanya admin desa;
-  bukan ID, ID tetap kode `KW-`). Status pernikahan hanya
+  alamat KTP & domisili), `jamaah_identitas` (NIK & No. KK, diisi admin
+  kelompok, selalu tersamar untuk semua peran; nomor lengkap hanya lewat
+  permintaan yang disetujui pengembang, berlaku 1 jam, tercatat; bukan ID,
+  ID tetap kode `KW-`). Status pernikahan hanya
   `lajang`/`menikah`/`janda_duda`; untuk janda/duda hanya keterangan
   `cerai_hidup`/`cerai_mati` di `jamaah_janda_duda` (default hanya admin desa).
   Tidak disimpan: tinggi/berat badan dan data kesehatan.
@@ -105,6 +107,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   (tabel/galat → aplikasi tetap jalan normal).
 - Form pengaturan dikirim lewat `useFormAksi()` (onSubmit), bukan prop
   `action`, supaya React tidak mereset isian setelah validasi server gagal.
+- Setiap admin aktif wajib punya minimal satu peran (dijaga database,
+  migrasi `20261026090000_keamanan_akun_identitas`, trigger
+  `jaga_peran_minimal` / `jaga_admin_berperan`, hint `peran_terakhir` /
+  `tanpa_peran`): peran terakhir tidak bisa dicabut, akun tanpa peran tidak
+  bisa diaktifkan.
 - Pengaman "jangan sampai tidak ada admin pengelola akses" (tidak bisa
   menonaktifkan diri sendiri / mencabut peran pengelola terakhir) saat ini
   dicek di Server Action, belum di database.
@@ -141,7 +148,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Akun generus (Fase 2b): login di `/masuk` (username + PIN). PIN diperiksa
   server (`siapkanMasukGenerus` → RPC `cek_pin_generus`, hanya service_role,
   kunci 5x salah); hash PIN di `private.pin_generus`, kata sandi Auth selalu
-  acak (lihat `docs/absensi.md`). Area generus `/saya` & `/absen` (`getGenerusSaatIni` /
+  acak (lihat `docs/absensi.md`). Admin tidak bisa melihat atau mengetik PIN
+  baru: hanya "Kembalikan ke PIN awal" (RPC `kembalikan_pin_awal`, dengan
+  alasan, tercatat di `riwayat_pin`). Area generus `/saya` & `/absen` (`getGenerusSaatIni` /
   `wajibGenerus`, `src/lib/generus/`). Akun generus tidak punya baris
   `admin`; `wajibAdmin()` mengarahkan akun generus ke `/saya`, dan
   `wajibGenerus()` mengarahkan admin ke `/dashboard`. Profil generus di

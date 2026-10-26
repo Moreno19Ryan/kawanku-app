@@ -7,7 +7,8 @@ import { FormPerawatan } from "@/components/sistem/form-perawatan";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
-import { simpanFitur } from "@/lib/sistem/actions";
+import { simpanFitur, tanganiPermintaanIdentitas } from "@/lib/sistem/actions";
+import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { getFitur } from "@/lib/sistem/data";
 import { createClient } from "@/lib/supabase/server";
 import { keInputWib, tanggalJam, waktuRelatif } from "@/lib/waktu";
@@ -58,6 +59,10 @@ async function IsiPanel() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
+      <Suspense fallback={<Skeleton className="h-40" />}>
+        <PermintaanIdentitas />
+      </Suspense>
+
       <Card>
         <h2 className="text-lg font-semibold">Mode perawatan</h2>
         <p className="mt-1 mb-5 text-sm text-muted">
@@ -145,5 +150,89 @@ function Info({ label, nilai, mono = false }: { label: string; nilai: string; mo
         {nilai}
       </dd>
     </div>
+  );
+}
+
+type Permintaan = {
+  id: string;
+  alasan: string;
+  status: string;
+  created_at: string;
+  ditangani_at: string | null;
+  pemohon: string;
+  jamaah: { nama_lengkap: string; kode: string } | null;
+};
+
+/** Permintaan melihat NIK/KK lengkap (disetujui pengembang, berlaku 1 jam) + catatan pembukaan. */
+async function PermintaanIdentitas() {
+  const supabase = await createClient();
+  const [{ data: permintaan }, { data: akses }, { data: admin }] = await Promise.all([
+    supabase
+      .from("permintaan_identitas")
+      .select("id, alasan, status, created_at, ditangani_at, pemohon, jamaah:jamaah_id(nama_lengkap, kode)")
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .returns<Permintaan[]>(),
+    supabase
+      .from("akses_identitas")
+      .select("created_at, oleh, jamaah:jamaah_id(nama_lengkap)")
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .returns<{ created_at: string; oleh: string | null; jamaah: { nama_lengkap: string } | null }[]>(),
+    supabase.from("admin").select("user_id, nama").returns<{ user_id: string; nama: string }[]>(),
+  ]);
+  const nama = new Map((admin ?? []).map((a) => [a.user_id, a.nama]));
+  const menunggu = (permintaan ?? []).filter((p) => p.status === "menunggu");
+  const selesai = (permintaan ?? []).filter((p) => p.status !== "menunggu").slice(0, 5);
+
+  return (
+    <Card>
+      <h2 className="text-lg font-semibold">Permintaan lihat NIK & No. KK</h2>
+      <p className="mt-1 mb-4 text-sm text-muted">
+        NIK/KK selalu tersamar untuk semua peran. Admin yang perlu nomor lengkap mengajukan di sini; bila disetujui,
+        nomornya bisa dilihat selama 1 jam dan setiap pembukaan tercatat.
+      </p>
+      {menunggu.length === 0 ? (
+        <p className="text-sm text-muted">Tidak ada permintaan yang menunggu.</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {menunggu.map((p) => (
+            <li key={p.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
+              <div className="min-w-0 flex-1 text-sm">
+                <p className="font-medium">
+                  {nama.get(p.pemohon) ?? "Admin"} → {p.jamaah?.nama_lengkap ?? "Jamaah"}{" "}
+                  <span className="font-normal text-muted">({p.jamaah?.kode})</span>
+                </p>
+                <p className="text-muted">
+                  {p.alasan} · {waktuRelatif(p.created_at)}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <TombolAksi aksi={tanganiPermintaanIdentitas.bind(null, p.id, true)} label="Setujui" varian="utama" />
+                <TombolAksi aksi={tanganiPermintaanIdentitas.bind(null, p.id, false)} label="Tolak" varian="kedua" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {(selesai.length > 0 || (akses ?? []).length > 0) && (
+        <details className="mt-4 text-sm">
+          <summary className="cursor-pointer font-medium text-primary">Riwayat</summary>
+          <ul className="mt-2 flex flex-col gap-1 text-muted">
+            {selesai.map((p) => (
+              <li key={p.id}>
+                {p.status === "disetujui" ? "Disetujui" : "Ditolak"}: {nama.get(p.pemohon) ?? "Admin"} →{" "}
+                {p.jamaah?.nama_lengkap} ({tanggalJam(p.ditangani_at ?? p.created_at)})
+              </li>
+            ))}
+            {(akses ?? []).map((a, i) => (
+              <li key={i}>
+                Dibuka: {nama.get(a.oleh ?? "") ?? "Admin"} → {a.jamaah?.nama_lengkap} ({tanggalJam(a.created_at)})
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </Card>
   );
 }

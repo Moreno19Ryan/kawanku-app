@@ -7,7 +7,7 @@ import { useFormAksi } from "@/components/pengaturan/use-form-aksi";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
 import { Saklar } from "@/components/ui/saklar";
-import { formatNoHp, samarkan } from "@/lib/jamaah/format";
+import { formatNoHp } from "@/lib/jamaah/format";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { PilihWilayah } from "./pilih-wilayah";
 
@@ -181,42 +181,87 @@ export function FormAlamat({
 
 
 /** Nomor tersamar dengan tombol tampilkan (hanya di layar, tidak tersimpan). */
-export function NomorTersamar({ nomor }: { nomor: string }) {
-  const [tampil, setTampil] = useState(false);
-  return (
-    <span className="inline-flex items-center gap-2 font-mono">
-      {tampil ? nomor : samarkan(nomor)}
-      <button
-        type="button"
-        onClick={() => setTampil((t) => !t)}
-        aria-label={tampil ? "Sembunyikan" : "Tampilkan"}
-        className="rounded-pill p-1 text-muted hover:bg-surface-muted hover:text-fg"
-      >
-        {tampil ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
-      </button>
-    </span>
-  );
-}
-
-export function FormIdentitas({
-  aksi,
-  nilai,
-}: {
-  aksi: Aksi;
-  nilai: { nik: string | null; no_kk: string | null } | null;
-}) {
+/** Isi / ganti NIK & No. KK. Nilai lama tidak dikirim ke browser; kosong = tidak diubah. */
+export function FormIdentitas({ aksi, ada }: { aksi: Aksi; ada: boolean }) {
   const [state, onSubmit, pending] = useFormAksi(aksi);
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Kolom label="NIK" bantuan="16 angka sesuai KTP/KK.">
-          <input name="nik" inputMode="numeric" maxLength={16} autoComplete="off" defaultValue={nilai?.nik ?? ""} className={`${INPUT_CLASS} font-mono`} />
+        <Kolom label="NIK" bantuan={ada ? "16 angka. Kosongkan bila tidak diubah." : "16 angka sesuai KTP/KK."}>
+          <input name="nik" inputMode="numeric" maxLength={16} autoComplete="off" className={`${INPUT_CLASS} font-mono`} />
         </Kolom>
-        <Kolom label="No. KK" bantuan="16 angka.">
-          <input name="no_kk" inputMode="numeric" maxLength={16} autoComplete="off" defaultValue={nilai?.no_kk ?? ""} className={`${INPUT_CLASS} font-mono`} />
+        <Kolom label="No. KK" bantuan={ada ? "16 angka. Kosongkan bila tidak diubah." : "16 angka."}>
+          <input name="no_kk" inputMode="numeric" maxLength={16} autoComplete="off" className={`${INPUT_CLASS} font-mono`} />
         </Kolom>
       </div>
+      {ada && (
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="hapus" className="size-4" />
+          Hapus NIK & No. KK yang tersimpan
+        </label>
+      )}
       <Kirim pending={pending} state={state} />
     </form>
+  );
+}
+
+/** Ajukan permintaan melihat NIK/KK lengkap (disetujui pengembang). */
+export function FormMintaIdentitas({ aksi }: { aksi: Aksi }) {
+  const [state, onSubmit, pending] = useFormAksi(aksi);
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <Kolom label="Untuk keperluan apa?" bantuan="Pengembang menyetujui permintaan ini; nomor lengkap bisa dilihat 1 jam.">
+        <input name="alasan" required minLength={5} maxLength={300} placeholder="mis. Pendaftaran BPJS kelompok" className={INPUT_CLASS} />
+      </Kolom>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="submit" disabled={pending} className={buttonClass("kedua", "h-10 px-5")}>
+          {pending ? "Mengirim…" : "Minta lihat nomor lengkap"}
+        </button>
+        <PesanAksi state={state} />
+      </div>
+    </form>
+  );
+}
+
+type HasilLihat = { galat?: string; nik?: string | null; no_kk?: string | null; berlaku_sampai?: string };
+
+/** Tampilkan NIK/KK lengkap (permintaan sudah disetujui). Setiap pembukaan tercatat. */
+export function TampilkanIdentitas({ lihat, sampai }: { lihat: () => Promise<HasilLihat>; sampai: string }) {
+  const [hasil, setHasil] = useState<HasilLihat>();
+  const [pending, setPending] = useState(false);
+  if (hasil && !hasil.galat) {
+    return (
+      <div className="flex flex-col gap-2 rounded-control bg-warning/10 p-4 text-sm">
+        <p>
+          <span className="text-muted">NIK:</span> <span className="font-mono">{hasil.nik ?? "–"}</span>
+        </p>
+        <p>
+          <span className="text-muted">No. KK:</span> <span className="font-mono">{hasil.no_kk ?? "–"}</span>
+        </p>
+        <button type="button" onClick={() => setHasil(undefined)} className="self-start text-sm font-medium text-primary">
+          <EyeOff className="mr-1 inline size-4" aria-hidden />
+          Sembunyikan
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-muted">Permintaanmu disetujui, berlaku sampai {sampai}. Setiap kali dibuka, tercatat.</p>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={async () => {
+          setPending(true);
+          setHasil(await lihat().catch(() => ({ galat: "Gagal memuat. Coba lagi." })));
+          setPending(false);
+        }}
+        className={`${buttonClass("kedua", "h-10 px-5")} self-start`}
+      >
+        <Eye className="size-4" aria-hidden />
+        {pending ? "Memuat…" : "Tampilkan nomor lengkap"}
+      </button>
+      {hasil?.galat && <p className="text-sm text-danger">{hasil.galat}</p>}
+    </div>
   );
 }

@@ -30,7 +30,7 @@ Keterangan: ✅ boleh · 👁 hanya lihat · — tidak.
 | --- | :---: | :---: | :---: | :---: | :---: |
 | No. HP, HP wali, email | ✅ | ✅ | 👁 | — | ✅ HP & email sendiri |
 | Nama orang tua & alamat | ✅ | ✅ | — | — | ✅ alamat sendiri |
-| NIK & No. KK | ✅ | — | — | — | — |
+| NIK & No. KK | 👁 tersamar | ✅ isi, 👁 tersamar | — | ✅ menyetujui permintaan lihat lengkap | — |
 | Keterangan janda/duda | ✅ | — | — | — | — |
 | Penanda keringanan (tanpa HP) | ✅ | ✅ | ✅ | — | — (tidak terlihat) |
 
@@ -48,7 +48,7 @@ Keterangan: ✅ boleh · 👁 hanya lihat · — tidak.
 | Lihat sesi & rekap | ✅ semua | ✅ kelompoknya + sesi desa | ✅ generus | 👁 (tanpa ekspor) | 👁 riwayatnya |
 | Buat sesi, scan, catat izin/sakit | ✅ | ✅ | ✅ sesi generus | — | — |
 | Kartu QR fisik | ✅ | ✅ | ✅ | — | — |
-| Akun generus (buat, PIN, kunci) | ✅ | ✅ | ✅ | — | ganti PIN sendiri |
+| Akun generus (buat, kembalikan ke PIN awal, kunci) | ✅ | ✅ | ✅ | — | ganti PIN sendiri |
 | Setujui pengajuan izin | ✅ | ✅ | ✅ | 👁 | ✅ mengajukan |
 
 ## 5. Kegiatan
