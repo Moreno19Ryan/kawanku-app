@@ -35,6 +35,7 @@ const TABEL = [
   "permintaan_identitas",
   "riwayat_pin",
   "sapaan_jamaah",
+  "tempat_sampah",
 ] as const;
 
 /** Jeda supaya rentetan perubahan (mis. scan beruntun) cukup sekali muat ulang. */

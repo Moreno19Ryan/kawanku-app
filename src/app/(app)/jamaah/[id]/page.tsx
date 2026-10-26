@@ -593,13 +593,14 @@ async function Detail({
             {akses.bolehHapus && (
               <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-muted">
-                  Hapus permanen hanya untuk data salah input (mis. dobel). Tidak bisa dibatalkan.
+                  Hapus hanya untuk data salah input (mis. dobel); yang pindah/wafat cukup dinonaktifkan. Data yang
+                  dihapus masuk tempat sampah 30 hari (Pengaturan → Tempat sampah).
                 </p>
                 <TombolAksi
                   aksi={hapusJamaah.bind(null, j.id)}
-                  label="Hapus permanen"
+                  label="Hapus"
                   varian="bahaya"
-                  konfirmasi={`Hapus ${j.nama_lengkap} (${j.kode}) secara permanen? Tindakan ini tidak bisa dibatalkan.`}
+                  konfirmasi={`Hapus ${j.nama_lengkap} (${j.kode})? Datanya (kontak, alamat, absensi, kartu, akun) masuk tempat sampah dan masih bisa dikembalikan dalam 30 hari.`}
                 />
               </div>
             )}

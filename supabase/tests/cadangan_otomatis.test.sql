@@ -80,7 +80,7 @@ select uji.cek('Cadangan harian berhasil, banyak tabel, ada jamaah',
    from public.cadangan where id = (select id from c1)));
 select uji.cek('Tabel teknis tidak ikut', not exists (
   select 1 from private.cadangan_isi where cadangan_id = (select id from c1)
-    and tabel in ('galat_aplikasi', 'langganan_notifikasi', 'cadangan')));
+    and tabel in ('galat_aplikasi', 'langganan_notifikasi', 'cadangan', 'tempat_sampah')));
 select uji.cek('Isi terenkripsi (nama tidak terbaca)', not exists (
   select 1 from private.cadangan_isi where cadangan_id = (select id from c1)
     and position(convert_to('Ahmad Rahasia', 'UTF8') in isi) > 0));

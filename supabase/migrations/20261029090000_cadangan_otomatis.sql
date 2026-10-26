@@ -143,7 +143,8 @@ as $$
   from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'public' and c.relkind = 'r'
     and c.relname not in ('cadangan', 'cadangan_jadwal', 'pemulihan_cadangan', 'notifikasi_sistem',
-                          'galat_aplikasi', 'langganan_notifikasi', 'notifikasi_terkirim', 'sesi_layar')
+                          'galat_aplikasi', 'langganan_notifikasi', 'notifikasi_terkirim', 'sesi_layar',
+                          'tempat_sampah')
   order by 1;
 $$;
 revoke all on function private.tabel_cadangan() from public, anon, authenticated;
