@@ -26,7 +26,7 @@ export type ParamLaporan = {
 };
 
 const RENTANG = [3, 6, 12] as const;
-const STATUS: ParamLaporan["status"][] = ["semua", "perlu_disapa", "menurun", "jarang", "rajin", "biasa"];
+const STATUS: ParamLaporan["status"][] = ["semua", "perlu_disapa", "menurun", "mulai_jarang", "jarang", "rajin", "biasa"];
 
 const satu = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 

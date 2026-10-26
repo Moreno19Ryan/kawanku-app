@@ -18,6 +18,8 @@ tabel baru). Batas data tetap RLS dan wewenang tiap admin.
 | Saran (pola) | 3 pertemuan terakhir sebuah kegiatan (wilayah yang sama) tanpa pemateri tercatat |
 | Saran (pola) | Kegiatan diliburkan ≥ 2× dalam 4 pekan |
 | Peringatan (pola) | Absensi pertemuan sepekan terakhir kosong (tidak ada yang hadir; lupa scan?), hanya bila admin bisa melihat absensi |
+| Saran (deteksi dini) | Jamaah **mulai jarang hadir**: 2 dari 4 pertemuan terakhir tidak hadir (izin/sakit tidak dihitung) padahal sebelumnya rajin (≥ 60%); juga status "Mulai jarang" di Laporan kehadiran (`mulaiJarang()`) |
+| Saran | Pengajar rutin (aktif) di wilayah yang dikelola admin itu **belum mengisi 6 pekan** terakhir (dari `pertemuan_materi`) |
 | Peringatan | Kemungkinan data jamaah ganda: nama (dirapikan) & tanggal lahir sama, untuk admin yang boleh mengubah data jamaah |
 | Peringatan | Pengembang: galat aplikasi yang belum dicek dalam 7 hari terakhir |
 

@@ -20,6 +20,7 @@ import {
   saranLaporan,
   saranPermintaanIdentitas,
   saranLaporanBulanan,
+  saranPengajar,
   saranPola,
   urutkanSaran,
   type Saran,
@@ -75,6 +76,32 @@ export async function getSaranAdmin(): Promise<Saran[]> {
       });
     }),
     aman(async () => {
+      // Pengajar rutin di wilayah yang dikelola admin ini, yang lama tidak mengisi.
+      if (!kegiatan || (kegiatan.kelompokKelola.length === 0 && !kegiatan.kelolaDesa)) return [];
+      const supabase = await createClient();
+      const wilayah = kegiatan.kelompokKelola.map((k) => k.id);
+      let q = supabase.from("pengajar").select("id, nama, kelompok_id, created_at").eq("aktif", true);
+      q = kegiatan.kelolaDesa
+        ? wilayah.length
+          ? q.or(`kelompok_id.is.null,kelompok_id.in.(${wilayah.join(",")})`)
+          : q.is("kelompok_id", null)
+        : q.in("kelompok_id", wilayah);
+      const { data: pengajar } = await q.returns<{ id: string; nama: string; kelompok_id: string | null; created_at: string }[]>();
+      if (!pengajar?.length) return [];
+      const { data: isi } = await supabase
+        .from("pertemuan_materi")
+        .select("pengajar_id, pertemuan:pertemuan_id!inner(tanggal, status)")
+        .in("pengajar_id", pengajar.map((p) => p.id))
+        .eq("pertemuan.status", "terjadwal")
+        .lte("pertemuan.tanggal", hariIniWib(sekarang))
+        .returns<{ pengajar_id: string; pertemuan: { tanggal: string } }[]>();
+      const terakhir = new Map<string, string>();
+      for (const r of isi ?? []) {
+        if ((terakhir.get(r.pengajar_id) ?? "") < r.pertemuan.tanggal) terakhir.set(r.pengajar_id, r.pertemuan.tanggal);
+      }
+      return saranPengajar({ pengajar, terakhir, sekarang });
+    }),
+    aman(async () => {
       const jamaah = await getAksesJamaah();
       if (!jamaah || jamaah.kelompokUbah.length === 0) return [];
       const supabase = await createClient();
@@ -118,7 +145,9 @@ export async function getSaranAdmin(): Promise<Saran[]> {
       if (!absensi?.bolehLihat) return [];
       const hasil = await getLaporan(bacaParamLaporan({}));
       if (!hasil) return [];
-      const ids = hasil.laporan.jamaah.filter((b) => b.status === "perlu_disapa").map((b) => b.id);
+      const ids = hasil.laporan.jamaah
+        .filter((b) => b.status === "perlu_disapa" || b.status === "mulai_jarang")
+        .map((b) => b.id);
       const batas = new Date(sekarang.getTime() - 14 * 24 * 3600_000).toISOString();
       const sapaan = await getSapaanTerakhir(ids);
       const sudah = new Set([...sapaan.values()].filter((s) => s.created_at >= batas).map((s) => s.jamaah_id));

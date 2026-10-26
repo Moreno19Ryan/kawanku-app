@@ -75,6 +75,7 @@ export function DaftarBatang({ isi }: { isi: { nama: string; persen: number | nu
 export const LABEL_STATUS: Record<StatusJamaah, { label: string; nada: "utama" | "netral" | "sukses" | "bahaya" }> = {
   perlu_disapa: { label: "Perlu disapa", nada: "bahaya" },
   menurun: { label: "Menurun", nada: "bahaya" },
+  mulai_jarang: { label: "Mulai jarang", nada: "utama" },
   jarang: { label: "Jarang hadir", nada: "netral" },
   rajin: { label: "Rajin", nada: "sukses" },
   biasa: { label: "Biasa", nada: "netral" },
@@ -96,7 +97,7 @@ export function TabelJamaah({
   param: ParamLaporan;
   tautan: (status: ParamLaporan["status"]) => string;
 }) {
-  const tab: ParamLaporan["status"][] = ["semua", "perlu_disapa", "menurun", "jarang", "rajin"];
+  const tab: ParamLaporan["status"][] = ["semua", "perlu_disapa", "menurun", "mulai_jarang", "jarang", "rajin"];
   const tampil = param.status === "semua" ? baris : baris.filter((b) => b.status === param.status);
   return (
     <div className="flex flex-col gap-4">

@@ -198,6 +198,38 @@ export function saranPola(opsi: {
   return hasil;
 }
 
+/**
+ * Pengajar rutin (aktif) yang lama tidak mengisi: terakhir mengisi lebih
+ * dari `pekan` pekan lalu (atau belum pernah, bila sudah terdaftar selama
+ * itu). `terakhir`: id pengajar → tanggal terakhir mengisi ("YYYY-MM-DD").
+ */
+export function saranPengajar(opsi: {
+  pengajar: { id: string; nama: string; created_at: string }[];
+  terakhir: Map<string, string>;
+  pekan?: number;
+  sekarang?: Date;
+}): Saran[] {
+  const pekan = opsi.pekan ?? 6;
+  const batas = tambahHari(hariIniWib(opsi.sekarang), -pekan * 7);
+  const lama = opsi.pengajar.filter((p) => {
+    const t = opsi.terakhir.get(p.id);
+    return t ? t < batas : hariIniWib(new Date(p.created_at)) < batas;
+  });
+  if (!lama.length) return [];
+  return [
+    {
+      kode: `pengajar-lama:${lama.map((p) => p.id).sort().join(",")}`,
+      jenis: "saran",
+      judul:
+        lama.length === 1
+          ? `${lama[0].nama} belum mengisi ${pekan} pekan terakhir`
+          : `${lama.length} pengajar belum mengisi ${pekan} pekan terakhir`,
+      isi: `${lama.length > 1 ? `${daftarNama(lama.map((p) => p.nama))}. ` : ""}Mungkin perlu dijadwalkan lagi, atau ditanyakan kabarnya. Bila sudah tidak aktif mengajar, nonaktifkan di daftar pengajar.`,
+      href: "/kegiatan/pengajar",
+    },
+  ];
+}
+
 /** Kunci pembanding nama: huruf kecil, tanpa tanda baca & spasi ganda. */
 export function kunciNama(nama: string): string {
   return nama
@@ -283,6 +315,18 @@ export function saranLaporan(l: Laporan, sudahDisapa: Set<string> = new Set()): 
       judul: `${sapa.length} jamaah perlu disapa`,
       isi: `Tidak hadir 3 pertemuan terakhir berturut-turut: ${daftarNama(sapa.map((b) => b.nama))}. Mungkin sedang ada kendala; sapaan hangat bisa membantu, lalu catat hasilnya di Laporan.`,
       href: "/absensi/laporan?status=perlu_disapa",
+    });
+  }
+
+  // Deteksi dini: mulai jarang hadir (2 dari 4 terakhir), sebelum jadi "perlu disapa".
+  const mulai = l.jamaah.filter((b) => b.status === "mulai_jarang" && !sudahDisapa.has(b.id));
+  if (mulai.length) {
+    hasil.push({
+      kode: `mulai-jarang:${mulai.map((b) => b.id).sort().join(",")}`,
+      jenis: "saran",
+      judul: `${mulai.length} jamaah mulai jarang hadir`,
+      isi: `2 dari 4 pertemuan terakhir tidak hadir, padahal sebelumnya rajin: ${daftarNama(mulai.map((b) => b.nama))}. Sapa lebih awal, sebelum jadi kebiasaan.`,
+      href: "/absensi/laporan?status=mulai_jarang",
     });
   }
 
