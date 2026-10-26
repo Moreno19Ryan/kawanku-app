@@ -1,0 +1,79 @@
+# Cadangan lapis 2 (docs/cadangan.md): salinan lengkap database produksi di
+# luar Supabase, terenkripsi AES-256 dengan sandi pengembang, disimpan
+# sebagai artifact 90 hari. Repo publik: artifact bisa diunduh orang lain,
+# karena itu WAJIB terenkripsi; jangan pernah mencetak isi data ke log.
+name: Cadangan mingguan
+
+on:
+  schedule:
+    - cron: "0 20 * * 6" # Ahad 03.00 WIB
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cadangan
+  cancel-in-progress: false
+
+jobs:
+  cadangan:
+    name: Cadangan database (terenkripsi)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Periksa secret
+        id: cek
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SANDI: ${{ secrets.CADANGAN_SANDI }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$SANDI" ]; then
+            echo "::warning::Secret SUPABASE_DB_URL / CADANGAN_SANDI belum diisi; cadangan dilewati."
+            echo "jalan=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${#SANDI}" -lt 32 ]; then
+            echo "::error::CADANGAN_SANDI minimal 32 karakter."
+            exit 1
+          fi
+          echo "jalan=true" >> "$GITHUB_OUTPUT"
+
+      - uses: supabase/setup-cli@v1
+        if: steps.cek.outputs.jalan == 'true'
+        with:
+          version: 2.121.0
+
+      - name: Dump & enkripsi
+        if: steps.cek.outputs.jalan == 'true'
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SANDI: ${{ secrets.CADANGAN_SANDI }}
+        run: |
+          set -euo pipefail
+          umask 077
+          KERJA="$RUNNER_TEMP/cadangan"
+          NAMA="kawanku-$(date -u +%Y%m%d-%H%M)"
+          mkdir -p "$KERJA/$NAMA"
+          # Cara resmi Supabase (Backup and restore using CLI): peran, skema, data.
+          supabase db dump --db-url "$DB_URL" -f "$KERJA/$NAMA/roles.sql" --role-only > /dev/null
+          supabase db dump --db-url "$DB_URL" -f "$KERJA/$NAMA/schema.sql" > /dev/null
+          # Isi cadangan lapis 1 tidak ikut: kuncinya ada di Vault, tidak bisa dibuka di luar.
+          supabase db dump --db-url "$DB_URL" -f "$KERJA/$NAMA/data.sql" --use-copy --data-only \
+            -x private.cadangan_isi > /dev/null
+          tar -C "$KERJA" -czf "$KERJA/$NAMA.tar.gz" "$NAMA"
+          rm -rf "${KERJA:?}/$NAMA"
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+            --symmetric --cipher-algo AES256 \
+            --output "$KERJA/$NAMA.tar.gz.gpg" "$KERJA/$NAMA.tar.gz" 3<<<"$SANDI"
+          shred -u "$KERJA/$NAMA.tar.gz"
+          echo "Ukuran cadangan terenkripsi: $(du -h "$KERJA/$NAMA.tar.gz.gpg" | cut -f1)"
+          echo "NAMA=$NAMA" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.cek.outputs.jalan == 'true'
+        with:
+          name: ${{ env.NAMA }}
+          path: ${{ runner.temp }}/cadangan/*.gpg
+          retention-days: 90
+          if-no-files-found: error

@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   Building2,
   CircleHelp,
+  DatabaseBackup,
   KeyRound,
   Megaphone,
   Palette,
@@ -85,6 +86,13 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     judul: "Panel pengembang",
     keterangan: "Mode perawatan, saklar fitur, info sistem",
     icon: Wrench,
+    izin: "sistem.kelola",
+  },
+  {
+    href: "/pengaturan/cadangan",
+    judul: "Cadangan data",
+    keterangan: "Cadangan otomatis, pemeriksaan, dan pemulihan",
+    icon: DatabaseBackup,
     izin: "sistem.kelola",
   },
   {
