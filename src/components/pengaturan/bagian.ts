@@ -7,6 +7,7 @@ import {
   Palette,
   ShieldCheck,
   Tags,
+  Trash2,
   UserRound,
   Wrench,
   type LucideIcon,
@@ -19,8 +20,8 @@ export type BagianPengaturan = {
   icon: LucideIcon;
   /** Izin global yang dibutuhkan; kosong (dan tanpa izinWilayah) = semua admin. */
   izin?: string;
-  /** Alternatif: izin yang cukup berlaku di wilayah mana pun (mis. per kelompok). */
-  izinWilayah?: string;
+  /** Alternatif: izin (salah satu) yang cukup berlaku di wilayah mana pun (mis. per kelompok). */
+  izinWilayah?: string | string[];
   segera?: boolean;
 };
 
@@ -85,6 +86,13 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     keterangan: "Mode perawatan, saklar fitur, info sistem",
     icon: Wrench,
     izin: "sistem.kelola",
+  },
+  {
+    href: "/pengaturan/sampah",
+    judul: "Tempat sampah",
+    keterangan: "Jamaah, keluarga, dan kegiatan yang dihapus (bisa dikembalikan 30 hari)",
+    icon: Trash2,
+    izinWilayah: ["jamaah.hapus", "keluarga.kelola", "kegiatan.kelola"],
   },
   {
     href: "/pengaturan/bantuan",
