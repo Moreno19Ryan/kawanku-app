@@ -52,9 +52,6 @@ export async function buatKegiatan(_prev: StateAksi, fd: FormData): Promise<Stat
   const jenis = fd.get("jenis") === "agenda" ? "agenda" : "rutin";
   const target = ctx.akses.targetKegiatan.find((t) => t.nilai === fd.get("wilayah"));
   if (!target) return { galat: "Pilih wilayah kegiatan." };
-  if (jenis === "agenda" && target.nilai === "serentak") {
-    return { galat: "Agenda sekali jalan dibuat per kelompok atau tingkat desa, bukan serentak." };
-  }
   const hanyaGenerus = !target.umum || fd.get("sasaran") === "generus";
   const durasi = Math.min(720, Math.max(15, Number(fd.get("durasi")) || 90));
 
@@ -75,8 +72,7 @@ export async function buatKegiatan(_prev: StateAksi, fd: FormData): Promise<Stat
     .insert({
       nama,
       jenis,
-      kelompok_id: target.nilai === "desa" || target.nilai === "serentak" ? null : target.nilai,
-      per_kelompok: target.nilai === "serentak",
+      kelompok_id: target.nilai === "desa" ? null : target.nilai,
       hanya_generus: hanyaGenerus,
       lokasi: teks(fd, "lokasi", 120),
       keterangan: teks(fd, "keterangan", 500),

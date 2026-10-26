@@ -69,6 +69,10 @@ $$;
 create function uji.keg(p_nama text) returns uuid language sql stable security definer as $$
   select id from public.kegiatan where nama = p_nama;
 $$;
+create function uji.kegk(p_nomor int) returns uuid language sql stable security definer as $$
+  select k.id from public.kegiatan k join public.kelompok g on g.id = k.kelompok_id
+  where k.nama = 'Pengajian Rutin Sambung Kelompok' and g.nomor = p_nomor;
+$$;
 grant execute on all functions in schema uji to anon, authenticated;
 
 insert into auth.users (id) values
@@ -92,8 +96,8 @@ values ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000
 
 -- Pertemuan sambung kelompok K1 & K2 (dibuat superuser).
 insert into public.pertemuan (id, kegiatan_id, kelompok_id, tanggal, mulai) values
-  ('00000000-0000-0000-0000-0000000000e1', uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(1), '2026-10-25', '2026-10-25 20:00+07'),
-  ('00000000-0000-0000-0000-0000000000e2', uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(2), '2026-10-25', '2026-10-25 20:00+07');
+  ('00000000-0000-0000-0000-0000000000e1', uji.kegk(1), uji.kel(1), '2026-10-25', '2026-10-25 20:00+07'),
+  ('00000000-0000-0000-0000-0000000000e2', uji.kegk(2), uji.kel(2), '2026-10-25', '2026-10-25 20:00+07');
 -- Muballigh dari data jamaah
 insert into public.jamaah (id, kelompok_id, nama_lengkap, jenis_kelamin, kode, status_pernikahan, status_sekolah, tahun_lahir, muballigh)
 values ('00000000-0000-0000-0000-0000000000f2', uji.kel(1), 'Ust. Jamaah', 'L', 'x', 'menikah', 'bekerja', 1980, true);
@@ -104,6 +108,8 @@ set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000a1');
 insert into public.pengajar (id, nama, keterangan, kelompok_id)
 values ('00000000-0000-0000-0000-0000000000d1', 'Ust. Desa', 'MT', null);
+select uji.harus_ditolak('Desa: menambah pengajar kelompok ditolak (wewenang kelompok)',
+  $q$ insert into public.pengajar (nama, kelompok_id) values ('X', uji.kel(1)) returning 1 $q$);
 select uji.sebagai('00000000-0000-0000-0000-0000000000a2');
 insert into public.pengajar (id, nama, kelompok_id) values ('00000000-0000-0000-0000-0000000000d2', 'Ust. Kelompok Satu', uji.kel(1));
 select uji.harus_ditolak('K1: menambah pengajar tingkat desa ditolak',

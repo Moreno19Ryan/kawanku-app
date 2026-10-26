@@ -60,12 +60,15 @@ grant execute on all functions in schema uji to anon, authenticated;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'desa@uji.id'),
   ('00000000-0000-0000-0000-0000000000a2', 'kel2@uji.id'),
+  ('00000000-0000-0000-0000-0000000000a3', 'kel1@uji.id'),
   ('00000000-0000-0000-0000-0000000000b1', 'fajar@generus.uji'),
   ('00000000-0000-0000-0000-0000000000b2', 'baru@generus.uji');
 insert into public.admin (user_id, nama) values
-  ('00000000-0000-0000-0000-0000000000a1', 'Desa'), ('00000000-0000-0000-0000-0000000000a2', 'Kelompok 2');
+  ('00000000-0000-0000-0000-0000000000a1', 'Desa'), ('00000000-0000-0000-0000-0000000000a2', 'Kelompok 2'),
+  ('00000000-0000-0000-0000-0000000000a3', 'Kelompok 1');
 select uji.beri('00000000-0000-0000-0000-0000000000a1', 'admin_desa', null);
 select uji.beri('00000000-0000-0000-0000-0000000000a2', 'admin_kelompok', 2);
+select uji.beri('00000000-0000-0000-0000-0000000000a3', 'admin_kelompok', 1);
 
 -- f1 Fajar (K1, SMA kelas 10, lajang), f2 generus dengan PIN awal (K1)
 insert into public.jamaah (id, kelompok_id, nama_lengkap, jenis_kelamin, kode, status_pernikahan,
@@ -185,19 +188,23 @@ select uji.harus_ditolak('Admin kelompok 2 tidak bisa menandai catatan jamaah K1
   $q$ update public.perubahan_data_generus set diperiksa_at = now() returning 1 $q$);
 select uji.sebagai('00000000-0000-0000-0000-0000000000a1');
 select uji.cek('Admin desa melihat catatan', (select count(*) > 0 from public.perubahan_data_generus));
+-- Menandai "sudah dicek" = merapikan data jamaah: wewenang kelompok (20261026100000).
+select uji.harus_ditolak('Admin desa tidak bisa menandai catatan (wewenang kelompok)',
+  $q$ update public.perubahan_data_generus set diperiksa_at = now() returning 1 $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000a3');
 select uji.harus_ditolak('Admin tidak bisa mengubah isi catatan',
   $q$ update public.perubahan_data_generus set nilai_baru = 'x' where bagian = 'kelas' returning 1 $q$);
 update public.perubahan_data_generus set diperiksa_at = now();
 reset role;
-select uji.cek('Admin desa menandai sudah dicek, pemeriksa tercatat',
+select uji.cek('Admin kelompok 1 menandai sudah dicek, pemeriksa tercatat',
   not exists (select 1 from public.perubahan_data_generus
-              where diperiksa_at is null or diperiksa_by is distinct from '00000000-0000-0000-0000-0000000000a1'));
+              where diperiksa_at is null or diperiksa_by is distinct from '00000000-0000-0000-0000-0000000000a3'));
 
 -- Alamat yang diubah admin tidak dicatat sebagai perubahan generus
 create temp table jumlah2 as select count(*) as n from public.perubahan_data_generus;
 grant select on jumlah2 to authenticated;
 set local role authenticated;
-select uji.sebagai('00000000-0000-0000-0000-0000000000a1');
+select uji.sebagai('00000000-0000-0000-0000-0000000000a3');
 update public.jamaah_pribadi set ktp_jalan = 'Jl. Mawar 2' where jamaah_id = '00000000-0000-0000-0000-0000000000f1';
 reset role;
 select uji.cek('Perubahan alamat oleh admin tidak dicatat',

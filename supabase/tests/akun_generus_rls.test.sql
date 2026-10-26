@@ -108,15 +108,17 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b1', 'desa@uji.id'),
   ('00000000-0000-0000-0000-0000000000b2', 'kel1@uji.id'),
   ('00000000-0000-0000-0000-0000000000b3', 'gen1@uji.id'),
+  ('00000000-0000-0000-0000-0000000000b4', 'kel2@uji.id'),
   ('00000000-0000-0000-0000-0000000000c1', 'g-satu@generus.kawanku.invalid'),   -- akun generus K1
   ('00000000-0000-0000-0000-0000000000c2', 'g-dua@generus.kawanku.invalid'),    -- calon akun (dewasa)
   ('00000000-0000-0000-0000-0000000000c3', 'g-tiga@generus.kawanku.invalid');   -- calon akun (generus K2)
 insert into public.admin (user_id, nama) values
   ('00000000-0000-0000-0000-0000000000b1', 'Desa'), ('00000000-0000-0000-0000-0000000000b2', 'Kelompok 1'),
-  ('00000000-0000-0000-0000-0000000000b3', 'Generus K1');
+  ('00000000-0000-0000-0000-0000000000b3', 'Generus K1'), ('00000000-0000-0000-0000-0000000000b4', 'Kelompok 2');
 select uji.beri('00000000-0000-0000-0000-0000000000b1', 'admin_desa', null);
 select uji.beri('00000000-0000-0000-0000-0000000000b2', 'admin_kelompok', 1);
 select uji.beri('00000000-0000-0000-0000-0000000000b3', 'admin_generus', 1);
+select uji.beri('00000000-0000-0000-0000-0000000000b4', 'admin_kelompok', 2);
 
 -- f1 generus K1 (punya akun), f2 dewasa K1, f3 generus K2, f4 generus K1 lain
 insert into public.jamaah (id, kelompok_id, nama_lengkap, jenis_kelamin, kode, status_pernikahan, status_sekolah, tahun_lahir)
@@ -254,9 +256,12 @@ select uji.cek('K1: token layar berformat sesi.detik.tanda',
 select uji.harus_ditolak('K1: token layar sesi K2 ditolak',
   $q$ select public.token_layar('00000000-0000-0000-0000-0000000000e2') $q$);
 reset role;
--- Token sesi K2 dibuat admin desa.
+-- Token sesi K2 hanya dibuat pengurus K2 (20261026100000), bukan desa.
 set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000b1');
+select uji.harus_ditolak('Desa: token layar sesi K2 ditolak',
+  $q$ select public.token_layar('00000000-0000-0000-0000-0000000000e2') $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000b4');
 create temp table tok2 on commit drop as select public.token_layar('00000000-0000-0000-0000-0000000000e2') t2;
 grant select on tok2 to authenticated;
 

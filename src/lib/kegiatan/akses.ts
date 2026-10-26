@@ -1,13 +1,13 @@
 import "server-only";
 import { cache } from "react";
-import { getAdminSaatIni, punyaIzin, punyaIzinDi, type AdminSaatIni } from "@/lib/auth/admin";
+import { getAdminSaatIni, punyaIzin, type AdminSaatIni } from "@/lib/auth/admin";
 import type { KelompokRingkas } from "@/lib/jamaah/akses";
 import { getFitur } from "@/lib/sistem/data";
 import { createClient } from "@/lib/supabase/server";
 
 /** Pilihan wilayah saat membuat kegiatan. */
 export type TargetKegiatan = {
-  /** "desa" | "serentak" | id kelompok */
+  /** "desa" | id kelompok */
   nilai: string;
   nama: string;
   /** false = hanya kegiatan khusus generus (peran admin generus). */
@@ -20,6 +20,7 @@ export type AksesKegiatan = {
   kelompokLihat: KelompokRingkas[];
   kelompokKelola: KelompokRingkas[];
   lihatSeluruhDesa: boolean;
+  /** Penugasan tingkat desa dengan kegiatan.kelola: hanya kegiatan desa. */
   kelolaDesa: boolean;
   targetKegiatan: TargetKegiatan[];
 };
@@ -55,18 +56,16 @@ export const getAksesKegiatan = cache(async (): Promise<AksesKegiatan | null> =>
         ? semua
         : semua.filter((k) => f.fitur_kelompok.some((x) => x.kelompok_id === k.id));
 
-  const kelola = wilayah(admin, "kegiatan.kelola");
-  const kelompokKelola = saring(kelompokFitur, kelola);
-  const kelolaDesa = kelola === null && kelompokFitur.length > 0;
-  const umumDesa = punyaIzin(admin, "kegiatan.kelola");
+  // Kelola TEPAT di wilayah penugasan (RLS boleh_kelola_wilayah): penugasan
+  // desa → kegiatan desa saja; kegiatan kelompok hanya oleh kelompoknya.
+  const kelola = admin.izinWilayah["kegiatan.kelola"] ?? [];
+  const kelompokKelola = kelompokFitur.filter((k) => kelola.includes(k.id));
+  const kelolaDesa = kelola.includes(null) && kelompokFitur.length > 0;
   const targetKegiatan: TargetKegiatan[] = [
     ...(kelolaDesa
-      ? [
-          { nilai: "serentak", nama: "Serentak di setiap kelompok", umum: umumDesa },
-          { nilai: "desa", nama: "Tingkat desa (sambung desa)", umum: umumDesa },
-        ]
+      ? [{ nilai: "desa", nama: "Tingkat desa (sambung desa)", umum: punyaIzin(admin, "kegiatan.kelola") }]
       : []),
-    ...kelompokKelola.map((k) => ({ nilai: k.id, nama: k.nama, umum: punyaIzinDi(admin, "kegiatan.kelola", k.id) })),
+    ...kelompokKelola.map((k) => ({ nilai: k.id, nama: k.nama, umum: Boolean(admin.izinKelompok["kegiatan.kelola"]?.includes(k.id)) })),
   ];
   const kelompokLihat = saring(kelompokFitur, wilayah(admin, "kegiatan.lihat"));
   return {
@@ -92,8 +91,9 @@ export function bolehKelolaPertemuan(
   hanyaGenerus: boolean,
 ): boolean {
   const izin = akses.admin.izinWilayah["kegiatan.kelola"] ?? [];
-  const wilayahCocok = izin.includes(null) || (kelompokId !== null && izin.includes(kelompokId));
-  if (!wilayahCocok) return false;
+  if (!izin.includes(kelompokId)) return false;
   if (hanyaGenerus) return true;
-  return kelompokId === null ? punyaIzin(akses.admin, "kegiatan.kelola") : punyaIzinDi(akses.admin, "kegiatan.kelola", kelompokId);
+  return kelompokId === null
+    ? punyaIzin(akses.admin, "kegiatan.kelola")
+    : Boolean(akses.admin.izinKelompok["kegiatan.kelola"]?.includes(kelompokId));
 }

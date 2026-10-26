@@ -11,6 +11,23 @@ Dua sumbu yang selalu berlaku:
 - **Sasaran**: peran khusus generus (admin generus) hanya melihat/mengubah
   jamaah berkategori generus.
 
+**Keputusan Reno, 26 Okt 2026** (bukan trial lagi, migrasi
+`20261026100000_wewenang_wilayah`):
+
+- Mengelola data jamaah (tambah, ubah, nonaktifkan, hapus, keluarga, kontak,
+  alamat, NIK/KK, janda/duda, keringanan, kenaikan kelas, "sudah dicek")
+  **hanya di tingkat kelompok**, karena pengurus kelompoklah yang bertemu
+  dan berkomunikasi langsung. Izin seperti ini ditandai "hanya berlaku di
+  tingkat kelompok" (`izin.hanya_kelompok`): penugasan desa tidak pernah
+  mendapatkannya, walau perannya diberi izin itu. Tingkat desa (termasuk
+  admin generus desa) tetap **melihat** semuanya.
+- Kegiatan dikelola **tepat di wilayahnya**: kegiatan desa oleh pengurus
+  desa, kegiatan kelompok oleh pengurus kelompok itu. Tidak ada lagi
+  kegiatan "serentak"; sambung kelompok menjadi satu kegiatan per kelompok.
+- Absensi sesi kelompok dicatat pengurus kelompok itu; sesi desa dicatat
+  pengurus desa dan pengurus kelompok (untuk jamaahnya sendiri).
+- Setiap admin wajib punya minimal satu peran (dijaga database).
+
 Keterangan: ✅ boleh · 👁 hanya lihat · — tidak.
 
 ## 1. Data jamaah
@@ -18,47 +35,49 @@ Keterangan: ✅ boleh · 👁 hanya lihat · — tidak.
 | Hal | Admin desa | Admin kelompok | Admin generus | Pengembang | Akun generus |
 | --- | :---: | :---: | :---: | :---: | :---: |
 | Lihat profil jamaah | ✅ semua | ✅ kelompoknya | ✅ generus di wilayahnya | 👁 semua | 👁 dirinya |
-| Tambah jamaah | ✅ | ✅ | — | — | — |
-| Ubah profil jamaah | ✅ | ✅ | ✅ (tetap generus) | — | nama panggilan saja |
-| Hapus permanen | ✅ | — | — | — | — |
-| Nonaktifkan (pindah/wafat) | ✅ | ✅ | ✅ | — | — |
-| Laporan data salah dari generus | ✅ menangani | ✅ menangani | ✅ menangani | 👁 | ✅ mengirim |
+| Tambah jamaah | — | ✅ | — | — | — |
+| Ubah profil jamaah | — | ✅ | ✅ kelompok (tetap generus) | — | data diri sendiri |
+| Hapus permanen | — | ✅ | — | — | — |
+| Nonaktifkan (pindah/wafat) | — | ✅ | ✅ kelompok | — | — |
+| Kenaikan kelas tahunan | — | ✅ | ✅ kelompok | — | — |
+| Laporan data salah dari generus | 👁 | ✅ menangani | ✅ kelompok | 👁 | ✅ mengirim |
 
 ## 2. Data sensitif (tabel terpisah)
 
 | Hal | Admin desa | Admin kelompok | Admin generus | Pengembang | Akun generus |
 | --- | :---: | :---: | :---: | :---: | :---: |
-| No. HP, HP wali, email | ✅ | ✅ | 👁 | — | ✅ HP & email sendiri |
-| Nama orang tua & alamat | ✅ | ✅ | — | — | ✅ alamat sendiri |
+| No. HP, HP wali, email | 👁 | ✅ | 👁 | — | ✅ HP & email sendiri |
+| Nama orang tua & alamat | 👁 | ✅ | — | — | ✅ alamat sendiri |
 | NIK & No. KK | 👁 tersamar | ✅ isi, 👁 tersamar | — | ✅ menyetujui permintaan lihat lengkap | — |
-| Keterangan janda/duda | ✅ | — | — | — | — |
-| Penanda keringanan (tanpa HP) | ✅ | ✅ | ✅ | — | — (tidak terlihat) |
+| Keterangan janda/duda | 👁 | ✅ | — | — | — |
+| Penanda keringanan (tanpa HP) | 👁 | ✅ | ✅ kelompok | — | — (tidak terlihat) |
 
 ## 3. Keluarga
 
 | Hal | Admin desa | Admin kelompok | Admin generus | Pengembang |
 | --- | :---: | :---: | :---: | :---: |
 | Lihat keluarga | ✅ | ✅ | — | 👁 |
-| Kelola keluarga & hubungan | ✅ | ✅ | — | — |
+| Kelola keluarga & hubungan | — | ✅ | — | — |
 
 ## 4. Absensi
 
 | Hal | Admin desa | Admin kelompok | Admin generus | Pengembang | Akun generus |
 | --- | :---: | :---: | :---: | :---: | :---: |
 | Lihat sesi & rekap | ✅ semua | ✅ kelompoknya + sesi desa | ✅ generus | 👁 (tanpa ekspor) | 👁 riwayatnya |
-| Buat sesi, scan, catat izin/sakit | ✅ | ✅ | ✅ sesi generus | — | — |
+| Scan & catat (sesi dibuka otomatis dari pertemuan) | ✅ sesi desa | ✅ sesi kelompoknya + jamaahnya di sesi desa | ✅ generus, sesuai wilayah | — | — |
 | Kartu QR fisik | ✅ | ✅ | ✅ | — | — |
 | Akun generus (buat, kembalikan ke PIN awal, kunci) | ✅ | ✅ | ✅ | — | ganti PIN sendiri |
-| Setujui pengajuan izin | ✅ | ✅ | ✅ | 👁 | ✅ mengajukan |
+| Setujui pengajuan izin | ✅ kegiatan desa | ✅ kegiatan kelompoknya + jamaahnya di kegiatan desa | ✅ generus, sesuai wilayah | 👁 | ✅ mengajukan |
 
 ## 5. Kegiatan
 
 | Hal | Admin desa | Admin kelompok | Admin generus | Pengembang | Akun generus |
 | --- | :---: | :---: | :---: | :---: | :---: |
 | Lihat jadwal & pertemuan | ✅ | ✅ | ✅ | 👁 | 👁 jadwalnya |
-| Buat kegiatan & jadwal | ✅ desa/serentak/kelompok | ✅ kelompoknya | ✅ kegiatan generus | — | — |
-| Isi pemateri/materi, batal, pindah | ✅ | ✅ kelompoknya | ✅ kegiatan generus | — | — |
-| Pengumuman untuk generus | ✅ | ✅ kelompoknya | ✅ | (lewat pengumuman sistem) | 👁 |
+| Buat kegiatan & jadwal | ✅ kegiatan desa saja | ✅ kelompoknya | ✅ kegiatan generus di wilayahnya | — | — |
+| Isi pemateri/materi, batal, pindah | ✅ kegiatan desa | ✅ kelompoknya | ✅ kegiatan generus di wilayahnya | — | — |
+| Daftar pengajar rutin | ✅ desa | ✅ kelompoknya | ✅ wilayahnya | — | — |
+| Pengumuman untuk generus | ✅ seluruh desa | ✅ kelompoknya | ✅ wilayahnya | (lewat pengumuman sistem) | 👁 |
 
 ## 6. Pengaturan & sistem
 
@@ -74,13 +93,14 @@ Keterangan: ✅ boleh · 👁 hanya lihat · — tidak.
 
 Tandai jawabannya, nanti Claude sesuaikan datanya:
 
-1. Admin kelompok **belum** bisa menghapus jamaah permanen (hanya
-   menonaktifkan). Sudah pas?
+1. ~~Admin kelompok belum bisa menghapus jamaah permanen.~~ Sejak 26 Okt
+   2026 admin kelompok yang menghapus (desa tidak lagi).
 2. Admin generus **tidak** melihat nama orang tua & alamat, tapi melihat no.
    HP. Perlu melihat alamat (mis. untuk kunjungan/silaturahim)?
 3. Admin generus **tidak** melihat data keluarga. Perlu?
-4. Admin kelompok **tidak** melihat NIK/No. KK dan keterangan janda/duda.
-   Sudah pas?
+4. ~~Admin kelompok tidak melihat NIK/No. KK dan keterangan janda/duda.~~
+   Sejak 26 Okt 2026 admin kelompok yang mengisi keduanya (NIK/KK tampil
+   tersamar; nomor lengkap perlu persetujuan pengembang).
 5. Pengembang hanya melihat data jamaah (tanpa ekspor) untuk keperluan
    perbaikan sistem. Sudah pas?
 6. Perlu peran baru? Mis. **pemateri/muballigh** (mengisi materi & capaian

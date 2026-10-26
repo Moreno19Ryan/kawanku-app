@@ -110,9 +110,10 @@ from public.kelompok where nomor = 1;
 create table uji.kode_j as select id, kode from public.jamaah;
 grant select on uji.kode_j to anon, authenticated;
 
--- Kegiatan rutin serentak (per kelompok) & pertemuan K1 hari ini.
-insert into public.kegiatan (id, nama, jenis, per_kelompok, durasi_menit)
-values ('00000000-0000-0000-0000-0000000000a1', 'Pengajian Rutin', 'rutin', true, 120);
+-- Kegiatan rutin K1 & pertemuannya hari ini.
+insert into public.kegiatan (id, nama, jenis, kelompok_id, durasi_menit)
+select '00000000-0000-0000-0000-0000000000a1', 'Pengajian Rutin', 'rutin', id, 120
+from public.kelompok where nomor = 1;
 insert into public.pertemuan (id, kegiatan_id, kelompok_id, tanggal, mulai)
 select '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a1', id,
        (now() at time zone 'Asia/Jakarta')::date, now() - interval '10 minutes'
@@ -137,8 +138,8 @@ grant select on s1 to authenticated;
 select uji.cek('Buka absensi: sesi tertaut dua arah',
   (select pertemuan_id from public.sesi_absensi where id = (select id from s1)) = '00000000-0000-0000-0000-0000000000b1'
   and (select sesi_id from public.pertemuan where id = '00000000-0000-0000-0000-0000000000b1') = (select id from s1));
-select uji.cek('Sesi diisi dari pertemuan: nama "Kegiatan · Kelompok", wilayah, waktu, durasi',
-  (select nama = 'Pengajian Rutin · ' || (select nama from public.kelompok where nomor = 1)
+select uji.cek('Sesi diisi dari pertemuan: nama kegiatan, wilayah, waktu, durasi',
+  (select nama = 'Pengajian Rutin'
           and kelompok_id = (select id from public.kelompok where nomor = 1)
           and not hanya_generus
           and mulai = (select mulai from public.pertemuan where id = '00000000-0000-0000-0000-0000000000b1')
@@ -156,6 +157,16 @@ select uji.harus_ditolak('Pengikat sesi tidak bisa dipindah',
       where id = (select id from s1) returning 1 $q$);
 select uji.harus_berhasil('Jam selesai sesi boleh diubah',
   $q$ update public.sesi_absensi set selesai = selesai + interval '30 minutes' where id = (select id from s1) returning 1 $q$);
+
+-- Sesi kelompok hanya dicatat pengurus kelompok itu (20261026100000).
+select uji.sebagai('00000000-0000-0000-0000-0000000000d1');
+select uji.cek('Desa: mencatat di sesi K1 tidak berhak',
+  uji.catat((select id from s1), (select kode from uji.kode_j where id = '00000000-0000-0000-0000-0000000000f1')) = 'tidak_berhak');
+select uji.harus_ditolak('Desa: QR layar sesi K1 ditolak',
+  $q$ select public.token_layar((select id from s1)) $q$);
+select uji.harus_ditolak('Desa: mengoreksi catatan sesi K1 ditolak',
+  $q$ update public.absensi set status = 'izin', alasan_izin = 'kerja' where sesi_id = (select id from s1) returning 1 $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000d2');
 
 -- Scan dalam jendela waktu
 select uji.cek('Scan saat pertemuan berjalan → tercatat',
@@ -179,7 +190,7 @@ select uji.cek('QR layar tidak dibuat di luar jendela scan', public.token_layar(
 reset role;
 update public.kegiatan set nama = 'Pengajian Sambung' where id = '00000000-0000-0000-0000-0000000000a1';
 select uji.cek('Nama kegiatan diubah → nama sesi ikut',
-  (select nama like 'Pengajian Sambung · %' from public.sesi_absensi where id = (select id from s1)));
+  (select nama = 'Pengajian Sambung' from public.sesi_absensi where id = (select id from s1)));
 set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000d2');
 

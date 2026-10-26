@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { getAdminSaatIni, punyaIzin, punyaIzinDi, type AdminSaatIni } from "@/lib/auth/admin";
+import { getAdminSaatIni, punyaIzin, type AdminSaatIni } from "@/lib/auth/admin";
 import type { KelompokRingkas } from "@/lib/jamaah/akses";
 import { getFitur } from "@/lib/sistem/data";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +14,14 @@ export type AksesAbsensi = {
   kelompokFitur: KelompokRingkas[];
   /** Kelompok (yang menyala) tempat admin boleh melihat / mengelola absensi. */
   kelompokLihat: KelompokRingkas[];
+  /** Kelompok tempat admin memegang absensi.kelola (penugasan desa → semua; untuk kartu & rekap). */
   kelompokKelola: KelompokRingkas[];
+  /**
+   * Kelompok tempat admin boleh mencatat sesi KELOMPOK: hanya penugasan
+   * tepat di kelompok itu (RLS boleh_absensi_di). Sesi desa dicatat semua
+   * pemegang absensi.kelola untuk jamaahnya.
+   */
+  kelompokCatat: KelompokRingkas[];
   /** Boleh melihat sesi tingkat desa (wilayah absensi.lihat apa pun). */
   bolehLihat: boolean;
   /** absensi.lihat untuk seluruh desa (rekap lintas kelompok). */
@@ -70,12 +77,19 @@ export const getAksesAbsensi = cache(async (): Promise<AksesAbsensi | null> => {
 
   const kelola = wilayah(admin, "absensi.kelola");
   const kelompokKelola = saring(kelompokFitur, kelola);
+  // Sesi dikelola tepat di wilayahnya (RLS boleh_kelola_sesi).
+  const wilayahKelola = admin.izinWilayah["absensi.kelola"] ?? [];
+  const kelompokCatat = kelompokFitur.filter((k) => wilayahKelola.includes(k.id));
   const targetSesi: TargetSesi[] = [];
-  if (kelola === null && kelompokFitur.length > 0) {
+  if (wilayahKelola.includes(null) && kelompokFitur.length > 0) {
     targetSesi.push({ kelompokId: null, nama: "Seluruh desa", umum: punyaIzin(admin, "absensi.kelola") });
   }
-  for (const k of kelompokKelola) {
-    targetSesi.push({ kelompokId: k.id, nama: k.nama, umum: punyaIzinDi(admin, "absensi.kelola", k.id) });
+  for (const k of kelompokCatat) {
+    targetSesi.push({
+      kelompokId: k.id,
+      nama: k.nama,
+      umum: Boolean(admin.izinKelompok["absensi.kelola"]?.includes(k.id)),
+    });
   }
 
   const kelompokLihat = saring(kelompokFitur, wilayah(admin, "absensi.lihat"));
@@ -84,6 +98,7 @@ export const getAksesAbsensi = cache(async (): Promise<AksesAbsensi | null> => {
     kelompokFitur,
     kelompokLihat,
     kelompokKelola,
+    kelompokCatat,
     bolehLihat: kelompokLihat.length > 0,
     lihatSeluruhDesa: wilayah(admin, "absensi.lihat") === null && kelompokLihat.length > 0,
     targetSesi,
@@ -118,11 +133,15 @@ export function bolehKelolaSesi(akses: AksesAbsensi, sesi: Pick<Sesi, "kelompok_
   return Boolean(t && (t.umum || sesi.hanya_generus));
 }
 
-/** Boleh mencatat kehadiran di sesi ini: punya absensi.kelola di kelompok mana pun yang ikut. */
+/**
+ * Boleh mencatat kehadiran di sesi ini (RLS boleh_catat_sesi): sesi desa →
+ * pemegang absensi.kelola mana pun (jamaahnya sendiri); sesi kelompok →
+ * hanya pengurus kelompok itu.
+ */
 export function bolehCatatSesi(akses: AksesAbsensi, sesi: Pick<Sesi, "kelompok_id">) {
   return sesi.kelompok_id === null
     ? akses.kelompokKelola.length > 0
-    : akses.kelompokKelola.some((k) => k.id === sesi.kelompok_id);
+    : akses.kelompokCatat.some((k) => k.id === sesi.kelompok_id);
 }
 
 /**
@@ -142,8 +161,8 @@ export function belumBisaDibuka(mulai: string, sekarang = Date.now()): string | 
 export function bolehBukaAbsensi(akses: AksesAbsensi | null, kelompokId: string | null): boolean {
   if (!akses) return false;
   return kelompokId === null
-    ? akses.kelompokKelola.length > 0 && akses.targetSesi.some((t) => t.kelompokId === null)
-    : akses.kelompokKelola.some((x) => x.id === kelompokId);
+    ? akses.targetSesi.some((t) => t.kelompokId === null)
+    : akses.kelompokCatat.some((x) => x.id === kelompokId);
 }
 
 /** Jam absensi terbuka & tertutup otomatis (ISO). */

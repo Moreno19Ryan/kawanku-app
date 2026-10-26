@@ -44,7 +44,7 @@ type BarisAdmin = {
       kode: string;
       nama: string;
       hanya_generus: boolean;
-      peran_izin: { izin_kode: string }[];
+      peran_izin: { izin_kode: string; izin: { hanya_kelompok: boolean } | null }[];
     } | null;
     kelompok: { id: string; nomor: number; nama: string } | null;
   }[];
@@ -136,7 +136,7 @@ export async function bacaAdmin(
   const { data, error } = await supabase
     .from("admin")
     .select(
-      "nama, aktif, penugasan_peran(kelompok_id, peran(kode, nama, hanya_generus, peran_izin(izin_kode)), kelompok(id, nomor, nama))",
+      "nama, aktif, penugasan_peran(kelompok_id, peran(kode, nama, hanya_generus, peran_izin(izin_kode, izin(hanya_kelompok))), kelompok(id, nomor, nama))",
     )
     .eq("user_id", userId)
     .maybeSingle<BarisAdmin>();
@@ -150,11 +150,14 @@ export async function bacaAdmin(
   const izinKelompok: Record<string, string[]> = {};
   const izinWilayah: Record<string, (string | null)[]> = {};
   for (const p of berlaku) {
-    for (const { izin_kode } of p.peran!.peran_izin) {
+    // Izin khusus kelompok (data jamaah) tidak berlaku dari penugasan desa,
+    // sama dengan private.boleh().
+    const izin = p.peran!.peran_izin.filter((i) => p.kelompok_id !== null || !i.izin?.hanya_kelompok);
+    for (const { izin_kode } of izin) {
       (izinWilayah[izin_kode] ??= []).push(p.kelompok_id);
     }
     if (p.peran!.hanya_generus) continue;
-    for (const { izin_kode } of p.peran!.peran_izin) {
+    for (const { izin_kode } of izin) {
       if (p.kelompok_id === null) izinGlobal.add(izin_kode);
       else (izinKelompok[izin_kode] ??= []).push(p.kelompok_id);
     }

@@ -13,8 +13,9 @@ Tes: `supabase/tests/kegiatan_rls.test.sql`.
 
 ## Keputusan (Reno, 21 Okt 2026)
 
-- **Pengajian rutin sambung kelompok**: serentak di setiap kelompok, Minggu
-  dan Selasa malam pukul 20.00 WIB. Pemateri dan materinya berbeda di tiap
+- **Pengajian rutin sambung kelompok**: di setiap kelompok, Minggu
+  dan Selasa malam pukul 20.00 WIB. Sejak 26 Okt 2026 menjadi **satu
+  kegiatan per kelompok** (dikelola kelompoknya masing-masing). Pemateri dan materinya berbeda di tiap
   kelompok. Minggu ke-3 setiap bulan libur (Hari Keluarga se-Daerah).
 - **Pengajian rutin sambung desa**: Kamis malam pukul 20.00 WIB.
 - **Jadwal bisa berubah sewaktu-waktu** sesuai musyawarah pengurus.
@@ -24,8 +25,10 @@ Tes: `supabase/tests/kegiatan_rls.test.sql`.
 ## Model
 
 - **`kegiatan`**: `jenis` = `rutin` atau `agenda`; `kelompok_id` kosong berarti
-  tingkat desa. `per_kelompok` berarti kegiatan desa yang dijalankan serentak
-  di setiap kelompok. Juga ada `hanya_generus`, `lokasi`, `durasi_menit`,
+  tingkat desa. Kolom lama `per_kelompok` (serentak) tidak dipakai lagi:
+  dicegah constraint `kegiatan_tanpa_serentak` (migrasi
+  `20261026100000_wewenang_wilayah` memecah kegiatan serentak menjadi satu
+  kegiatan per kelompok, jadwal disalin, pertemuan & izin dipindah). Juga ada `hanya_generus`, `lokasi`, `durasi_menit`,
   `aktif`, dan masa berlaku.
 - **`kegiatan_jadwal`**: hari (0 = Minggu), jam, dan `kecuali_pekan_ke` (pekan
   libur dalam bulan; pekan ke-3 = tanggal 15–21).
@@ -44,7 +47,7 @@ Tes: `supabase/tests/kegiatan_rls.test.sql`.
   fungsi murni). Baris `pertemuan` baru dibuat bila ada isian. Mengubah jadwal
   langsung mengubah kalender, dan pertemuan yang sudah tersimpan tetap ada.
 - **`buka_absensi_pertemuan()`**: membuat sesi absensi untuk pertemuan
-  (nama "Kegiatan · Kelompok") lalu menautkannya. Kalau dipanggil lagi,
+  (nama = nama kegiatan) lalu menautkannya. Kalau dipanggil lagi,
   hasilnya sesi yang sama. Sejak 24 Okt 2026 absensi **terikat** pada
   pertemuan: libur menghapus absensinya, pindah waktu menggeser waktunya,
   ganti nama kegiatan mengganti nama sesinya, dan kegiatan yang pernah
@@ -56,11 +59,15 @@ Tes: `supabase/tests/kegiatan_rls.test.sql`.
 
 | | Lihat | Kelola kegiatan | Isi pertemuan |
 | - | --- | --- | --- |
-| Admin desa | semua | desa & semua kelompok | semua |
-| Admin kelompok | desa + kelompoknya | kelompoknya | kelompoknya (termasuk pertemuan serentak di kelompoknya) |
+| Admin desa | semua | kegiatan desa saja | kegiatan desa |
+| Admin kelompok | desa + kelompoknya | kelompoknya | kelompoknya |
 | Admin generus | desa + wilayahnya | kegiatan generus di wilayahnya | kegiatan generus |
 | Pengembang | semua (hanya lihat) | - | - |
 | Akun generus | desa + kelompoknya | - | - |
+
+Kelola **tepat di wilayahnya** (`private.boleh_kelola_wilayah`, sejak
+26 Okt 2026): penugasan desa hanya kegiatan desa, penugasan kelompok hanya
+kegiatan kelompok itu. Sama untuk pengajar & pengumuman generus.
 
 Izin: `kegiatan.lihat`, `kegiatan.kelola`. Membuka absensi juga butuh
 `absensi.kelola` di wilayahnya.

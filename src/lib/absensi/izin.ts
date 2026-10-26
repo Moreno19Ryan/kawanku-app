@@ -54,7 +54,12 @@ export async function getPengajuanIzin(opsi: {
   const { data } = await q.returns<PengajuanIzin[]>();
   const lihat = new Set(akses.kelompokLihat.map((k) => k.id));
   const kelola = new Set(akses.kelompokKelola.map((k) => k.id));
+  const catat = new Set(akses.kelompokCatat.map((k) => k.id));
+  // Kegiatan kelompok: hanya pengurus kelompok itu (RLS boleh_absensi_di).
   return (data ?? [])
     .filter((p) => p.jamaah && lihat.has(p.jamaah.kelompok_id))
-    .map((p) => ({ ...p, bolehTangani: kelola.has(p.jamaah!.kelompok_id) }));
+    .map((p) => ({
+      ...p,
+      bolehTangani: kelola.has(p.jamaah!.kelompok_id) && (p.kelompok_id === null || catat.has(p.kelompok_id)),
+    }));
 }
