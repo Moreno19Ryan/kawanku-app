@@ -193,7 +193,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   absensi). Absensi pertemuan lewat RPC `buka_absensi_pertemuan`. Beberapa
   sesi pemateri per pertemuan (`pertemuan_materi`, RPC
   `simpan_materi_pertemuan`) dipilih dari daftar pengajar rutin
-  (`/kegiatan/pengajar`, tabel `pengajar`).
+  (`/kegiatan/pengajar`, tabel `pengajar`; rekap pemateri per bulan di
+  halaman yang sama, `src/lib/kegiatan/rekap-pengajar.ts`). Tindak lanjut
+  "perlu disapa" (`sapaan_jamaah`) dan laporan bulanan (`/cetak/laporan`):
+  lihat `docs/absensi.md`.
 - Asisten KawanKu (`docs/asisten.md`): kartu pengingat/peringatan/saran/
   apresiasi di Beranda admin & generus, dihitung dari data yang ada
   (`src/lib/asisten/`), tanpa tabel baru.
@@ -245,6 +248,7 @@ src/
                         # bantuan (difilter izin)
     cetak/kartu/        # lembar cetak kartu QR (A4, tanpa navigasi)
     cetak/rekap/        # lembar cetak rekap absensi (KopDokumen, A4)
+    cetak/laporan/      # laporan bulanan kehadiran & kegiatan (KopDokumen, A4)
     cetak/akun/         # slip info masuk akun generus (alamat + QR, username, aturan PIN)
     api/rekap/          # GET ekspor rekap absensi (CSV)
     (auth)/             # halaman tanpa navigasi (login)

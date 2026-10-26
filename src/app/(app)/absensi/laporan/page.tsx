@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, FileText, Sparkles } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { GrafikTren } from "@/components/absensi/grafik-tren";
 import { DaftarBatang, FilterLaporan, TabelJamaah, Ubin } from "@/components/absensi/laporan-bagian";
@@ -9,6 +9,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { namaBulan, type StatusJamaah } from "@/lib/absensi/laporan-hitung";
 import { bacaParamLaporan, getLaporan, queryLaporan } from "@/lib/absensi/laporan";
+import { FormSapaan } from "@/components/absensi/form-sapaan";
+import { catatSapaan } from "@/lib/absensi/actions";
+import { getAksesAbsensi } from "@/lib/absensi/akses";
+import { getSapaanTerakhir, LABEL_HASIL_SAPAAN } from "@/lib/absensi/sapaan";
+import { tanggalJam } from "@/lib/waktu";
 import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
@@ -56,6 +61,25 @@ async function Isi({ cari }: { cari: Promise<Record<string, string | string[] | 
   return (
     <div className="flex flex-col gap-5">
       <FilterLaporan param={param} wilayah={wilayah} />
+
+      <div className="flex flex-wrap items-center gap-2 px-1 text-sm">
+        <FileText className="size-4 text-muted" aria-hidden />
+        <span className="text-muted">Laporan bulanan siap cetak:</span>
+        {l.bulan
+          .slice(-2)
+          .reverse()
+          .map((b) => (
+            <a
+              key={b}
+              href={`/cetak/laporan?${new URLSearchParams({ wilayah: param.wilayah, peserta: param.peserta, bulan: b })}`}
+              target="_blank"
+              rel="noopener"
+              className="font-medium text-primary hover:underline"
+            >
+              {namaBulan(b)}
+            </a>
+          ))}
+      </div>
 
       <section className="rounded-card bg-primary-soft p-5 sm:p-6">
         <h2 className="flex items-center gap-2 font-semibold text-primary">
@@ -136,6 +160,8 @@ async function Isi({ cari }: { cari: Promise<Record<string, string | string[] | 
         </Card>
       </div>
 
+      <TindakLanjut baris={l.jamaah.filter((b) => b.status === "perlu_disapa")} />
+
       <Card>
         <h2 className="font-semibold">Pemantauan {peserta}</h2>
         <p className="mb-4 text-sm text-muted">
@@ -145,5 +171,53 @@ async function Isi({ cari }: { cari: Promise<Record<string, string | string[] | 
         <TabelJamaah baris={l.jamaah} hitung={hitung} param={param} tautan={(status) => `?${queryLaporan(param, { status })}`} />
       </Card>
     </div>
+  );
+}
+
+/** Jamaah perlu disapa beserta catatan sapaan terakhirnya; pengelola absensi bisa mencatat sapaan. */
+async function TindakLanjut({ baris }: { baris: { id: string; nama: string; kode: string; kelompok: string; terakhirHadir: string | null }[] }) {
+  if (!baris.length) return null;
+  const [sapaan, akses] = await Promise.all([getSapaanTerakhir(baris.map((b) => b.id)), getAksesAbsensi()]);
+  const bolehCatat = Boolean(akses?.kelompokKelola.length);
+  const sudah = baris.filter((b) => sapaan.has(b.id)).length;
+  return (
+    <Card>
+      <h2 className="font-semibold">Tindak lanjut: perlu disapa</h2>
+      <p className="mb-4 text-sm text-muted">
+        {baris.length} jamaah tidak hadir 3 pertemuan terakhir; {sudah} sudah pernah disapa. Sapaan hangat dari pengurus
+        sering kali cukup untuk mengajak kembali hadir.
+      </p>
+      <ul className="divide-y divide-border">
+        {baris.map((b) => {
+          const s = sapaan.get(b.id);
+          return (
+            <li key={b.id} className="flex flex-col gap-2 py-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+                <span className="font-medium">
+                  {b.nama} <span className="font-normal text-muted">· {b.kelompok}</span>
+                </span>
+                <span className="text-muted">
+                  {b.terakhirHadir ? `Terakhir hadir ${tanggalJam(b.terakhirHadir)}` : "Belum pernah hadir di rentang ini"}
+                </span>
+              </div>
+              {s ? (
+                <p className="text-sm">
+                  <span className="font-medium">{LABEL_HASIL_SAPAAN[s.hasil]}</span>
+                  <span className="text-muted">
+                    {" "}
+                    · {tanggalJam(s.created_at)}
+                    {s.oleh ? ` oleh ${s.oleh}` : ""}
+                  </span>
+                  {s.catatan ? <span className="block text-muted">&ldquo;{s.catatan}&rdquo;</span> : null}
+                </p>
+              ) : (
+                <p className="text-sm text-muted">Belum ada catatan sapaan.</p>
+              )}
+              {bolehCatat && <FormSapaan aksi={catatSapaan.bind(null, b.id)} />}
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
   );
 }

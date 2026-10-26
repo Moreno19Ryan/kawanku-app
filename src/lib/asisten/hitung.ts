@@ -90,6 +90,23 @@ export function saranPermintaanIdentitas(jumlah: number): Saran[] {
   ];
 }
 
+/** Awal bulan (tanggal 1–7): laporan bulan lalu siap dicetak untuk pengurus. */
+export function saranLaporanBulanan(sekarang = new Date()): Saran[] {
+  const hariIni = hariIniWib(sekarang);
+  if (Number(hariIni.slice(8, 10)) > 7) return [];
+  const [t, b] = hariIni.split("-").map(Number);
+  const lalu = b === 1 ? `${t - 1}-12` : `${t}-${String(b - 1).padStart(2, "0")}`;
+  return [
+    {
+      kode: `laporan-bulanan:${lalu}`,
+      jenis: "pengingat",
+      judul: `Laporan ${namaBulan(lalu)} siap`,
+      isi: "Ringkasan kehadiran, kegiatan, pengajar, dan tindak lanjut bulan lalu, siap dicetak untuk musyawarah pengurus.",
+      href: `/cetak/laporan?bulan=${lalu}`,
+    },
+  ];
+}
+
 /** Pengajuan izin generus yang menunggu persetujuan admin ini. */
 export function saranIzin(jumlah: number): Saran[] {
   if (!jumlah) return [];
@@ -108,15 +125,16 @@ export function saranIzin(jumlah: number): Saran[] {
  * Dari laporan kehadiran 3 bulan: siapa yang perlu disapa, kelompok yang
  * turun dua bulan berturut-turut, dan apresiasi bila naik / ada yang rajin.
  */
-export function saranLaporan(l: Laporan): Saran[] {
+export function saranLaporan(l: Laporan, sudahDisapa: Set<string> = new Set()): Saran[] {
   const hasil: Saran[] = [];
-  const sapa = l.jamaah.filter((b) => b.status === "perlu_disapa");
+  // Yang sudah disapa (14 hari terakhir) tidak diingatkan lagi.
+  const sapa = l.jamaah.filter((b) => b.status === "perlu_disapa" && !sudahDisapa.has(b.id));
   if (sapa.length) {
     hasil.push({
-      kode: "perlu-disapa",
+      kode: `perlu-disapa:${sapa.length}`,
       jenis: "saran",
       judul: `${sapa.length} jamaah perlu disapa`,
-      isi: `Tidak hadir 3 pertemuan terakhir berturut-turut: ${daftarNama(sapa.map((b) => b.nama))}. Mungkin sedang ada kendala; sapaan hangat bisa membantu.`,
+      isi: `Tidak hadir 3 pertemuan terakhir berturut-turut: ${daftarNama(sapa.map((b) => b.nama))}. Mungkin sedang ada kendala; sapaan hangat bisa membantu, lalu catat hasilnya di Laporan.`,
       href: "/absensi/laporan?status=perlu_disapa",
     });
   }

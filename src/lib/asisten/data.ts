@@ -3,6 +3,7 @@ import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { punyaIzin } from "@/lib/auth/admin";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { bacaParamLaporan, getLaporan } from "@/lib/absensi/laporan";
+import { getSapaanTerakhir } from "@/lib/absensi/sapaan";
 import { getAksesKegiatan, bolehKelolaPertemuan } from "@/lib/kegiatan/akses";
 import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari, type Kejadian } from "@/lib/kegiatan/jadwal";
@@ -15,6 +16,7 @@ import {
   saranKegiatan,
   saranLaporan,
   saranPermintaanIdentitas,
+  saranLaporanBulanan,
   urutkanSaran,
   type Saran,
 } from "./hitung";
@@ -49,6 +51,7 @@ export async function getSaranAdmin(): Promise<Saran[]> {
         .eq("status", "menunggu");
       return saranPermintaanIdentitas(count ?? 0);
     }),
+    aman(async () => (absensi?.bolehLihat ? saranLaporanBulanan(sekarang) : [])),
     aman(async () => {
       if (!absensi?.bolehLihat) return [];
       const izin = await getPengajuanIzin({ menunggu: true });
@@ -57,7 +60,12 @@ export async function getSaranAdmin(): Promise<Saran[]> {
     aman(async () => {
       if (!absensi?.bolehLihat) return [];
       const hasil = await getLaporan(bacaParamLaporan({}));
-      return hasil ? saranLaporan(hasil.laporan) : [];
+      if (!hasil) return [];
+      const ids = hasil.laporan.jamaah.filter((b) => b.status === "perlu_disapa").map((b) => b.id);
+      const batas = new Date(sekarang.getTime() - 14 * 24 * 3600_000).toISOString();
+      const sapaan = await getSapaanTerakhir(ids);
+      const sudah = new Set([...sapaan.values()].filter((s) => s.created_at >= batas).map((s) => s.jamaah_id));
+      return saranLaporan(hasil.laporan, sudah);
     }),
   ]);
   return urutkanSaran(bagian.flat());

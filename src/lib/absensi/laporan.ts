@@ -58,6 +58,8 @@ function potong<T>(xs: T[], n = POTONG): T[][] {
 
 export async function getLaporan(
   param: ParamLaporan,
+  /** Satu bulan tertentu ("YYYY-MM") untuk laporan bulanan; tanpa ini = n bulan terakhir. */
+  opsi: { bulan?: string } = {},
 ): Promise<{ param: ParamLaporan; laporan: Laporan; wilayah: { id: string; nama: string }[]; namaWilayah: string } | null> {
   const akses = await getAksesAbsensi();
   if (!akses?.bolehLihat) return null;
@@ -69,8 +71,15 @@ export async function getLaporan(
   const kelompokIds = p.wilayah === "desa" ? akses.kelompokLihat.map((k) => k.id) : [p.wilayah];
   const generusSaja = p.peserta === "generus";
 
-  const sekarang = new Date();
-  const bulan = daftarBulan(p.rentang, sekarang);
+  let sekarang = new Date();
+  let bulan = daftarBulan(p.rentang, sekarang);
+  if (opsi.bulan) {
+    const [t, b] = opsi.bulan.split("-").map(Number);
+    // Akhir bulan itu (WIB), atau sekarang bila bulannya belum selesai.
+    const akhir = new Date(Date.UTC(t, b, 1) - 7 * 3600_000 - 1);
+    if (akhir < sekarang) sekarang = akhir;
+    bulan = [opsi.bulan];
+  }
   const awal = `${bulan[0]}-01T00:00:00+07:00`;
 
   // --- Sesi -------------------------------------------------------------

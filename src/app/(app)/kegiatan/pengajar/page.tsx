@@ -12,6 +12,10 @@ import { Memuat } from "@/components/ui/memuat";
 import { aturPengajarAktif, hapusPengajar } from "@/lib/kegiatan/actions";
 import { getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { createClient } from "@/lib/supabase/server";
+import { FormOtomatis } from "@/components/ui/form-otomatis";
+import { INPUT_CLASS } from "@/components/ui/input";
+import { bulanWib, daftarBulan, namaBulan } from "@/lib/absensi/laporan-hitung";
+import { getRekapPengajar } from "@/lib/kegiatan/rekap-pengajar";
 
 export const metadata: Metadata = {
   title: "Pengajar",
@@ -19,7 +23,7 @@ export const metadata: Metadata = {
 
 type Pengajar = { id: string; nama: string; keterangan: string | null; kelompok_id: string | null; aktif: boolean };
 
-export default function PengajarPage() {
+export default function PengajarPage({ searchParams }: PageProps<"/kegiatan/pengajar">) {
   return (
     <>
       <Link href="/kegiatan" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary lg:mt-10">
@@ -32,6 +36,9 @@ export default function PengajarPage() {
       />
       <Suspense fallback={<Memuat className="h-96" />}>
         <Isi />
+      </Suspense>
+      <Suspense fallback={<Memuat className="h-64" />}>
+        <RekapBulanan cari={searchParams} />
       </Suspense>
     </>
   );
@@ -102,5 +109,69 @@ async function Isi() {
         pemateri.
       </p>
     </div>
+  );
+}
+
+/** Rekap pemateri per bulan: siapa mengisi, berapa sesi, di kegiatan & wilayah mana, materi terakhir. */
+async function RekapBulanan({ cari }: { cari: Promise<Record<string, string | string[] | undefined>> }) {
+  const akses = await getAksesKegiatan();
+  if (!akses || akses.kelompokLihat.length === 0) return null;
+  const pilihan = daftarBulan(12).reverse();
+  const minta = (await cari).bulan;
+  const bulan = typeof minta === "string" && pilihan.includes(minta) ? minta : bulanWib(new Date().toISOString());
+  const namaKelompok = new Map(akses.kelompokFitur.map((k) => [k.id, k.nama]));
+  const rekap = await getRekapPengajar(bulan, namaKelompok);
+
+  return (
+    <section aria-labelledby="rekap-pengajar" className="mt-6 flex flex-col gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="rekap-pengajar" className="text-lg font-semibold">
+            Rekap pengajar
+          </h2>
+          <p className="text-sm text-muted">Dari pemateri yang diisi di setiap pertemuan (libur tidak dihitung).</p>
+        </div>
+        <FormOtomatis>
+          <select name="bulan" defaultValue={bulan} aria-label="Bulan" className={INPUT_CLASS}>
+            {pilihan.map((b) => (
+              <option key={b} value={b}>
+                {namaBulan(b)}
+              </option>
+            ))}
+          </select>
+        </FormOtomatis>
+      </div>
+      {rekap.length === 0 ? (
+        <Card className="text-center text-sm text-muted">Belum ada pemateri tercatat di {namaBulan(bulan)}.</Card>
+      ) : (
+        <Card className="overflow-x-auto p-0 sm:p-0">
+          <table className="w-full min-w-[36rem] text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted">
+                <th className="px-5 py-3 font-medium">Pemateri</th>
+                <th className="px-3 py-3 text-right font-medium">Sesi</th>
+                <th className="px-3 py-3 font-medium">Kegiatan</th>
+                <th className="px-3 py-3 font-medium">Wilayah</th>
+                <th className="px-5 py-3 font-medium">Materi terakhir</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rekap.map((r) => (
+                <tr key={r.nama}>
+                  <td className="px-5 py-3 font-medium">{r.nama}</td>
+                  <td className="px-3 py-3 text-right tabular-nums">
+                    {r.sesi}
+                    {r.pertemuan !== r.sesi && <span className="block text-xs text-muted">{r.pertemuan} pertemuan</span>}
+                  </td>
+                  <td className="px-3 py-3">{r.kegiatan.join(", ")}</td>
+                  <td className="px-3 py-3">{r.wilayah.join(", ")}</td>
+                  <td className="px-5 py-3 text-muted">{r.materi.join(" · ") || "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+    </section>
   );
 }
