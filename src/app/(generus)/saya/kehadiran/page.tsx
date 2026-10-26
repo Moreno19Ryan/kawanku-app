@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { KartuKehadiran } from "@/components/generus/kartu-kehadiran";
 import { Badge } from "@/components/ui/badge";
@@ -55,8 +56,13 @@ async function Kehadiran() {
           const dinilai = isi.filter((c) => c.status !== "berjalan").length;
           return (
             <section key={bulan} className="flex flex-col gap-2">
-              <h2 className="px-1 text-sm font-semibold text-muted">
-                {judulBulan(bulan)} · {hadir}/{dinilai} hadir
+              <h2 className="flex items-center justify-between gap-3 px-1 text-sm font-semibold text-muted">
+                <span>
+                  {judulBulan(bulan)} · {hadir}/{dinilai} hadir
+                </span>
+                <Link href={`/saya/rapor?bulan=${bulan}`} className="font-medium text-primary">
+                  Rapor
+                </Link>
               </h2>
               <ul className="divide-y divide-border overflow-hidden rounded-card bg-surface">
                 {isi.map((c) => {

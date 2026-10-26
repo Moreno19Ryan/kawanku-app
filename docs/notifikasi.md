@@ -31,6 +31,19 @@ notifikasi (bisa ditambah nanti).
    VAPID (`web-push`), lalu melapor balik lewat RPC
    `hasil_kirim_notifikasi` (langganan 404/410 dimatikan).
 
+Jenis notifikasi (`notifikasi_jatuh_tempo`, kunci unik per akun):
+
+| Kunci | Untuk | Kapan |
+| ----- | ----- | ----- |
+| `h1:…` / `jam:…` | Generus | Malam sebelum (18–21 WIB) & ±1 jam sebelum pengajian |
+| `sistem:…` | Pengembang | Peringatan cadangan/ruang database (`notifikasi_sistem`) |
+| `pagi:<tanggal>` | Admin yang menyalakan "Ringkasan pagi di HP" (Beranda / Pengaturan → Akun saya) | 05.30–08.59 WIB, sekali sehari, hanya bila ada isinya |
+| `rapor:<YYYY-MM>` | Generus (akun sudah ada bulan lalu) | Tanggal 1, 09.00–20.59 WIB |
+
+Ringkasan pagi dihitung "sebagai" admin itu (`private.ringkasan_hari_untuk`
+mengganti identitas JWT sementara di transaksi, lalu mengembalikannya),
+supaya aturannya persis sama dengan RLS dan kartu di Beranda.
+
 Secret key Supabase **tidak** dipakai. Selama kunci/rahasia belum diisi,
 semuanya diam (tombol menampilkan "belum disiapkan", database tidak mengirim).
 

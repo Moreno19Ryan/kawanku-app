@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { FormKataSandi } from "@/components/pengaturan/form-kata-sandi";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
+import { SaklarNotifikasi } from "@/components/generus/saklar-notifikasi";
 import { TombolKeluarSemua } from "@/components/pengaturan/tombol-keluar-semua";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,8 @@ export default function AkunPage() {
         <Suspense fallback={<Skeleton className="h-36" />}>
           <ProfilAkun />
         </Suspense>
+
+        <SaklarNotifikasi untuk="admin" />
 
         <Card>
           <h2 className="text-lg font-semibold">Ganti kata sandi</h2>
