@@ -11,9 +11,9 @@ import { hariIniWib } from "@/lib/kegiatan/jadwal";
 import { jam } from "@/lib/waktu";
 
 /**
- * Pertemuan hari ini beserta absensinya. Absensi terbuka otomatis 30 menit
- * sebelum mulai (dibuat saat halaman ini dibuka, siapkanAbsensiOtomatis) dan
- * tertutup 30 menit setelah selesai. Dipakai di Beranda admin & halaman
+ * Pertemuan hari ini beserta absensinya. Absensi terbuka & tertutup otomatis
+ * sesuai jendela kegiatannya (dibuka database tiap menit lewat pg_cron;
+ * siapkanAbsensiOtomatis sebagai cadangan saat halaman ini dibuka). Dipakai di Beranda admin & halaman
  * Absensi. Tidak tampil bila tidak ada pertemuan hari ini atau modul
  * Kegiatan tidak tersedia.
  */

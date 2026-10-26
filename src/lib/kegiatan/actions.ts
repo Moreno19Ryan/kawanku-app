@@ -2,6 +2,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { JENDELA_BAWAAN, PILIHAN_JENDELA } from "@/lib/absensi/jendela";
 import { getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { KOLOM_KEGIATAN } from "@/lib/kegiatan/data";
 import type { Kegiatan } from "@/lib/kegiatan/jadwal";
@@ -44,6 +45,12 @@ function bacaJadwal(fd: FormData): BarisJadwal[] | { galat: string } {
   return hasil;
 }
 
+/** Jendela absensi dari form (15/30/45/60; selain itu bawaan 30). */
+function bacaJendela(fd: FormData): number {
+  const n = Number(fd.get("jendela"));
+  return (PILIHAN_JENDELA as readonly number[]).includes(n) ? n : JENDELA_BAWAAN;
+}
+
 export async function buatKegiatan(_prev: StateAksi, fd: FormData): Promise<StateAksi> {
   const ctx = await konteks();
   if (!ctx) return TIDAK_BERHAK;
@@ -77,6 +84,7 @@ export async function buatKegiatan(_prev: StateAksi, fd: FormData): Promise<Stat
       lokasi: teks(fd, "lokasi", 120),
       keterangan: teks(fd, "keterangan", 500),
       durasi_menit: durasi,
+      jendela_menit: bacaJendela(fd),
     })
     .select("id, kelompok_id")
     .maybeSingle();
@@ -116,6 +124,7 @@ export async function ubahKegiatan(id: string, _prev: StateAksi, fd: FormData): 
         lokasi: teks(fd, "lokasi", 120),
         keterangan: teks(fd, "keterangan", 500),
         durasi_menit: Math.min(720, Math.max(15, Number(fd.get("durasi")) || 90)),
+        jendela_menit: bacaJendela(fd),
         aktif: fd.get("aktif") === "on",
       },
       { count: "exact" },
@@ -313,7 +322,7 @@ export async function bukaAbsensiPertemuan(k: KunciPertemuan & { mulai: string }
       galat: error?.hint === "dibatalkan"
         ? "Pertemuan ini dibatalkan; aktifkan lagi dulu."
         : error?.hint === "belum_waktunya"
-          ? "Absensi baru terbuka 30 menit sebelum pertemuan dimulai."
+          ? "Absensi belum terbuka; tunggu jendela absensi kegiatan ini."
           : "Gagal membuka absensi. Pastikan kamu pengelola absensi wilayah ini.",
     };
   }

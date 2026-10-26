@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DaftarPengajuan } from "@/components/absensi/daftar-pengajuan";
-import { bolehBukaAbsensi, getAksesAbsensi, jamAbsensi, jendelaScan } from "@/lib/absensi/akses";
+import { bolehBukaAbsensi, getAksesAbsensi, jamAbsensi, jendelaScan, menitJendela } from "@/lib/absensi/akses";
 import { siapkanAbsensiOtomatis } from "@/lib/absensi/otomatis";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { bolehKelolaPertemuan, getAksesKegiatan } from "@/lib/kegiatan/akses";
@@ -59,7 +59,7 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
   );
   const ditemukan = kalender.find((x) => x.kunci === kunciKejadian(kegiatanId, kelompokId, tanggal));
   if (!ditemukan) notFound();
-  // Absensi terbuka otomatis saat waktunya (30 menit sebelum s.d. 30 menit setelah).
+  // Absensi terbuka otomatis saat waktunya (jendela kegiatan, lihat jendela.ts).
   const [k] = await siapkanAbsensiOtomatis([ditemukan], aksesAbsensi);
 
   const supabase = await createClient();
@@ -162,13 +162,13 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
                 · {hadir} hadir tercatat.
               </>
             ) : jendela === "lewat_waktu" ? (
-              <>Absensi tidak sempat terbuka (tidak ada admin yang membuka aplikasi saat pertemuan).</>
+              <>Absensi tidak terbuka saat pertemuan berlangsung.</>
             ) : (
               <>Absensi belum terbuka.</>
             )}
             <span className="mt-0.5 block text-muted">
-              Otomatis terbuka {tanggalJam(waktuAbsensi.buka)} dan tertutup {tanggalJam(waktuAbsensi.tutup)} (30 menit
-              sebelum mulai s.d. 30 menit setelah selesai).
+              Otomatis terbuka {tanggalJam(waktuAbsensi.buka)} dan tertutup {tanggalJam(waktuAbsensi.tutup)} ({menitJendela(k)}{" "}
+              menit sebelum mulai s.d. {menitJendela(k)} menit setelah selesai).
             </span>
           </div>
           {k.sesiId ? (

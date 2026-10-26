@@ -33,17 +33,25 @@ serba otomatis. Migrasi `20261024090000_absensi_terikat_pertemuan`, tes
   pertemuannya** (trigger `atur_sesi`), bukan dari isian.
 - **Tidak ada pembuatan sesi di menu Absensi.** Acara di luar jadwal dibuat
   sebagai agenda di Kegiatan; absensinya ikut terbuka sendiri.
-- **Serba otomatis** (Reno, 26 Okt 2026): semua kegiatan memakai jendela yang
-  sama, **30 menit sebelum mulai s.d. 30 menit setelah selesai**.
-  - Sesi dibuat otomatis oleh aplikasi saat jendela terbuka, ketika admin
-    pengelola absensi membuka Beranda, Absensi, atau halaman pertemuan
-    (`siapkanAbsensiOtomatis`, `src/lib/absensi/otomatis.ts` → RPC
-    `buka_absensi_pertemuan`, idempoten). Tidak ada tombol Buka/Tutup.
-  - Sesi paling cepat dibuat 30 menit sebelum mulai (trigger
-    `cek_waktu_sesi`, sebelumnya 2 jam).
-  - Pertemuan yang lewat tanpa absensi (tidak ada admin yang membuka
-    aplikasi) bisa dicatat lewat tombol "Catat absensi susulan" di halaman
-    pertemuan.
+- **Serba otomatis** (Reno, 26 Okt 2026; F2 migrasi
+  `20261027090000_absensi_otomatis`): setiap kegiatan memilih jendela
+  absensi **15, 30 (bawaan), 45, atau 60 menit** sebelum mulai s.d. sesudah
+  selesai (`kegiatan.jendela_menit`, form Kegiatan → "Absensi terbuka").
+  Sesi menyalinnya (`sesi_absensi.jendela_menit`, trigger `atur_sesi`) dan
+  ikut berubah bila kegiatannya diubah (trigger `sinkron_jendela_sesi`).
+  - **Database membuka absensi sendiri tiap menit** lewat pg_cron (tugas
+    `kawanku-buka-absensi` → `private.buka_absensi_otomatis()`): pertemuan
+    rutin (dari jadwal, ±1 hari) atau agenda yang terjadwal, aktif, sedang di
+    jendelanya, dan belum punya sesi langsung dibuatkan pertemuan + sesinya.
+    Saklar fitur `absensi` per kelompok dihormati (`private.absensi_menyala`,
+    fail-open). Satu pertemuan yang gagal tidak menghentikan yang lain.
+  - Cadangan di aplikasi: `siapkanAbsensiOtomatis`
+    (`src/lib/absensi/otomatis.ts` → RPC `buka_absensi_pertemuan`,
+    idempoten) saat admin membuka Beranda, Absensi, atau halaman pertemuan.
+    Tidak ada tombol Buka/Tutup.
+  - Sesi paling cepat dibuat sesuai jendelanya (trigger `cek_waktu_sesi`).
+  - Pertemuan yang lewat tanpa absensi (mis. sebelum F2) bisa dicatat lewat
+    tombol "Catat absensi susulan" di halaman pertemuan.
 - **Libur/batal** (pilihan a): menandai pertemuan libur menghapus sesi beserta
   semua catatannya (trigger `sinkron_sesi`); aplikasi meminta konfirmasi
   dengan jumlah catatan. Diaktifkan lagi → absensi bisa dibuka ulang dan izin
@@ -55,8 +63,8 @@ serba otomatis. Migrasi `20261024090000_absensi_terikat_pertemuan`, tes
 - **Hapus**: pertemuan/kegiatan yang pernah dibuka absensinya tidak bisa
   dihapus (hint `ada_absensi`); kegiatan dinonaktifkan saja.
 - **Jendela scan**: kartu (`catat_absensi_kode`) & QR layar (`absen_layar`,
-  `token_layar`) hanya diterima di jendela 30 menit itu
-  (`private.waktu_scan` = `jendelaScan()` di `src/lib/absensi/akses.ts`; hasil
+  `token_layar`) hanya diterima di jendela sesinya
+  (`private.waktu_scan_sesi` = `jendelaScan()` di `src/lib/absensi/jendela.ts`; hasil
   `belum_waktunya` / `lewat_waktu`). QR layar menunggu dan muncul sendiri.
   Koreksi manual admin (hadir/izin/sakit) tetap boleh kapan saja. Daftar
   Absensi memindahkan sesi yang lewat jendela ke bagian "Selesai".
@@ -128,8 +136,9 @@ sudah punya catatan.
 
 1. **Absensi otomatis**: pertemuan hari ini tampil di Beranda admin ("Hari
    ini") dan di atas halaman Absensi dengan jam absensinya. Absensi terbuka
-   sendiri 30 menit sebelum mulai (lalu tombol "Buka absensi" membawa ke
-   halaman scan) dan tertutup sendiri 30 menit setelah selesai. Acara yang
+   sendiri sesuai jendela kegiatannya (bawaan 30 menit sebelum mulai; lalu
+   tombol "Buka absensi" membawa ke halaman scan) dan tertutup sendiri
+   sekian menit setelah selesai. Acara yang
    tidak ada di jadwal dibuat sebagai agenda di Kegiatan.
 2. **Absensi → Kartu QR**:
    - "Buat kartu yang belum ada" per kelompok.

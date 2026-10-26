@@ -145,10 +145,15 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   `buka_absensi_pertemuan`, libur menghapus absensinya, pindah waktu & ganti
   nama ikut otomatis, kegiatan berriwayat absensi hanya bisa dinonaktifkan.
   Tidak ada "buat sesi" di menu Absensi (acara di luar jadwal = agenda di
-  Kegiatan). Serba otomatis: absensi terbuka 30 menit sebelum mulai s.d. 30
-  menit setelah selesai (`private.waktu_scan` = `jendelaScan()`, trigger
-  `cek_waktu_sesi`); sesinya dibuat `siapkanAbsensiOtomatis()` saat admin
-  membuka Beranda/Absensi/pertemuan, tanpa tombol buka/tutup. Lembar
+  Kegiatan). Serba otomatis: absensi terbuka N menit sebelum mulai s.d. N
+  menit setelah selesai, N = `kegiatan.jendela_menit` (15/30/45/60, bawaan
+  30; disalin ke `sesi_absensi.jendela_menit`; `private.waktu_scan_sesi` =
+  `jendelaScan()` di `src/lib/absensi/jendela.ts`, trigger `cek_waktu_sesi`).
+  Sesinya dibuka **database sendiri tiap menit** lewat pg_cron (tugas
+  `kawanku-buka-absensi` → `private.buka_absensi_otomatis()`, migrasi
+  `20261027090000_absensi_otomatis`), dengan `siapkanAbsensiOtomatis()` saat
+  admin membuka Beranda/Absensi/pertemuan sebagai cadangan; tanpa tombol
+  buka/tutup. Lembar
   cetak kartu di `/cetak/kartu` (di luar layout admin). Pertemuan hari
   ini (`PertemuanHariIni`) tampil di Beranda admin & Absensi. Kamera QR
   (`KameraQr`, jsQR + bantuan izin per browser) dipakai pemindai generus dan
