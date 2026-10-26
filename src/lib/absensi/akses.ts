@@ -108,19 +108,9 @@ export type Sesi = {
   ditutup: boolean;
   /** Pertemuan Kegiatan pemilik sesi (setiap sesi lahir dari pertemuan). */
   pertemuan_id: string;
-  /** Salinan pengaturan kegiatan: buka/tutup otomatis N menit sebelum/sesudah. */
-  buka_otomatis: boolean;
-  buka_sebelum_menit: number;
-  tutup_setelah_menit: number;
-  /** Dibuka admin (Buka sekarang / mode manual): scan diterima tanpa melihat jam. */
-  dibuka_manual: boolean;
 };
 
-export const KOLOM_SESI =
-  "id, nama, kelompok_id, hanya_generus, mulai, selesai, ditutup, pertemuan_id, buka_otomatis, buka_sebelum_menit, tutup_setelah_menit, dibuka_manual";
-
-/** Pilihan menit buka sebelum / tutup sesudah kegiatan (sama dengan check di DB). */
-export const PILIHAN_MENIT = [15, 30, 45, 60] as const;
+export const KOLOM_SESI = "id, nama, kelompok_id, hanya_generus, mulai, selesai, ditutup, pertemuan_id";
 
 /** Boleh mengelola sesi ini (UX; batas sebenarnya RLS boleh_kelola_sesi). */
 export function bolehKelolaSesi(akses: AksesAbsensi, sesi: Pick<Sesi, "kelompok_id" | "hanya_generus">) {
@@ -135,8 +125,12 @@ export function bolehCatatSesi(akses: AksesAbsensi, sesi: Pick<Sesi, "kelompok_i
     : akses.kelompokKelola.some((k) => k.id === sesi.kelompok_id);
 }
 
-/** Sesi absensi boleh dibuka paling cepat 2 jam sebelum mulai (sama dengan trigger cek_waktu_sesi). */
-export const BUKA_SEBELUM_MS = 2 * 3600_000;
+/**
+ * Absensi serba otomatis: terbuka 30 menit sebelum mulai sampai 30 menit
+ * setelah selesai (sama dengan private.waktu_scan & trigger cek_waktu_sesi).
+ */
+export const BUKA_SEBELUM_MS = 30 * 60_000;
+export const TUTUP_SETELAH_MS = 30 * 60_000;
 
 /** Waktu paling cepat absensi bisa dibuka (ISO), atau null bila sudah bisa. */
 export function belumBisaDibuka(mulai: string, sekarang = Date.now()): string | null {
@@ -152,34 +146,23 @@ export function bolehBukaAbsensi(akses: AksesAbsensi | null, kelompokId: string 
     : akses.kelompokKelola.some((x) => x.id === kelompokId);
 }
 
-type SesiWaktu = Pick<
-  Sesi,
-  "mulai" | "selesai" | "ditutup" | "buka_otomatis" | "buka_sebelum_menit" | "tutup_setelah_menit" | "dibuka_manual"
->;
-
-/** Jam buka & tutup otomatis (ISO) dari pengaturan sesi. */
-export function jamOtomatis(sesi: Pick<Sesi, "mulai" | "selesai" | "buka_sebelum_menit" | "tutup_setelah_menit">) {
-  const buka = new Date(new Date(sesi.mulai).getTime() - sesi.buka_sebelum_menit * 60_000).toISOString();
-  const tutup = new Date(new Date(sesi.selesai ?? sesi.mulai).getTime() + sesi.tutup_setelah_menit * 60_000).toISOString();
-  return { buka, tutup };
+/** Jam absensi terbuka & tertutup otomatis (ISO). */
+export function jamAbsensi(waktu: { mulai: string; selesai: string | null }) {
+  return {
+    buka: new Date(new Date(waktu.mulai).getTime() - BUKA_SEBELUM_MS).toISOString(),
+    tutup: new Date(new Date(waktu.selesai ?? waktu.mulai).getTime() + TUTUP_SETELAH_MS).toISOString(),
+  };
 }
 
-/**
- * Status scan sesi saat ini (sama dengan private.waktu_scan): "dibuka" =
- * scan diterima; "ditutup" = ditutup admin / mode manual belum dibuka;
- * "belum_waktunya" / "lewat_waktu" = mode otomatis di luar jendela.
- */
-export function statusScan(
-  sesi: SesiWaktu,
+/** Jendela scan sesi saat ini: null = boleh scan; selain itu belum waktunya / sudah lewat. */
+export function jendelaScan(
+  sesi: Pick<Sesi, "mulai" | "selesai">,
   sekarang = Date.now(),
-): "dibuka" | "ditutup" | "belum_waktunya" | "lewat_waktu" {
-  if (sesi.ditutup) return "ditutup";
-  if (sesi.dibuka_manual) return "dibuka";
-  if (!sesi.buka_otomatis) return "ditutup";
-  const { buka, tutup } = jamOtomatis(sesi);
+): "belum_waktunya" | "lewat_waktu" | null {
+  const { buka, tutup } = jamAbsensi(sesi);
   if (sekarang < new Date(buka).getTime()) return "belum_waktunya";
   if (sekarang > new Date(tutup).getTime()) return "lewat_waktu";
-  return "dibuka";
+  return null;
 }
 
 /** Waktu (ISO) sudah lewat. */

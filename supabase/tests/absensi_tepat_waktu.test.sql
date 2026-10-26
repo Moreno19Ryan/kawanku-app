@@ -20,15 +20,15 @@ end $$;
 
 select throws_ok(
   $q$ insert into public.sesi_absensi (pertemuan_id) values (pg_temp.pertemuan(now() + interval '1 day')) $q$,
-  '22023', 'Absensi bisa dibuka paling cepat 2 jam sebelum mulai',
+  '22023', 'Absensi baru terbuka 30 menit sebelum mulai',
   'Sesi besok ditolak');
 select throws_ok(
-  $q$ insert into public.sesi_absensi (pertemuan_id) values (pg_temp.pertemuan(now() + interval '3 hours')) $q$,
-  '22023', 'Absensi bisa dibuka paling cepat 2 jam sebelum mulai',
-  'Sesi 3 jam lagi ditolak');
-select lives_ok(
   $q$ insert into public.sesi_absensi (pertemuan_id) values (pg_temp.pertemuan(now() + interval '1 hour')) $q$,
-  'Sesi 1 jam lagi boleh');
+  '22023', 'Absensi baru terbuka 30 menit sebelum mulai',
+  'Sesi 1 jam lagi ditolak');
+select lives_ok(
+  $q$ insert into public.sesi_absensi (pertemuan_id) values (pg_temp.pertemuan(now() + interval '20 minutes')) $q$,
+  'Sesi 20 menit lagi boleh');
 select lives_ok(
   $q$ insert into public.sesi_absensi (pertemuan_id) values (pg_temp.pertemuan(now())) $q$,
   'Sesi yang sedang berlangsung boleh');

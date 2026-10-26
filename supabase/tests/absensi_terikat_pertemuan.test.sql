@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Tes migrasi 20261024090000_absensi_terikat_pertemuan: sesi absensi lahir
 -- dari pertemuan, ikut libur/pindah waktu/ganti nama, kegiatan berriwayat
--- tidak bisa dihapus, buka/tutup otomatis atau manual, dan buat_acara_absensi.
+-- tidak bisa dihapus, dan jendela absensi otomatis 30 menit.
 -- Satu transaksi, di-rollback.
 -- =====================================================================
 \set ON_ERROR_STOP 1
@@ -214,29 +214,32 @@ select uji.cek('Aktif lagi: absensi bisa dibuka ulang',
   public.buka_absensi_pertemuan('00000000-0000-0000-0000-0000000000a1',
     (select id from public.kelompok where nomor = 1), (now() at time zone 'Asia/Jakarta')::date, now()) is not null);
 
--- Acara di luar jadwal
+-- Agenda sekali (acara di luar jadwal dibuat di Kegiatan) → absensi otomatis
+insert into public.kegiatan (nama, jenis, kelompok_id, durasi_menit)
+select 'Bakti Sosial', 'agenda', id, 60 from public.kelompok where nomor = 1;
+insert into public.pertemuan (kegiatan_id, tanggal, mulai)
+select id, ((now() + interval '20 minutes') at time zone 'Asia/Jakarta')::date, now() + interval '20 minutes'
+from public.kegiatan where nama = 'Bakti Sosial';
 create temp table acara on commit drop as
-  select public.buat_acara_absensi('  Bakti   Sosial ', (select id from public.kelompok where nomor = 1), false, now(), 60::smallint,
-                                   false, 15::smallint, 60::smallint) as id;
+  select public.buka_absensi_pertemuan(p.kegiatan_id, null, p.tanggal, p.mulai) as id
+  from public.pertemuan p join public.kegiatan k on k.id = p.kegiatan_id where k.nama = 'Bakti Sosial';
 grant select on acara to authenticated;
-select uji.cek('Acara baru: agenda + pertemuan + sesi sekaligus',
-  (select s.nama = 'Bakti Sosial' and k.jenis = 'agenda' and k.durasi_menit = 60
-          and s.selesai = s.mulai + interval '60 minutes' and p.sesi_id = s.id
-   from public.sesi_absensi s join public.pertemuan p on p.id = s.pertemuan_id
-   join public.kegiatan k on k.id = p.kegiatan_id where s.id = (select id from acara)));
-select uji.cek('Acara baru: pengaturan buka/tutup tersimpan (manual, 15/60)',
-  (select not k.absensi_otomatis and k.buka_sebelum_menit = 15 and k.tutup_setelah_menit = 60 and s.dibuka_manual
-   from public.sesi_absensi s join public.pertemuan p on p.id = s.pertemuan_id
-   join public.kegiatan k on k.id = p.kegiatan_id where s.id = (select id from acara)));
-select uji.harus_ditolak('Acara baru di kelompok lain ditolak',
-  $q$ select public.buat_acara_absensi('X', (select id from public.kelompok where nomor = 2), false, now(), 60::smallint) $q$);
-select uji.harus_ditolak('Acara baru tanpa nama ditolak',
-  $q$ select public.buat_acara_absensi('  ', (select id from public.kelompok where nomor = 1), false, now(), 60::smallint) $q$);
-select uji.harus_ditolak('Acara baru 1 hari lagi ditolak (absensi paling cepat 2 jam sebelum)',
-  $q$ select public.buat_acara_absensi('X', (select id from public.kelompok where nomor = 1), false, now() + interval '1 day', 60::smallint) $q$);
-select uji.cek('Acara gagal tidak meninggalkan kegiatan', not exists (select 1 from public.kegiatan where nama = 'X'));
+select uji.cek('Agenda 20 menit lagi: absensi terbuka (30 menit sebelum mulai)',
+  uji.catat((select id from acara), (select kode from uji.kode_j where id = '00000000-0000-0000-0000-0000000000f1')) = 'tercatat');
+select uji.harus_ditolak('Absensi 45 menit sebelum mulai belum bisa dibuat',
+  $q$ insert into public.sesi_absensi (pertemuan_id)
+      values (uji.pertemuan_baru((select id from public.kelompok where nomor = 1), false, now() + interval '45 minutes'))
+      returning 1 $q$);
+update public.pertemuan p set mulai = now() - interval '80 minutes'
+from public.kegiatan k where k.id = p.kegiatan_id and k.nama = 'Bakti Sosial';
+select uji.cek('20 menit setelah selesai: masih terbuka',
+  uji.catat((select id from acara), (select kode from uji.kode_j where id = '00000000-0000-0000-0000-0000000000f1')) = 'sudah');
+update public.pertemuan p set mulai = now() - interval '100 minutes'
+from public.kegiatan k where k.id = p.kegiatan_id and k.nama = 'Bakti Sosial';
+select uji.cek('40 menit setelah selesai: lewat_waktu',
+  uji.catat((select id from acara), (select kode from uji.kode_j where id = '00000000-0000-0000-0000-0000000000f1')) = 'lewat_waktu');
 
--- Hapus sesi langsung (salah buka) → pertemuan tetap, kegiatan bisa dihapus
+-- Hapus sesi langsung → pertemuan tetap, kegiatan bisa dihapus
 delete from public.sesi_absensi where id = (select id from acara);
 select uji.cek('Hapus sesi: tautan pertemuan dilepas',
   (select count(*) from public.pertemuan p join public.kegiatan k on k.id = p.kegiatan_id
@@ -244,82 +247,8 @@ select uji.cek('Hapus sesi: tautan pertemuan dilepas',
 select uji.harus_berhasil('Kegiatan tanpa riwayat absensi bisa dihapus',
   $q$ delete from public.kegiatan where nama = 'Bakti Sosial' returning 1 $q$);
 
--- ---------------------------------------------------------------------
--- Buka/tutup absensi: otomatis (15/30/45/60 menit) atau manual
--- ---------------------------------------------------------------------
-reset role;
-insert into public.kegiatan (id, nama, jenis, kelompok_id, durasi_menit, absensi_otomatis, buka_sebelum_menit, tutup_setelah_menit)
-select v.id::uuid, v.nama, 'agenda', k.id, 90, v.oto, v.buka, v.tutup
-from (values
-  ('00000000-0000-0000-0000-0000000000a2', 'Otomatis 40 menit lagi', true,  30, 30, interval '40 minutes'),
-  ('00000000-0000-0000-0000-0000000000a3', 'Otomatis sudah selesai', true,  30, 30, interval '-130 minutes'),
-  ('00000000-0000-0000-0000-0000000000a4', 'Manual lama',            false, 30, 30, interval '-2 days')
-) v(id, nama, oto, buka, tutup, geser)
-cross join public.kelompok k where k.nomor = 1;
-insert into public.pertemuan (kegiatan_id, tanggal, mulai)
-select v.id::uuid, ((now() + v.geser) at time zone 'Asia/Jakarta')::date, now() + v.geser
-from (values
-  ('00000000-0000-0000-0000-0000000000a2', interval '40 minutes'),
-  ('00000000-0000-0000-0000-0000000000a3', interval '-130 minutes'),
-  ('00000000-0000-0000-0000-0000000000a4', interval '-2 days')
-) v(id, geser);
-do $$ begin
-  update public.kegiatan set buka_sebelum_menit = 20 where id = '00000000-0000-0000-0000-0000000000a2';
-  insert into uji.hasil (nama, lulus) values ('Pilihan menit selain 15/30/45/60 ditolak', false);
-exception when check_violation then
-  insert into uji.hasil (nama, lulus) values ('Pilihan menit selain 15/30/45/60 ditolak', true);
-end $$;
-set local role authenticated;
-select uji.sebagai('00000000-0000-0000-0000-0000000000d2');
-
-create temp table sx on commit drop as
-  select p.kegiatan_id as k, public.buka_absensi_pertemuan(p.kegiatan_id, null, p.tanggal, p.mulai) as id
-  from public.pertemuan p
-  where p.kegiatan_id in ('00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-0000000000a3',
-                          '00000000-0000-0000-0000-0000000000a4');
-grant select on sx to authenticated;
-create function pg_temp.scan(p_k text) returns text language sql as $$
-  select uji.catat((select id from sx where k = p_k::uuid),
-                   (select kode from uji.kode_j where id = '00000000-0000-0000-0000-0000000000f1'));
-$$;
-
-select uji.cek('Sesi menyalin pengaturan kegiatan (otomatis, 30/30)',
-  (select buka_otomatis and buka_sebelum_menit = 30 and tutup_setelah_menit = 30 and not dibuka_manual
-   from public.sesi_absensi where id = (select id from sx where k = '00000000-0000-0000-0000-0000000000a2')));
-select uji.cek('Otomatis 30 menit: 40 menit sebelum mulai → belum_waktunya',
-  pg_temp.scan('00000000-0000-0000-0000-0000000000a2') = 'belum_waktunya');
-select uji.cek('QR layar belum tampil sebelum jendela buka',
-  public.token_layar((select id from sx where k = '00000000-0000-0000-0000-0000000000a2')) is null);
-update public.kegiatan set buka_sebelum_menit = 45 where id = '00000000-0000-0000-0000-0000000000a2';
-select uji.cek('Ubah kegiatan ke 45 menit → sesi ikut',
-  (select buka_sebelum_menit = 45 from public.sesi_absensi where id = (select id from sx where k = '00000000-0000-0000-0000-0000000000a2')));
-select uji.cek('Otomatis 45 menit: 40 menit sebelum mulai → tercatat',
-  pg_temp.scan('00000000-0000-0000-0000-0000000000a2') = 'tercatat');
-select uji.cek('QR layar tampil di dalam jendela',
-  public.token_layar((select id from sx where k = '00000000-0000-0000-0000-0000000000a2')) is not null);
-
-select uji.cek('Otomatis tutup 30 menit: 40 menit setelah selesai → lewat_waktu',
-  pg_temp.scan('00000000-0000-0000-0000-0000000000a3') = 'lewat_waktu');
-update public.sesi_absensi set dibuka_manual = true where id = (select id from sx where k = '00000000-0000-0000-0000-0000000000a3');
-select uji.cek('Admin "Buka sekarang" → scan diterima walau lewat jendela',
-  pg_temp.scan('00000000-0000-0000-0000-0000000000a3') = 'tercatat');
-update public.sesi_absensi set dibuka_manual = false, ditutup = true where id = (select id from sx where k = '00000000-0000-0000-0000-0000000000a3');
-select uji.cek('Admin "Tutup sekarang" → sesi_ditutup',
-  pg_temp.scan('00000000-0000-0000-0000-0000000000a3') = 'sesi_ditutup');
-
-select uji.cek('Mode manual: Buka absensi langsung membuka (tanpa melihat jam)',
-  (select dibuka_manual and not buka_otomatis from public.sesi_absensi where id = (select id from sx where k = '00000000-0000-0000-0000-0000000000a4'))
-  and pg_temp.scan('00000000-0000-0000-0000-0000000000a4') = 'tercatat');
-update public.sesi_absensi set dibuka_manual = false, ditutup = true where id = (select id from sx where k = '00000000-0000-0000-0000-0000000000a4');
-select uji.cek('Mode manual: ditutup admin → sesi_ditutup',
-  pg_temp.scan('00000000-0000-0000-0000-0000000000a4') = 'sesi_ditutup');
-
-update public.kegiatan set absensi_otomatis = false where id = '00000000-0000-0000-0000-0000000000a2';
-select uji.cek('Kegiatan diubah ke manual → sesi yang belum ditutup ikut dibuka manual',
-  (select dibuka_manual and not buka_otomatis from public.sesi_absensi where id = (select id from sx where k = '00000000-0000-0000-0000-0000000000a2')));
-
 reset role;
 select ok(lulus, nama || coalesce(' — ' || catatan, '')) from uji.hasil order by no;
-select cmp_ok((select count(*)::int from uji.hasil), '>=', 45, 'Jumlah skenario');
+select cmp_ok((select count(*)::int from uji.hasil), '>=', 30, 'Jumlah skenario');
 select * from finish();
 rollback;

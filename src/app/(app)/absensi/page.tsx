@@ -3,17 +3,15 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CalendarPlus, ChartColumn, ChartLine, ChevronRight, IdCard, MailQuestion, UserRound } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
-import { FormAcara } from "@/components/absensi/form-acara";
 import { PertemuanHariIni } from "@/components/absensi/pertemuan-hari-ini";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getAksesAbsensi, KOLOM_SESI, statusScan, type Sesi } from "@/lib/absensi/akses";
+import { getAksesAbsensi, jendelaScan, KOLOM_SESI, type Sesi } from "@/lib/absensi/akses";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
-import { buatAcara } from "@/lib/absensi/actions";
 import { createClient } from "@/lib/supabase/server";
-import { keInputWib, tanggalJam } from "@/lib/waktu";
+import { tanggalJam } from "@/lib/waktu";
 import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
@@ -96,11 +94,8 @@ async function DaftarSesi() {
   for (const c of catatan ?? []) hadir.set(c.sesi_id, (hadir.get(c.sesi_id) ?? 0) + 1);
 
   const izinMenunggu = (await getPengajuanIzin({ menunggu: true })).filter((p) => p.bolehTangani).length;
-  // "Sedang dibuka" = sedang menerima scan atau menunggu jam buka otomatis.
-  const masihDibuka = (s: Sesi) => {
-    const st = statusScan(s);
-    return st === "dibuka" || st === "belum_waktunya";
-  };
+  // Sesi yang sudah lewat jendela absensi (30 menit setelah selesai) dianggap selesai.
+  const masihDibuka = (s: Sesi) => !s.ditutup && jendelaScan(s) !== "lewat_waktu";
   const berjalan = daftar.filter(masihDibuka);
   const selesai = daftar.filter((s) => !masihDibuka(s));
 
@@ -122,26 +117,17 @@ async function DaftarSesi() {
         <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />
       </Link>
 
-      {akses.targetSesi.length > 0 && (
-        <Card>
-          <details className="group">
-            <summary className="flex cursor-pointer list-none items-center gap-3">
-              <CalendarPlus className="size-5 shrink-0 text-primary" aria-hidden />
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold">Acara baru</span>
-                <span className="block text-sm text-muted">
-                  Untuk acara yang tidak ada di jadwal. Acara tersimpan sebagai agenda di Kegiatan dan absensinya
-                  langsung dibuka. Pengajian rutin cukup dibuka dari pertemuannya (Hari ini / Kegiatan).
-                </span>
-              </span>
-              <ChevronRight className="size-5 shrink-0 text-muted transition-transform group-open:rotate-90" aria-hidden />
-            </summary>
-            <div className="mt-5">
-              <FormAcara aksi={buatAcara} target={akses.targetSesi} mulaiAwal={keInputWib(new Date().toISOString())} />
-            </div>
-          </details>
-        </Card>
-      )}
+      <p className="flex items-start gap-2 px-1 text-sm text-muted">
+        <CalendarPlus className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <span>
+          Absensi terbuka otomatis untuk setiap pertemuan di Kegiatan, 30 menit sebelum mulai sampai 30 menit setelah
+          selesai. Ada acara di luar jadwal?{" "}
+          <Link href="/kegiatan/kelola" className="font-medium text-primary hover:underline">
+            Buat agendanya di Kegiatan
+          </Link>
+          , absensinya ikut terbuka sendiri.
+        </span>
+      </p>
 
       {[
         { judul: "Sedang dibuka", isi: berjalan, kosong: "Belum ada absensi yang dibuka." },

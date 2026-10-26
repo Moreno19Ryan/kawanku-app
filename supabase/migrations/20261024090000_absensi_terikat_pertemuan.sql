@@ -5,8 +5,8 @@
 -- Absensi harus sinkron dan serba otomatis.
 --   1. Setiap sesi absensi lahir dari satu pertemuan (sesi_absensi.pertemuan_id,
 --      wajib & unik). Nama, wilayah, sasaran, dan waktu sesi diambil dari
---      pertemuannya, bukan dari isian. Acara di luar jadwal dibuat sebagai
---      agenda sekali lewat RPC buat_acara_absensi.
+--      pertemuannya, bukan dari isian. Tidak ada lagi "Buat sesi" di menu
+--      Absensi: acara di luar jadwal dibuat sebagai agenda di Kegiatan.
 --   2. Pertemuan ditandai libur/batal → sesi & catatannya ikut terhapus
 --      (pilihan a). Diaktifkan lagi → absensi bisa dibuka ulang dan izin yang
 --      sudah disetujui diterapkan otomatis (trigger terapkan_izin).
@@ -14,13 +14,11 @@
 --      diubah → nama sesi ikut berubah.
 --   4. Kegiatan / pertemuan yang pernah dibuka absensinya tidak bisa dihapus
 --      (nonaktifkan saja).
---   5. Buka/tutup absensi diatur per kegiatan (revisi Reno, 24 Okt 2026):
---      - otomatis: scan kartu & QR layar diterima dari N menit sebelum mulai
---        sampai N menit setelah selesai (15/30/45/60, dipilih admin);
---      - manual: dibuka saat admin menekan Buka absensi, ditutup saat admin
---        menekan Tutup.
---      Admin tetap bisa Buka sekarang / Tutup sekarang per sesi. Koreksi
---      manual (hadir/izin/sakit) tetap boleh kapan saja.
+--   5. Serba otomatis (Reno, 26 Okt 2026): absensi terbuka 30 menit sebelum
+--      mulai sampai 30 menit setelah selesai, untuk semua kegiatan. Sesi
+--      paling cepat dibuat 30 menit sebelum mulai (cek_waktu_sesi) dan dibuat
+--      otomatis oleh aplikasi saat waktunya. Koreksi manual admin
+--      (hadir/izin/sakit) tetap boleh kapan saja.
 --   6. Data lama: sesi milik pertemuan yang sudah dibatalkan dihapus.
 -- =====================================================================
 
@@ -55,28 +53,6 @@ alter table public.sesi_absensi
 
 comment on column public.sesi_absensi.pertemuan_id is
   'Pertemuan Kegiatan pemilik sesi ini (wajib). Nama, wilayah, sasaran, dan waktu sesi mengikuti pertemuannya.';
-
--- Pengaturan buka/tutup absensi per kegiatan. Disalin ke sesinya (dan ikut
--- diperbarui bila kegiatannya diubah, trigger sinkron_sesi_kegiatan).
-alter table public.kegiatan
-  add column absensi_otomatis boolean not null default true,
-  add column buka_sebelum_menit smallint not null default 30
-    check (buka_sebelum_menit in (15, 30, 45, 60)),
-  add column tutup_setelah_menit smallint not null default 30
-    check (tutup_setelah_menit in (15, 30, 45, 60));
-
-comment on column public.kegiatan.absensi_otomatis is
-  'true = absensi dibuka/ditutup otomatis sesuai buka_sebelum_menit/tutup_setelah_menit; false = admin membuka & menutup sendiri.';
-
-alter table public.sesi_absensi
-  add column buka_otomatis boolean not null default true,
-  add column buka_sebelum_menit smallint not null default 30
-    check (buka_sebelum_menit in (15, 30, 45, 60)),
-  add column tutup_setelah_menit smallint not null default 30
-    check (tutup_setelah_menit in (15, 30, 45, 60)),
-  -- Dibuka admin ("Buka sekarang" / mode manual): scan diterima tanpa
-  -- melihat jam sampai admin menutupnya.
-  add column dibuka_manual boolean not null default false;
 
 -- ---------------------------------------------------------------------
 -- 3. Sesi mengikuti pertemuannya
@@ -128,11 +104,6 @@ begin
   new.hanya_generus := v_kegiatan.hanya_generus;
   new.mulai := v_pertemuan.mulai;
   new.selesai := v_pertemuan.mulai + make_interval(mins => v_kegiatan.durasi_menit);
-  new.buka_otomatis := v_kegiatan.absensi_otomatis;
-  new.buka_sebelum_menit := v_kegiatan.buka_sebelum_menit;
-  new.tutup_setelah_menit := v_kegiatan.tutup_setelah_menit;
-  -- Mode manual: menekan Buka absensi berarti absensi langsung dibuka.
-  new.dibuka_manual := new.dibuka_manual or not v_kegiatan.absensi_otomatis;
   return new;
 end;
 $$;
@@ -288,40 +259,26 @@ revoke all on function private.jaga_hapus_kegiatan() from public, anon, authenti
 create trigger jaga_hapus_kegiatan before delete on public.kegiatan
   for each row execute function private.jaga_hapus_kegiatan();
 
--- Nama atau pengaturan buka/tutup kegiatan diubah → sesinya ikut. Pengaturan
--- hanya diterapkan ke sesi yang belum lewat (riwayat lama tetap).
-create or replace function private.sinkron_sesi_kegiatan()
+-- Nama kegiatan diubah → nama sesinya ikut.
+create or replace function private.sinkron_nama_sesi()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
 begin
-  if new.nama is distinct from old.nama then
-    update public.sesi_absensi s
-    set nama = private.nama_sesi_pertemuan(s.pertemuan_id)
-    from public.pertemuan p
-    where p.id = s.pertemuan_id and p.kegiatan_id = new.id;
-  end if;
-  if (new.absensi_otomatis, new.buka_sebelum_menit, new.tutup_setelah_menit)
-     is distinct from (old.absensi_otomatis, old.buka_sebelum_menit, old.tutup_setelah_menit) then
-    update public.sesi_absensi s
-    set buka_otomatis = new.absensi_otomatis,
-        buka_sebelum_menit = new.buka_sebelum_menit,
-        tutup_setelah_menit = new.tutup_setelah_menit,
-        dibuka_manual = s.dibuka_manual or (not new.absensi_otomatis and not s.ditutup)
-    from public.pertemuan p
-    where p.id = s.pertemuan_id and p.kegiatan_id = new.id
-      and coalesce(s.selesai, s.mulai) > now() - interval '1 day';
-  end if;
+  update public.sesi_absensi s
+  set nama = private.nama_sesi_pertemuan(s.pertemuan_id)
+  from public.pertemuan p
+  where p.id = s.pertemuan_id and p.kegiatan_id = new.id;
   return null;
 end;
 $$;
-revoke all on function private.sinkron_sesi_kegiatan() from public, anon, authenticated;
+revoke all on function private.sinkron_nama_sesi() from public, anon, authenticated;
 
-create trigger sinkron_sesi_kegiatan
-  after update of nama, absensi_otomatis, buka_sebelum_menit, tutup_setelah_menit on public.kegiatan
-  for each row execute function private.sinkron_sesi_kegiatan();
+create trigger sinkron_nama_sesi after update of nama on public.kegiatan
+  for each row when (new.nama is distinct from old.nama)
+  execute function private.sinkron_nama_sesi();
 
 -- ---------------------------------------------------------------------
 -- 5. Membuka absensi
@@ -369,69 +326,42 @@ begin
 end;
 $$;
 
--- Acara di luar jadwal: buat agenda sekali di Kegiatan + pertemuannya, lalu
--- buka absensinya, dalam satu langkah. Security invoker → RLS kegiatan,
--- pertemuan, dan sesi tetap berlaku. p_kelompok_id null = tingkat desa.
-create or replace function public.buat_acara_absensi(
-  p_nama text, p_kelompok_id uuid, p_hanya_generus boolean, p_mulai timestamptz, p_durasi_menit smallint,
-  p_absensi_otomatis boolean default true, p_buka_sebelum_menit smallint default 30,
-  p_tutup_setelah_menit smallint default 30
-)
-returns uuid
+-- ---------------------------------------------------------------------
+-- 6. Jendela absensi: 30 menit sebelum mulai s.d. 30 menit setelah selesai
+-- ---------------------------------------------------------------------
+
+-- Sesi paling cepat dibuat 30 menit sebelum mulai (sebelumnya 2 jam,
+-- migrasi 20261022130000). Sesi yang sudah lewat tetap boleh (susulan).
+create or replace function private.cek_waktu_sesi()
+returns trigger
 language plpgsql
-security invoker
 set search_path = ''
 as $$
-declare
-  v_nama     text := nullif(regexp_replace(trim(coalesce(p_nama, '')), '\s+', ' ', 'g'), '');
-  v_tanggal  date := (p_mulai at time zone 'Asia/Jakarta')::date;
-  v_kegiatan uuid;
 begin
-  if v_nama is null or length(v_nama) > 120 then
-    raise exception 'Isi nama acara (maks. 120 karakter)' using errcode = '22023', hint = 'nama';
+  if new.mulai > now() + interval '30 minutes' then
+    raise exception 'Absensi baru terbuka 30 menit sebelum mulai'
+      using errcode = '22023', hint = 'belum_waktunya';
   end if;
-  if p_mulai is null then
-    raise exception 'Isi waktu mulai' using errcode = '22023', hint = 'mulai';
-  end if;
-  insert into public.kegiatan (nama, jenis, kelompok_id, hanya_generus, durasi_menit, berlaku_mulai, berlaku_sampai,
-                               absensi_otomatis, buka_sebelum_menit, tutup_setelah_menit)
-  values (v_nama, 'agenda', p_kelompok_id, coalesce(p_hanya_generus, false),
-          coalesce(p_durasi_menit, 90), least(v_tanggal, current_date), v_tanggal,
-          coalesce(p_absensi_otomatis, true), coalesce(p_buka_sebelum_menit, 30), coalesce(p_tutup_setelah_menit, 30))
-  returning id into v_kegiatan;
-  insert into public.pertemuan (kegiatan_id, kelompok_id, tanggal, mulai)
-  values (v_kegiatan, p_kelompok_id, v_tanggal, p_mulai);
-  return public.buka_absensi_pertemuan(v_kegiatan, p_kelompok_id, v_tanggal, p_mulai);
+  return new;
 end;
 $$;
-revoke all on function public.buat_acara_absensi(text, uuid, boolean, timestamptz, smallint, boolean, smallint, smallint) from public, anon;
-grant execute on function public.buat_acara_absensi(text, uuid, boolean, timestamptz, smallint, boolean, smallint, smallint) to authenticated;
 
--- ---------------------------------------------------------------------
--- 6. Status buka/tutup absensi
--- ---------------------------------------------------------------------
 
--- null = scan diterima sekarang; selain itu alasan penolakan:
--- 'sesi_ditutup' (ditutup admin / mode manual belum dibuka),
--- 'belum_waktunya' / 'lewat_waktu' (mode otomatis, di luar jendela).
-create or replace function private.waktu_scan(p_sesi public.sesi_absensi)
+-- null = boleh scan sekarang; selain itu 'belum_waktunya' / 'lewat_waktu'.
+create or replace function private.waktu_scan(p_mulai timestamptz, p_selesai timestamptz)
 returns text
 language sql
 stable
 set search_path = ''
 as $$
   select case
-    when p_sesi.ditutup then 'sesi_ditutup'
-    when p_sesi.dibuka_manual then null
-    when not p_sesi.buka_otomatis then 'sesi_ditutup'
-    when now() < p_sesi.mulai - make_interval(mins => p_sesi.buka_sebelum_menit) then 'belum_waktunya'
-    when now() > coalesce(p_sesi.selesai, p_sesi.mulai) + make_interval(mins => p_sesi.tutup_setelah_menit)
-      then 'lewat_waktu'
+    when now() < p_mulai - interval '30 minutes' then 'belum_waktunya'
+    when now() > coalesce(p_selesai, p_mulai) + interval '30 minutes' then 'lewat_waktu'
   end;
 $$;
-grant execute on function private.waktu_scan(public.sesi_absensi) to authenticated;
+grant execute on function private.waktu_scan(timestamptz, timestamptz) to authenticated;
 
--- Scan kartu / ketik kode (sama seperti 20261022010000, ditambah status buka/tutup).
+-- Scan kartu / ketik kode (sama seperti 20261022010000, ditambah jendela scan).
 create or replace function public.catat_absensi_kode(p_sesi_id uuid, p_kode text)
 returns jsonb
 language plpgsql
@@ -453,7 +383,10 @@ begin
   if not found then
     return jsonb_build_object('hasil', 'tidak_berhak');
   end if;
-  v_waktu := private.waktu_scan(v_sesi);
+  if v_sesi.ditutup then
+    return jsonb_build_object('hasil', 'sesi_ditutup');
+  end if;
+  v_waktu := private.waktu_scan(v_sesi.mulai, v_sesi.selesai);
   if v_waktu is not null then
     return jsonb_build_object('hasil', v_waktu);
   end if;
@@ -499,7 +432,7 @@ begin
 end;
 $$;
 
--- Token QR layar: null bila absensi sedang tidak dibuka (layar mencoba lagi tiap menit).
+-- Token QR layar: null bila sesi ditutup atau di luar jendela scan.
 create or replace function public.token_layar(p_sesi_id uuid)
 returns text
 language plpgsql
@@ -516,7 +449,7 @@ begin
   if not found or not private.boleh_lihat_sesi('absensi.kelola', v_sesi.kelompok_id) then
     raise exception 'Tidak berhak' using errcode = '42501';
   end if;
-  if private.waktu_scan(v_sesi) is not null then
+  if v_sesi.ditutup or private.waktu_scan(v_sesi.mulai, v_sesi.selesai) is not null then
     return null;
   end if;
   insert into public.sesi_layar (sesi_id) values (p_sesi_id) on conflict (sesi_id) do nothing;
@@ -528,7 +461,7 @@ end;
 $$;
 
 -- Generus absen dari QR layar (sama seperti 20261021200000, ditambah
--- status buka/tutup).
+-- jendela scan).
 create or replace function public.absen_layar(p_token text)
 returns jsonb
 language plpgsql
@@ -570,7 +503,10 @@ begin
   if floor(extract(epoch from now())) - v_detik > 90 or v_detik - floor(extract(epoch from now())) > 10 then
     return jsonb_build_object('hasil', 'kedaluwarsa', 'sesi', v_sesi.nama);
   end if;
-  v_waktu := private.waktu_scan(v_sesi);
+  if v_sesi.ditutup then
+    return jsonb_build_object('hasil', 'sesi_ditutup', 'sesi', v_sesi.nama);
+  end if;
+  v_waktu := private.waktu_scan(v_sesi.mulai, v_sesi.selesai);
   if v_waktu is not null then
     return jsonb_build_object('hasil', v_waktu, 'sesi', v_sesi.nama);
   end if;

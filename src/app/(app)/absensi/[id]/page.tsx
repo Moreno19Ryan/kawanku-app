@@ -7,21 +7,19 @@ import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { PanelScan } from "@/components/absensi/panel-scan";
 import { PilihStatus } from "@/components/absensi/pilih-status";
 import { PageHeader } from "@/components/layout/page-header";
-import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { INPUT_CLASS } from "@/components/ui/input";
 import {
   bolehCatatSesi,
-  bolehKelolaSesi,
   getAksesAbsensi,
-  jamOtomatis,
+  jamAbsensi,
+  jendelaScan,
   KOLOM_SESI,
-  statusScan,
   type Sesi,
 } from "@/lib/absensi/akses";
-import { aturBukaSesi, catatKode, hapusSesi, ubahStatusPeserta } from "@/lib/absensi/actions";
+import { catatKode, ubahStatusPeserta } from "@/lib/absensi/actions";
 import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import { createClient } from "@/lib/supabase/server";
 import { tanggalJam } from "@/lib/waktu";
@@ -109,13 +107,8 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
   const hrefPertemuan = pertemuan
     ? `/kegiatan/pertemuan?k=${pertemuan.kegiatan_id}&kel=${pertemuan.kelompok_id ?? "desa"}&t=${pertemuan.tanggal}`
     : null;
-  const status = statusScan(sesi);
-  const otomatis = jamOtomatis(sesi);
-  const keteranganBuka = sesi.dibuka_manual
-    ? "Dibuka admin: scan diterima sampai ditutup."
-    : sesi.buka_otomatis
-      ? `Otomatis: dibuka ${tanggalJam(otomatis.buka)}, ditutup ${tanggalJam(otomatis.tutup)}.`
-      : "Buka/tutup manual oleh admin.";
+  const waktuScan = sesi.ditutup ? "lewat_waktu" : jendelaScan(sesi);
+  const waktuAbsensi = jamAbsensi(sesi);
 
   const petaCatatan = new Map((catatan ?? []).map((c) => [c.jamaah_id, c]));
   const daftar = [...(peserta ?? [])];
@@ -144,7 +137,6 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
     return !q || p.nama_lengkap.toLowerCase().includes(q) || p.kode.toLowerCase().includes(q);
   });
 
-  const kelola = bolehKelolaSesi(akses, sesi);
   const bolehCatat = bolehCatatSesi(akses, sesi);
   const wilayah = sesi.kelompok_id ? (namaKelompok.get(sesi.kelompok_id) ?? "Kelompok") : "Seluruh desa";
 
@@ -166,8 +158,8 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
               Rekap
             </Link>
             {sesi.hanya_generus && <Badge nada="utama">Generus saja</Badge>}
-            <Badge nada={status === "dibuka" ? "sukses" : "netral"}>
-              {status === "dibuka" ? "Dibuka" : status === "belum_waktunya" ? "Belum dibuka" : "Ditutup"}
+            <Badge nada={waktuScan ? "netral" : "sukses"}>
+              {waktuScan === "belum_waktunya" ? "Belum terbuka" : waktuScan ? "Tertutup" : "Terbuka"}
             </Badge>
           </div>
         }
@@ -187,25 +179,21 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
         ))}
       </div>
 
-      {bolehCatat && status !== "dibuka" && (
-        <Card className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center">
-          <p className="flex-1 text-muted">
-            {status === "belum_waktunya"
-              ? `Absensi dibuka otomatis ${tanggalJam(otomatis.buka)}. Scan kartu & QR layar aktif sendiri pada jam itu.`
-              : status === "lewat_waktu"
-                ? `Absensi sudah ditutup otomatis ${tanggalJam(otomatis.tutup)}.`
-                : "Absensi ditutup: scan kartu & QR layar tidak diterima."}{" "}
-            Status hadir/izin/sakit tetap bisa diisi dari daftar di bawah.
-          </p>
-          {status === "belum_waktunya" && (
-            <Link href={`/layar/${sesi.id}`} target="_blank" className={buttonClass("kedua", "h-9 shrink-0 px-4")}>
-              <QrCode className="size-4" aria-hidden />
-              Siapkan QR layar
-            </Link>
-          )}
+      <p className="-mt-2 px-1 text-sm text-muted">
+        Absensi otomatis terbuka {tanggalJam(waktuAbsensi.buka)} dan tertutup {tanggalJam(waktuAbsensi.tutup)}.
+        Nama, waktu, dan peserta mengikuti pertemuannya di Kegiatan; bila pertemuan ditandai libur, absensi ini ikut
+        terhapus.
+      </p>
+
+      {bolehCatat && waktuScan && (
+        <Card className="text-sm text-muted">
+          {waktuScan === "lewat_waktu"
+            ? "Absensi sudah tertutup otomatis: scan kartu & QR layar tidak diterima lagi."
+            : `Scan kartu & QR layar terbuka otomatis ${tanggalJam(waktuAbsensi.buka)}.`}{" "}
+          Kehadiran yang belum tercatat tetap bisa diisi dari daftar di bawah.
         </Card>
       )}
-      {bolehCatat && status === "dibuka" && (
+      {bolehCatat && !waktuScan && (
         <Card>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-semibold">Scan kehadiran</h2>
@@ -288,34 +276,6 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
         )}
       </section>
 
-      {kelola && (
-        <Card className="flex flex-col gap-4">
-          <div>
-            <h2 className="font-semibold">Kelola sesi</h2>
-            <p className="text-sm text-muted">
-              <span className="font-medium text-fg">{keteranganBuka}</span> Jam buka/tutup otomatis diatur di
-              Kelola kegiatan. Nama, waktu, dan peserta absensi mengikuti pertemuannya dan ikut berubah otomatis; bila
-              pertemuan ditandai libur, absensinya ikut terhapus.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-4">
-            {sesi.buka_otomatis && (sesi.dibuka_manual || sesi.ditutup) && (
-              <TombolAksi aksi={aturBukaSesi.bind(null, sesi.id, "otomatis")} label="Ikuti jam otomatis" varian="kedua" />
-            )}
-            {status === "dibuka" ? (
-              <TombolAksi aksi={aturBukaSesi.bind(null, sesi.id, "tutup")} label="Tutup sekarang" varian="kedua" />
-            ) : (
-              <TombolAksi aksi={aturBukaSesi.bind(null, sesi.id, "buka")} label="Buka sekarang" varian="utama" />
-            )}
-            <TombolAksi
-              aksi={hapusSesi.bind(null, sesi.id)}
-              label="Hapus absensi"
-              varian="bahaya"
-              konfirmasi={`Hapus absensi "${sesi.nama}" beserta ${(catatan ?? []).length} catatan kehadirannya? Pertemuannya di Kegiatan tetap ada dan absensinya bisa dibuka lagi. Tindakan ini tidak bisa dibatalkan.`}
-            />
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

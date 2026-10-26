@@ -96,7 +96,7 @@ export function LayarQr({
             {status === "memuat"
               ? "Menyiapkan QR…"
               : status === "ditutup"
-                ? "Absensi sedang tidak dibuka. QR muncul sendiri begitu absensi dibuka (otomatis sesuai jam, atau dibuka admin)."
+                ? "Absensi belum terbuka atau sudah tertutup. QR muncul sendiri saat absensi terbuka (30 menit sebelum mulai)."
                 : "Gagal memuat QR. Periksa internet; dicoba lagi otomatis."}
           </p>
         )}

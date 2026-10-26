@@ -18,10 +18,6 @@ export type Kegiatan = {
   aktif: boolean;
   berlaku_mulai: string;
   berlaku_sampai: string | null;
-  /** Buka/tutup absensi otomatis N menit sebelum mulai / sesudah selesai; false = manual. */
-  absensi_otomatis: boolean;
-  buka_sebelum_menit: number;
-  tutup_setelah_menit: number;
 };
 
 export type Jadwal = { id: string; kegiatan_id: string; hari: number; jam: string; kecuali_pekan_ke: number[] };

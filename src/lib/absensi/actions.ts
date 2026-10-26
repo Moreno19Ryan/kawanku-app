@@ -1,19 +1,15 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { redirect } from "next/navigation";
 import {
   bolehCatatSesi,
-  bolehKelolaSesi,
   getAksesAbsensi,
   KOLOM_SESI,
   type Sesi,
 } from "@/lib/absensi/akses";
-import { bacaPengaturanAbsensi } from "@/lib/absensi/pengaturan";
 import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
-import { dariInputWib } from "@/lib/waktu";
 
 const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
 const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
@@ -27,85 +23,6 @@ async function konteks() {
 async function bacaSesi(supabase: Awaited<ReturnType<typeof createClient>>, id: string) {
   const { data } = await supabase.from("sesi_absensi").select(KOLOM_SESI).eq("id", id).maybeSingle<Sesi>();
   return data;
-}
-
-/**
- * Acara di luar jadwal: dibuat sebagai agenda sekali di Kegiatan sekaligus
- * dibuka absensinya (RPC buat_acara_absensi), supaya setiap absensi selalu
- * punya kegiatannya.
- */
-export async function buatAcara(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
-  const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
-  const nama = String(formData.get("nama") ?? "").trim().replace(/\s+/g, " ");
-  if (!nama) return { galat: "Isi nama acara, mis. Kerja bakti masjid." };
-  if (nama.length > 120) return { galat: "Nama acara maksimal 120 karakter." };
-  const mulai = dariInputWib(String(formData.get("mulai") ?? ""));
-  if (!mulai) return { galat: "Isi tanggal dan jam mulai." };
-  const durasi = Math.min(720, Math.max(15, Number(formData.get("durasi")) || 90));
-  const wilayah = String(formData.get("wilayah") ?? "");
-  const kelompokId = wilayah === "desa" ? null : wilayah;
-  const target = ctx.akses.targetSesi.find((t) => t.kelompokId === kelompokId);
-  if (!target) return { galat: "Pilih wilayah acara." };
-  const hanyaGenerus = !target.umum || formData.get("sasaran") === "generus";
-  const atur = bacaPengaturanAbsensi(formData);
-
-  const { data, error } = await ctx.supabase.rpc("buat_acara_absensi", {
-    p_nama: nama,
-    p_kelompok_id: kelompokId,
-    p_hanya_generus: hanyaGenerus,
-    p_mulai: mulai,
-    p_durasi_menit: durasi,
-    p_absensi_otomatis: atur.absensi_otomatis,
-    p_buka_sebelum_menit: atur.buka_sebelum_menit,
-    p_tutup_setelah_menit: atur.tutup_setelah_menit,
-  });
-  if (error?.hint === "belum_waktunya") {
-    return {
-      galat:
-        "Absensi baru bisa dibuka paling cepat 2 jam sebelum mulai. Untuk acara yang masih lama, buat agenda di Kegiatan; absensinya dibuka di hari-H.",
-    };
-  }
-  if (error?.code === "42501") {
-    return { galat: "Kamu belum berwenang membuat kegiatan di wilayah ini. Minta admin desa menambahkan izin Kegiatan." };
-  }
-  if (error || !data) return GAGAL;
-  redirect(`/absensi/${data}`);
-}
-
-/**
- * Buka / tutup absensi dari halaman sesi:
- * - "buka": scan diterima sekarang juga sampai ditutup (tanpa melihat jam);
- * - "tutup": scan ditolak;
- * - "otomatis": ikuti jam buka/tutup otomatis kegiatannya lagi.
- */
-export async function aturBukaSesi(id: string, mode: "buka" | "tutup" | "otomatis"): Promise<StateAksi> {
-  const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
-  const sesi = await bacaSesi(ctx.supabase, id);
-  if (!sesi || !bolehKelolaSesi(ctx.akses, sesi)) return TIDAK_BERHAK;
-  if (mode === "otomatis" && !sesi.buka_otomatis) return { galat: "Kegiatan ini memakai buka/tutup manual." };
-  const isi =
-    mode === "buka"
-      ? { ditutup: false, dibuka_manual: true }
-      : mode === "tutup"
-        ? { ditutup: true, dibuka_manual: false }
-        : { ditutup: false, dibuka_manual: false };
-  const { error } = await ctx.supabase.from("sesi_absensi").update(isi).eq("id", id);
-  if (error) return GAGAL;
-  refresh();
-  return {};
-}
-
-export async function hapusSesi(id: string): Promise<StateAksi> {
-  const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
-  const sesi = await bacaSesi(ctx.supabase, id);
-  if (!sesi || !bolehKelolaSesi(ctx.akses, sesi)) return TIDAK_BERHAK;
-  // Pertemuannya di Kegiatan tetap ada; absensinya bisa dibuka lagi dari sana.
-  const { error, count } = await ctx.supabase.from("sesi_absensi").delete({ count: "exact" }).eq("id", id);
-  if (error || !count) return GAGAL;
-  redirect("/absensi");
 }
 
 // ---------------------------------------------------------------------

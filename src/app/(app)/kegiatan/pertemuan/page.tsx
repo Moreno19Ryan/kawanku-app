@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DaftarPengajuan } from "@/components/absensi/daftar-pengajuan";
-import { belumBisaDibuka, bolehBukaAbsensi, getAksesAbsensi, jamOtomatis } from "@/lib/absensi/akses";
+import { bolehBukaAbsensi, getAksesAbsensi, jamAbsensi, jendelaScan } from "@/lib/absensi/akses";
+import { siapkanAbsensiOtomatis } from "@/lib/absensi/otomatis";
 import { getPengajuanIzin } from "@/lib/absensi/izin";
 import { bolehKelolaPertemuan, getAksesKegiatan } from "@/lib/kegiatan/akses";
 import { aktifkanPertemuan, batalkanPertemuan, bukaAbsensiPertemuan, simpanPertemuan } from "@/lib/kegiatan/actions";
@@ -56,8 +57,10 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
     tanggal,
     kelompokId ? [kelompokId] : akses.kelompokLihat.map((k) => k.id),
   );
-  const k = kalender.find((x) => x.kunci === kunciKejadian(kegiatanId, kelompokId, tanggal));
-  if (!k) notFound();
+  const ditemukan = kalender.find((x) => x.kunci === kunciKejadian(kegiatanId, kelompokId, tanggal));
+  if (!ditemukan) notFound();
+  // Absensi terbuka otomatis saat waktunya (30 menit sebelum s.d. 30 menit setelah).
+  const [k] = await siapkanAbsensiOtomatis([ditemukan], aksesAbsensi);
 
   const supabase = await createClient();
   const kelola = bolehKelolaPertemuan(akses, k.kelompokId, k.kegiatan.hanya_generus);
@@ -121,11 +124,8 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
   const kunci = { kegiatanId, kelompokId: k.kelompokId, tanggal, mulaiJadwal: k.mulaiJadwal };
   const bolehAbsensi = bolehBukaAbsensi(aksesAbsensi, k.kelompokId);
   const hadir = ringkas.data?.filter((r) => r.status === "hadir").length ?? 0;
-  const bisaDibukaMulai = belumBisaDibuka(k.mulai);
-  const oto = k.kegiatan.absensi_otomatis ? jamOtomatis({ mulai: k.mulai, selesai: k.selesai, ...k.kegiatan }) : null;
-  const caraBuka = oto
-    ? `Absensi otomatis: dibuka ${tanggalJam(oto.buka)}, ditutup ${tanggalJam(oto.tutup)}.`
-    : "Absensi manual: dibuka & ditutup oleh admin.";
+  const waktuAbsensi = jamAbsensi(k);
+  const jendela = jendelaScan(k);
 
   return (
     <div className="flex flex-col gap-5">
@@ -156,33 +156,30 @@ async function Detail({ cari }: { cari: Promise<Record<string, string | string[]
           <div className="flex-1 text-sm">
             {k.sesiId ? (
               <>
-                <span className="font-semibold">Absensi sudah disiapkan</span> · {hadir} hadir tercatat.
+                <span className="font-semibold">
+                  {jendela === null ? "Absensi sedang terbuka" : jendela === "lewat_waktu" ? "Absensi sudah tertutup" : "Absensi siap"}
+                </span>{" "}
+                · {hadir} hadir tercatat.
               </>
-            ) : bisaDibukaMulai ? (
-              <>
-                Absensi belum disiapkan. Bisa disiapkan mulai{" "}
-                <span className="font-semibold">{tanggalJam(bisaDibukaMulai)}</span> (2 jam sebelum mulai).
-              </>
+            ) : jendela === "lewat_waktu" ? (
+              <>Absensi tidak sempat terbuka (tidak ada admin yang membuka aplikasi saat pertemuan).</>
             ) : (
-              <>Absensi belum disiapkan. Siapkan sebelum pertemuan, lalu scan kartu / tampilkan QR layar.</>
+              <>Absensi belum terbuka.</>
             )}
             <span className="mt-0.5 block text-muted">
-              {caraBuka} Diatur di Kelola kegiatan.
+              Otomatis terbuka {tanggalJam(waktuAbsensi.buka)} dan tertutup {tanggalJam(waktuAbsensi.tutup)} (30 menit
+              sebelum mulai s.d. 30 menit setelah selesai).
             </span>
           </div>
           {k.sesiId ? (
             <Link href={`/absensi/${k.sesiId}`} className={buttonClass("utama", "h-9 px-4")}>
               Lihat absensi
             </Link>
-          ) : bolehAbsensi && bisaDibukaMulai ? (
-            <button type="button" disabled className={buttonClass("utama", "h-9 px-4")}>
-              Belum bisa disiapkan
-            </button>
-          ) : bolehAbsensi ? (
+          ) : bolehAbsensi && jendela === "lewat_waktu" ? (
             <TombolAksi
               aksi={bukaAbsensiPertemuan.bind(null, { ...kunci, mulai: k.mulai })}
-              label={oto ? "Siapkan absensi" : "Buka absensi"}
-              varian="utama"
+              label="Catat absensi susulan"
+              varian="kedua"
             />
           ) : null}
         </Card>
