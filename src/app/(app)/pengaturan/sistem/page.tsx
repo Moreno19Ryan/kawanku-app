@@ -7,7 +7,7 @@ import { FormPerawatan } from "@/components/sistem/form-perawatan";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
-import { simpanFitur, tanganiPermintaanIdentitas } from "@/lib/sistem/actions";
+import { simpanFitur, tandaiGalatDicek, tanganiPermintaanIdentitas } from "@/lib/sistem/actions";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { getFitur } from "@/lib/sistem/data";
 import { createClient } from "@/lib/supabase/server";
@@ -61,6 +61,9 @@ async function IsiPanel() {
     <div className="flex flex-col gap-4 sm:gap-6">
       <Suspense fallback={<Skeleton className="h-40" />}>
         <PermintaanIdentitas />
+      </Suspense>
+      <Suspense fallback={<Skeleton className="h-40" />}>
+        <PemantauGalat />
       </Suspense>
 
       <Card>
@@ -234,5 +237,104 @@ async function PermintaanIdentitas() {
         </details>
       )}
     </Card>
+  );
+}
+
+type Galat = {
+  id: string;
+  sumber: "server" | "klien";
+  jenis: string | null;
+  rute: string | null;
+  pesan: string;
+  digest: string | null;
+  jumlah: number;
+  pertama_at: string;
+  terakhir_at: string;
+  dicek_at: string | null;
+};
+
+const LABEL_JENIS: Record<string, string> = {
+  render: "Halaman",
+  route: "API",
+  action: "Simpan (aksi)",
+  proxy: "Proxy",
+  klien: "Browser",
+};
+
+/** Galat aplikasi yang tercatat otomatis (onRequestError & halaman galat), digabung per jenis. */
+async function PemantauGalat() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("galat_aplikasi")
+    .select("id, sumber, jenis, rute, pesan, digest, jumlah, pertama_at, terakhir_at, dicek_at")
+    .order("terakhir_at", { ascending: false })
+    .limit(40)
+    .returns<Galat[]>();
+  if (error) {
+    return (
+      <Card className="text-sm text-muted">
+        Pemantau galat belum aktif: migrasi <code>20261028090000_pemantau_galat</code> belum diterapkan.
+      </Card>
+    );
+  }
+  const baru = (data ?? []).filter((g) => !g.dicek_at);
+  const sudah = (data ?? []).filter((g) => g.dicek_at).slice(0, 10);
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Pemantau galat</h2>
+          <p className="mt-1 text-sm text-muted">
+            Galat di server maupun di browser pengguna tercatat otomatis. Galat yang sama digabung; yang sudah dicek
+            muncul lagi bila terulang.
+          </p>
+        </div>
+        {baru.length > 1 && (
+          <TombolAksi aksi={tandaiGalatDicek.bind(null, null)} label="Tandai semua dicek" varian="kedua" />
+        )}
+      </div>
+      {baru.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">Alhamdulillah, tidak ada galat baru.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-border">
+          {baru.map((g) => (
+            <BarisGalat key={g.id} g={g} />
+          ))}
+        </ul>
+      )}
+      {sudah.length > 0 && (
+        <details className="mt-4 text-sm">
+          <summary className="cursor-pointer font-medium text-primary">Sudah dicek ({sudah.length} terakhir)</summary>
+          <ul className="mt-2 divide-y divide-border">
+            {sudah.map((g) => (
+              <BarisGalat key={g.id} g={g} />
+            ))}
+          </ul>
+        </details>
+      )}
+    </Card>
+  );
+}
+
+function BarisGalat({ g }: { g: Galat }) {
+  return (
+    <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start">
+      <div className="min-w-0 flex-1 text-sm">
+        <p className="font-medium break-words">{g.pesan}</p>
+        <p className="mt-0.5 text-muted">
+          {LABEL_JENIS[g.jenis ?? ""] ?? g.sumber} · <span className="font-mono text-xs">{g.rute ?? "–"}</span> ·{" "}
+          {g.jumlah}× · terakhir {waktuRelatif(g.terakhir_at)}
+          {g.jumlah > 1 ? ` (pertama ${tanggalJam(g.pertama_at)})` : ""}
+          {g.digest ? (
+            <>
+              {" "}
+              · kode <span className="font-mono text-xs">{g.digest}</span>
+            </>
+          ) : null}
+        </p>
+      </div>
+      {!g.dicek_at && <TombolAksi aksi={tandaiGalatDicek.bind(null, g.id)} label="Sudah dicek" varian="netral" />}
+    </li>
   );
 }

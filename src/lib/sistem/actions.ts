@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { bacaAdmin, punyaIzin } from "@/lib/auth/admin";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { dariInputWib } from "@/lib/waktu";
+import { catatGalatSesi } from "./galat";
 
 const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
 const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
@@ -156,4 +157,33 @@ export async function tanganiPermintaanIdentitas(id: string, setuju: boolean): P
   if (error) return { galat: "Gagal. Pastikan kamu pengembang." };
   refresh();
   return { pesan: setuju ? "Disetujui (berlaku 1 jam)." : "Ditolak." };
+}
+
+// ---------------------------------------------------------------------
+// Pemantau galat
+// ---------------------------------------------------------------------
+
+/**
+ * Dipanggil halaman galat di browser untuk galat yang terjadi di klien
+ * (galat server sudah dicatat onRequestError). Siapa pun boleh memanggil;
+ * RPC catat_galat memotong isi & membatasi jumlah baris.
+ */
+export async function laporGalatKlien(pesan: string, rute: string): Promise<void> {
+  if (typeof pesan !== "string" || typeof rute !== "string") return;
+  await catatGalatSesi({ sumber: "klien", pesan, rute, jenis: "klien" });
+}
+
+/** Tandai satu galat (atau semua yang belum, bila id null) sudah dicek. Hanya pengembang (RLS). */
+export async function tandaiGalatDicek(id: string | null): Promise<StateAksi> {
+  const ctx = await konteks("sistem.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+  let q = ctx.supabase
+    .from("galat_aplikasi")
+    .update({ dicek_at: new Date().toISOString(), dicek_oleh: ctx.admin.userId })
+    .is("dicek_at", null);
+  if (id) q = q.eq("id", id);
+  const { data, error } = await q.select("id");
+  if (error) return GAGAL;
+  refresh();
+  return { pesan: id ? "Ditandai sudah dicek." : `${data.length} galat ditandai sudah dicek.` };
 }
