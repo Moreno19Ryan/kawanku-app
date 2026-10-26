@@ -6,8 +6,9 @@ import { FormJamaah } from "@/components/jamaah/form-jamaah";
 import {
   FormIdentitas,
   FormKontak,
+  FormMintaIdentitas,
   FormPribadi,
-  NomorTersamar,
+  TampilkanIdentitas,
   type NilaiPribadi,
 } from "@/components/jamaah/form-data-sensitif";
 import { DaftarPerubahan } from "@/components/jamaah/daftar-perubahan";
@@ -24,6 +25,8 @@ import {
   aturJandaDuda,
   aturKeringanan,
   hapusJamaah,
+  lihatIdentitasLengkap,
+  mintaLihatIdentitas,
   simpanIdentitas,
   simpanKontak,
   simpanPribadi,
@@ -45,8 +48,9 @@ import {
   labelJenisMuballigh,
   labelMuballigh,
 } from "@/lib/label";
+import { sudahLewat } from "@/lib/absensi/akses";
 import { createClient } from "@/lib/supabase/server";
-import { tanggalPanjang, waktuRelatif } from "@/lib/waktu";
+import { tanggalJam, tanggalPanjang, waktuRelatif } from "@/lib/waktu";
 import { Memuat } from "@/components/ui/memuat";
 
 export const metadata: Metadata = {
@@ -180,7 +184,14 @@ async function Detail({
     );
   }
 
-  const [{ data: keringanan }, { data: jandaDuda }, { data: kontak }, { data: pribadi }, { data: identitas }] = await Promise.all([
+  const [
+    { data: keringanan },
+    { data: jandaDuda },
+    { data: kontak },
+    { data: pribadi },
+    { data: identitas },
+    { data: permintaan },
+  ] = await Promise.all([
     akses.bolehLihatKeringanan
       ? supabase.from("jamaah_keringanan").select("aktif").eq("jamaah_id", j.id).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -200,8 +211,19 @@ async function Detail({
           .eq("jamaah_id", j.id)
           .maybeSingle<DataPribadi>()
       : Promise.resolve({ data: null }),
+    // NIK/KK selalu tersamar; nomor lengkap hanya lewat permintaan yang disetujui pengembang.
+    akses.bolehLihatIdentitas || akses.bolehKelolaIdentitas
+      ? supabase.rpc("identitas_tersamar", { p_jamaah_id: j.id }).maybeSingle<{ nik: string | null; no_kk: string | null }>()
+      : Promise.resolve({ data: null }),
     akses.bolehLihatIdentitas
-      ? supabase.from("jamaah_identitas").select("nik, no_kk").eq("jamaah_id", j.id).maybeSingle()
+      ? supabase
+          .from("permintaan_identitas")
+          .select("status, berlaku_sampai, created_at, tanggapan")
+          .eq("jamaah_id", j.id)
+          .eq("pemohon", akses.admin.userId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle<{ status: string; berlaku_sampai: string | null; created_at: string; tanggapan: string | null }>()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -474,20 +496,44 @@ async function Detail({
           </Card>
         )}
 
-        {akses.bolehLihatIdentitas && (
+        {(akses.bolehLihatIdentitas || akses.bolehKelolaIdentitas) && (
           <Card>
             <h2 className="text-lg font-semibold">Identitas (NIK & No. KK)</h2>
             <p className="mt-1 text-sm text-muted">
-              Opsional, bukan ID jamaah (ID tetap kode {j.kode}). Nomor disamarkan; tekan ikon mata
-              untuk menampilkan.
+              Opsional, bukan ID jamaah (ID tetap kode {j.kode}). Data sangat sensitif: selalu tampil tersamar untuk
+              semua peran. Nomor lengkap hanya bisa dilihat dengan persetujuan pengembang.
             </p>
             <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Baris label="NIK">{identitas?.nik ? <NomorTersamar nomor={identitas.nik} /> : "–"}</Baris>
-              <Baris label="No. KK">{identitas?.no_kk ? <NomorTersamar nomor={identitas.no_kk} /> : "–"}</Baris>
+              <Baris label="NIK">{identitas?.nik ? <span className="font-mono">{identitas.nik}</span> : "–"}</Baris>
+              <Baris label="No. KK">{identitas?.no_kk ? <span className="font-mono">{identitas.no_kk}</span> : "–"}</Baris>
             </dl>
+            {akses.bolehLihatIdentitas && identitas && (
+              <div className="mt-4 border-t border-border pt-4">
+                {permintaan?.status === "disetujui" && permintaan.berlaku_sampai && !sudahLewat(permintaan.berlaku_sampai) ? (
+                  <TampilkanIdentitas
+                    lihat={lihatIdentitasLengkap.bind(null, j.id)}
+                    sampai={tanggalJam(permintaan.berlaku_sampai)}
+                  />
+                ) : permintaan?.status === "menunggu" ? (
+                  <p className="text-sm text-muted">
+                    Permintaan melihat nomor lengkap menunggu persetujuan pengembang (diajukan{" "}
+                    {waktuRelatif(permintaan.created_at)}).
+                  </p>
+                ) : (
+                  <Lipat judul="Perlu nomor lengkap?">
+                    {permintaan?.status === "ditolak" && (
+                      <p className="mb-3 text-sm text-muted">
+                        Permintaan terakhir ditolak{permintaan.tanggapan ? `: ${permintaan.tanggapan}` : "."}
+                      </p>
+                    )}
+                    <FormMintaIdentitas aksi={mintaLihatIdentitas.bind(null, j.id)} />
+                  </Lipat>
+                )}
+              </div>
+            )}
             {akses.bolehKelolaIdentitas && (
-              <Lipat judul={identitas ? "Ubah NIK & No. KK" : "Isi NIK & No. KK"}>
-                <FormIdentitas aksi={simpanIdentitas.bind(null, j.id)} nilai={identitas} />
+              <Lipat judul={identitas ? "Ganti NIK & No. KK" : "Isi NIK & No. KK"}>
+                <FormIdentitas aksi={simpanIdentitas.bind(null, j.id)} ada={Boolean(identitas)} />
               </Lipat>
             )}
           </Card>

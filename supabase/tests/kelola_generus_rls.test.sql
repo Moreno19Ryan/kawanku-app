@@ -110,7 +110,7 @@ select uji.harus_berhasil('K1: menonaktifkan generus K1',
   $q$ update public.admin set aktif = false where user_id = '00000000-0000-0000-0000-0000000000c4' returning 1 $q$);
 select uji.harus_berhasil('K1: mengubah nama generus K1',
   $q$ update public.admin set nama = 'Baru' where user_id = '00000000-0000-0000-0000-0000000000c4' returning 1 $q$);
-select uji.harus_berhasil('K1: mencabut peran generus K1',
+select uji.harus_ditolak('K1: mencabut peran terakhir generus K1 (akun masih aktif) ditolak',
   $q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000c4' returning 1 $q$);
 select uji.harus_ditolak('K1: menonaktifkan generus K2 ditolak',
   $q$ update public.admin set aktif = false where user_id = '00000000-0000-0000-0000-0000000000c5' returning 1 $q$);

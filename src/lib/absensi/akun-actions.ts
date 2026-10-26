@@ -169,19 +169,32 @@ export async function buatAkunKelompok(kelompokId: string): Promise<StateAksi> {
   };
 }
 
-/** Kembalikan PIN ke PIN awal (DDMMYY atau isian admin), buka kunci, wajib ganti saat login. */
-export async function aturUlangPin(jamaahId: string, _prev: StateAksi, formData: FormData): Promise<StateAksi> {
+/**
+ * Kembalikan PIN ke PIN awal (tanggal lahir DDMMYY), buka kunci, wajib ganti
+ * saat masuk. Admin tidak bisa mengetik PIN baru sendiri; setiap pengembalian
+ * tercatat beserta alasannya (RPC kembalikan_pin_awal → riwayat_pin).
+ */
+export async function kembalikanPinAwal(jamaahId: string, _prev: StateAksi, formData: FormData): Promise<StateAksi> {
   const ctx = await konteks(jamaahId);
   if (!ctx) return TIDAK_BERHAK;
-  const pin = bacaPin(ctx.jamaah, formData.get("pin"));
-  if (typeof pin !== "string") return pin;
-  const { data: akun } = await ctx.supabase.from("akun_generus").select("user_id").eq("jamaah_id", jamaahId).maybeSingle();
-  if (!akun) return { galat: "Akun tidak ditemukan." };
-  // Menyimpan hash PIN baru, membuka kunci, dan menandai PIN awal.
-  const { error } = await ctx.supabase.rpc("atur_pin_generus", { p_user_id: akun.user_id, p_pin: pin });
-  if (error) return { galat: "Gagal mengatur ulang PIN. Coba lagi." };
+  const alasan = String(formData.get("alasan") ?? "");
+  const catatan = String(formData.get("catatan") ?? "").trim().replace(/\s+/g, " ").slice(0, 200);
+  const { error } = await ctx.supabase.rpc("kembalikan_pin_awal", {
+    p_jamaah_id: jamaahId,
+    p_alasan: alasan,
+    p_catatan: catatan || null,
+  });
+  if (error) {
+    const pesan: Record<string, string> = {
+      alasan: "Pilih alasannya.",
+      catatan: "Tulis alasannya.",
+      tanpa_akun: "Akun tidak ditemukan.",
+      tanpa_tanggal_lahir: "Isi tanggal lahir jamaah dulu; PIN awal = tanggal lahir (DDMMYY).",
+    };
+    return { galat: pesan[error.hint ?? ""] ?? "Gagal mengembalikan PIN. Coba lagi." };
+  }
   refresh();
-  return { pesan: formData.get("pin") ? "PIN diatur ulang." : "PIN kembali ke tanggal lahir (DDMMYY)." };
+  return { pesan: "PIN kembali ke PIN awal (tanggal lahir DDMMYY). Ia wajib menggantinya saat masuk." };
 }
 
 export async function ubahUsername(jamaahId: string, _prev: StateAksi, formData: FormData): Promise<StateAksi> {

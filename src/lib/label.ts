@@ -84,6 +84,13 @@ export const LABEL_STATUS_ABSENSI: Record<string, string> = {
   sakit: "Sakit",
 };
 
+/** Alasan pengembalian PIN generus ke PIN awal (riwayat_pin). */
+export const LABEL_ALASAN_PIN: Record<string, string> = {
+  lupa: "lupa PIN",
+  terkunci: "akun terkunci",
+  lainnya: "lainnya",
+};
+
 export const LABEL_ALASAN_IZIN: Record<string, string> = {
   sekolah: "Sekolah",
   kuliah: "Kuliah",

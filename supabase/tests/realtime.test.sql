@@ -8,13 +8,14 @@ create extension if not exists pgtap with schema extensions;
 select plan(3);
 
 select ok(
-  (select count(*) = 20 from pg_publication_tables
+  (select count(*) = 22 from pg_publication_tables
    where pubname = 'supabase_realtime' and schemaname = 'public'
      and tablename in ('jamaah', 'keluarga', 'kategori_jamaah', 'kelompok', 'absensi', 'sesi_absensi',
                        'kartu_qr', 'akun_generus', 'kegiatan', 'kegiatan_jadwal', 'pertemuan',
                        'pengumuman', 'pengajuan_izin', 'usulan_koreksi', 'fitur', 'fitur_kelompok',
-                       'pengaturan_sistem', 'perubahan_data_generus', 'pengajar', 'pertemuan_materi')),
-  'Realtime: 20 tabel aplikasi disiarkan');
+                       'pengaturan_sistem', 'perubahan_data_generus', 'pengajar', 'pertemuan_materi',
+                       'permintaan_identitas', 'riwayat_pin')),
+  'Realtime: 22 tabel aplikasi disiarkan');
 select ok(
   not exists (select 1 from pg_publication_tables
               where pubname = 'supabase_realtime' and schemaname = 'public'

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { ArrowLeft, MessageCircle, Printer, Search } from "lucide-react";
 import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import {
-  FormAturUlangPin,
+  FormKembalikanPin,
   FormBuatAkun,
   FormUsername,
 } from "@/components/absensi/form-akun-generus";
@@ -17,7 +17,7 @@ import { INPUT_CLASS } from "@/components/ui/input";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
 import {
   aturAkunAktif,
-  aturUlangPin,
+  kembalikanPinAwal,
   buatAkunGenerus,
   buatAkunKelompok,
   hapusAkunGenerus,
@@ -27,7 +27,8 @@ import { pesanWhatsapp, tautanWhatsapp } from "@/lib/generus/info-masuk";
 import { usulanUsername } from "@/lib/generus/username";
 import { alamatSitus } from "@/lib/situs";
 import { createClient } from "@/lib/supabase/server";
-import { jam, waktuRelatif } from "@/lib/waktu";
+import { jam, tanggalJam, waktuRelatif } from "@/lib/waktu";
+import { LABEL_ALASAN_PIN } from "@/lib/label";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
 import { Memuat } from "@/components/ui/memuat";
 
@@ -119,6 +120,19 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
     )
     .returns<{ jamaah_id: string; no_hp: string | null }[]>();
   const noHp = new Map((kontak ?? []).map((k) => [k.jamaah_id, k.no_hp]));
+  // Pengembalian PIN terakhir per generus (riwayat_pin, terbaru dulu).
+  const { data: riwayat } = await supabase
+    .from("riwayat_pin")
+    .select("jamaah_id, alasan, created_at")
+    .in("jamaah_id", [...petaAkun.keys()])
+    .order("created_at", { ascending: false })
+    .returns<{ jamaah_id: string; alasan: string; created_at: string }[]>();
+  const terakhirPin = new Map<string, string>();
+  for (const r of riwayat ?? []) {
+    if (!terakhirPin.has(r.jamaah_id)) {
+      terakhirPin.set(r.jamaah_id, `${tanggalJam(r.created_at)} (${LABEL_ALASAN_PIN[r.alasan] ?? r.alasan})`);
+    }
+  }
   const semua = generus ?? [];
   const daftar = semua.filter(
     (g) =>
@@ -277,9 +291,11 @@ async function DaftarAkun({ cari }: { cari: Promise<Cari> }) {
                           aksi={ubahUsername.bind(null, g.id)}
                           username={a.username}
                         />
-                        <FormAturUlangPin
-                          aksi={aturUlangPin.bind(null, g.id)}
+                        <FormKembalikanPin
+                          aksi={kembalikanPinAwal.bind(null, g.id)}
                           adaTanggal={adaTanggal}
+                          pinAwal={a.pin_awal}
+                          terakhir={terakhirPin.get(g.id)}
                         />
                         <div className="flex flex-wrap gap-2">
                           <TombolAksi

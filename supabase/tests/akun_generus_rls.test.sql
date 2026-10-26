@@ -216,8 +216,22 @@ select uji.harus_ditolak('K1: membuat akun generus K2 ditolak',
 select uji.harus_berhasil('K1: membuka kunci / atur ulang PIN awal',
   $q$ update public.akun_generus set gagal_login = 0, terkunci_sampai = null, pin_awal = true
       where username = 'satu' returning 1 $q$);
-select public.atur_pin_generus('00000000-0000-0000-0000-0000000000c1', '250311');
-select uji.cek('K1: atur_pin_generus → kunci dibuka & PIN awal',
+reset role;
+update public.jamaah set tanggal_lahir = '2012-03-25' where id = '00000000-0000-0000-0000-0000000000f1';
+set local role authenticated;
+select uji.sebagai('00000000-0000-0000-0000-0000000000b2');
+select uji.harus_ditolak('K1: PIN bebas untuk akun yang sudah punya PIN ditolak',
+  $q$ select public.atur_pin_generus('00000000-0000-0000-0000-0000000000c1', '250311') $q$);
+select uji.harus_ditolak('K1: kembalikan PIN tanpa alasan ditolak',
+  $q$ select public.kembalikan_pin_awal('00000000-0000-0000-0000-0000000000f1', '') $q$);
+select uji.harus_ditolak('K1: alasan "lainnya" tanpa catatan ditolak',
+  $q$ select public.kembalikan_pin_awal('00000000-0000-0000-0000-0000000000f1', 'lainnya') $q$);
+select uji.harus_ditolak('K1: kembalikan PIN generus K2 ditolak',
+  $q$ select public.kembalikan_pin_awal('00000000-0000-0000-0000-0000000000f3', 'lupa') $q$);
+select public.kembalikan_pin_awal('00000000-0000-0000-0000-0000000000f1', 'lupa');
+select uji.cek('K1: pengembalian PIN tercatat (oleh admin ini, alasan lupa)',
+  (select count(*) = 1 and bool_and(oleh = '00000000-0000-0000-0000-0000000000b2' and alasan = 'lupa') from public.riwayat_pin));
+select uji.cek('K1: kembalikan PIN awal → kunci dibuka & PIN awal',
   (select terkunci_sampai is null and pin_awal from public.akun_generus where username = 'satu'));
 select uji.harus_ditolak('K1: atur PIN akun di luar wewenang ditolak',
   $q$ select public.atur_pin_generus('00000000-0000-0000-0000-0000000000b1', '123456') $q$);
@@ -225,8 +239,8 @@ select uji.harus_ditolak('K1: PIN bukan 6 angka ditolak',
   $q$ select public.atur_pin_generus('00000000-0000-0000-0000-0000000000c1', '12ab') $q$);
 reset role;
 set local role service_role;
-select uji.cek('Server: PIN hasil atur ulang admin berlaku',
-  (select hasil = 'ok' from public.cek_pin_generus('satu', '250311')));
+select uji.cek('Server: PIN awal (tanggal lahir DDMMYY) berlaku',
+  (select hasil = 'ok' from public.cek_pin_generus('satu', '250312')));
 reset role;
 set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000b2');
@@ -254,6 +268,7 @@ select uji.harus_ditolak('Gen: RPC login lama ditutup (login_generus_berhasil)',
   $q$ select public.login_generus_berhasil() $q$);
 select uji.harus_ditolak('Gen: atur PIN lewat jalur admin ditolak',
   $q$ select public.atur_pin_generus('00000000-0000-0000-0000-0000000000c1', '111222') $q$);
+select uji.cek('Gen: melihat riwayat pengembalian PIN miliknya', (select count(*) from public.riwayat_pin) = 1);
 select uji.cek('Gen: hanya melihat profilnya sendiri',
   (select array_agg(nama_lengkap) from public.jamaah) = array['Generus Satu']);
 select uji.cek('Gen: view kategori juga hanya dirinya', (select count(*) from public.jamaah_dengan_kategori) = 1);
@@ -287,7 +302,7 @@ select uji.cek('Gen: token lebih dari 90 detik → kedaluwarsa',
 select uji.cek('Gen: token 80 detik lalu masih berlaku (sudah)',
   uji.absen(uji.token('00000000-0000-0000-0000-0000000000e1', floor(extract(epoch from now()))::bigint - 80)) = 'sudah');
 select uji.harus_ditolak('Gen: PIN baru sama dengan lama ditolak',
-  $q$ select public.ganti_pin_saya('250311') $q$);
+  $q$ select public.ganti_pin_saya('250312') $q$);
 select public.ganti_pin_saya('739182');
 reset role;
 select uji.cek('PIN diganti → pin_awal false',

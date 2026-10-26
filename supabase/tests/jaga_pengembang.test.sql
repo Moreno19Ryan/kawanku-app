@@ -95,7 +95,8 @@ select uji.cek('Pemilik DB: pengembang terakhir tidak bisa dipindah ke peran lai
                where user_id = '00000000-0000-0000-0000-0000000000f2' $q$) like '%pengembang terakhir%');
 select uji.harus_berhasil('Perubahan yang tidak menyentuh peran (updated_at) tetap boleh',
   $q$ update public.penugasan_peran set updated_at = now() where user_id = '00000000-0000-0000-0000-0000000000f2' returning 1 $q$);
-select uji.harus_berhasil('Peran bukan sistem tetap bisa dicabut seperti biasa',
+update public.admin set aktif = false where user_id = '00000000-0000-0000-0000-0000000000f4';
+select uji.harus_berhasil('Peran bukan sistem tetap bisa dicabut (akun nonaktif, aturan minimal satu peran)',
   $q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f4' returning 1 $q$);
 
 set local role authenticated;
@@ -108,6 +109,11 @@ reset role;
 -- Dua pengembang
 insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
   select '00000000-0000-0000-0000-0000000000f3', id, null from public.peran where kode = 'pengembang';
+-- Peran tambahan supaya mencabut peran pengembang tidak menyisakan akun tanpa peran.
+insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
+  select u, id, null from public.peran,
+    (values ('00000000-0000-0000-0000-0000000000f2'::uuid), ('00000000-0000-0000-0000-0000000000f3'::uuid)) v(u)
+  where kode = 'admin_generus';
 
 set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000f2');
@@ -115,10 +121,12 @@ select uji.cek('Dua pengembang: tetap tidak bisa mencabut milik sendiri',
   uji.galat($q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f2' $q$)
     like '%milikmu sendiri%');
 select uji.harus_berhasil('Dua pengembang: Dev 1 boleh mencabut peran pengembang Dev 2',
-  $q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f3' returning 1 $q$);
+  $q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f3'
+      and peran_id = (select id from public.peran where kode = 'pengembang') returning 1 $q$);
 select uji.sebagai('00000000-0000-0000-0000-0000000000f3');
 select uji.harus_berhasil('Dua pengembang: Dev 2 boleh mencabut peran pengembang Dev 1',
-  $q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f2' returning 1 $q$);
+  $q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f2'
+      and peran_id = (select id from public.peran where kode = 'pengembang') returning 1 $q$);
 reset role;
 select uji.harus_berhasil('Dua pengembang: salah satu boleh dinonaktifkan',
   $q$ update public.admin set aktif = false where user_id = '00000000-0000-0000-0000-0000000000f3' returning 1 $q$);
@@ -129,7 +137,35 @@ select uji.cek('Pengembang lain nonaktif: yang aktif tetap terhitung terakhir',
   uji.galat($q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f2' $q$)
     like '%pengembang terakhir%');
 
+-- Minimal satu peran (migrasi 20261026090000)
+insert into auth.users (id) values ('00000000-0000-0000-0000-0000000000f5');
+insert into public.admin (user_id, nama) values ('00000000-0000-0000-0000-0000000000f5', 'Kelompok 2');
+insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
+  select '00000000-0000-0000-0000-0000000000f5', p.id, k.id from public.peran p, public.kelompok k
+  where p.kode = 'admin_kelompok' and k.nomor = 2;
+select uji.cek('Peran terakhir admin aktif tidak bisa dicabut (hint peran_terakhir)',
+  uji.galat($q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f5' $q$)
+    like '%minimal satu peran%');
+select uji.cek('Peran terakhir tidak bisa dipindah ke akun lain',
+  uji.galat($q$ update public.penugasan_peran set user_id = '00000000-0000-0000-0000-0000000000f1'
+               where user_id = '00000000-0000-0000-0000-0000000000f5' $q$) like '%minimal satu peran%');
+insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
+  select '00000000-0000-0000-0000-0000000000f5', p.id, k.id from public.peran p, public.kelompok k
+  where p.kode = 'admin_generus' and k.nomor = 2;
+select uji.harus_berhasil('Punya dua peran: salah satunya boleh dicabut',
+  $q$ delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f5'
+      and peran_id = (select id from public.peran where kode = 'admin_generus') returning 1 $q$);
+update public.admin set aktif = false where user_id = '00000000-0000-0000-0000-0000000000f5';
+delete from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f5';
+select uji.cek('Akun nonaktif: semua peran boleh dicabut',
+  not exists (select 1 from public.penugasan_peran where user_id = '00000000-0000-0000-0000-0000000000f5'));
+select uji.cek('Akun tanpa peran tidak bisa diaktifkan (hint tanpa_peran)',
+  uji.galat($q$ update public.admin set aktif = true where user_id = '00000000-0000-0000-0000-0000000000f5' $q$)
+    like '%minimal satu peran%');
+select uji.cek('Menghapus akun Auth tetap bisa (peran ikut terhapus)',
+  uji.galat($q$ delete from auth.users where id = '00000000-0000-0000-0000-0000000000f4' $q$) is null);
+
 select ok(lulus, nama || coalesce(' — ' || catatan, '')) from uji.hasil order by no;
-select cmp_ok((select count(*)::int from uji.hasil), '>=', 11, 'Jumlah skenario jaga pengembang');
+select cmp_ok((select count(*)::int from uji.hasil), '>=', 17, 'Jumlah skenario jaga pengembang');
 select * from finish();
 rollback;

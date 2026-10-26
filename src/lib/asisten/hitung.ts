@@ -76,6 +76,20 @@ export function saranKegiatan(kejadian: Kejadian[], bolehKelola: (k: Kejadian) =
   return hasil;
 }
 
+/** Permintaan melihat NIK/KK lengkap yang menunggu persetujuan pengembang. */
+export function saranPermintaanIdentitas(jumlah: number): Saran[] {
+  if (!jumlah) return [];
+  return [
+    {
+      kode: `permintaan-identitas:${jumlah}`,
+      jenis: "peringatan",
+      judul: `${jumlah} permintaan lihat NIK/KK menunggu`,
+      isi: "Admin menunggu persetujuanmu untuk melihat nomor lengkap (berlaku 1 jam bila disetujui).",
+      href: "/pengaturan/sistem",
+    },
+  ];
+}
+
 /** Pengajuan izin generus yang menunggu persetujuan admin ini. */
 export function saranIzin(jumlah: number): Saran[] {
   if (!jumlah) return [];
@@ -159,9 +173,23 @@ export function saranGenerus(opsi: {
   kelengkapan: Kelengkapan;
   /** Jadwal beberapa hari ke depan (untuk pengingat H-1). */
   jadwal?: Kejadian[];
+  /** PIN dikembalikan admin ke PIN awal dalam 14 hari terakhir (riwayat_pin). */
+  pinDikembalikan?: { id: string; created_at: string } | null;
   sekarang?: Date;
 }): Saran[] {
   const hasil: Saran[] = [];
+  if (opsi.pinDikembalikan) {
+    const tgl = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", timeZone: "Asia/Jakarta" }).format(
+      new Date(opsi.pinDikembalikan.created_at),
+    );
+    hasil.push({
+      kode: `pin:${opsi.pinDikembalikan.id}`,
+      jenis: "pengingat",
+      judul: "PIN-mu dikembalikan ke PIN awal",
+      isi: `Pada ${tgl}, admin mengembalikan PIN-mu ke tanggal lahir (DDMMYY). Bila itu bukan permintaanmu, sampaikan ke admin kelompokmu.`,
+      href: "/saya/pin",
+    });
+  }
   const besok = tambahHari(hariIniWib(opsi.sekarang), 1);
   const esok = (opsi.jadwal ?? []).filter((k) => k.status === "terjadwal" && k.tanggal === besok);
   if (esok.length) {

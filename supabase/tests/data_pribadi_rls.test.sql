@@ -58,6 +58,13 @@ create function uji.sebagai(p_uid text) returns void language sql as $$
   select set_config('request.jwt.claims',
     json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
 $$;
+create function uji.harus_ditolak_teks(p_sql text) returns boolean language plpgsql as $$
+begin
+  execute p_sql;
+  return false;
+exception when others then
+  return true;
+end $$;
 grant execute on all functions in schema uji to anon, authenticated;
 
 
@@ -144,9 +151,14 @@ set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000d1');
 select uji.cek('Admin desa: lihat kontak', (select count(*) from public.jamaah_kontak) = 2);
 select uji.cek('Admin desa: lihat data pribadi', (select count(*) from public.jamaah_pribadi) = 2);
-select uji.cek('Admin desa: lihat identitas', (select count(*) from public.jamaah_identitas) = 1);
-select uji.harus_berhasil('Admin desa: ubah NIK',
-  $q$ update public.jamaah_identitas set nik = '3216070101090009' where jamaah_id = '00000000-0000-0000-0000-00000000e001' returning 1 $q$);
+select uji.cek('Admin desa: identitas tidak terbaca langsung', not exists (select 1 from public.jamaah_identitas));
+select uji.cek('Admin desa: identitas tampil tersamar',
+  (select nik = '••••••••••••0001' and no_kk = '••••••••••••0002'
+   from public.identitas_tersamar('00000000-0000-0000-0000-00000000e001')));
+select uji.harus_ditolak('Admin desa: tidak lagi mengubah NIK (wewenang kelompok)',
+  $q$ select public.simpan_identitas('00000000-0000-0000-0000-00000000e001', '3216070101090009', null) $q$);
+select uji.harus_ditolak('Admin desa: lihat NIK lengkap tanpa persetujuan ditolak',
+  $q$ select * from public.lihat_identitas('00000000-0000-0000-0000-00000000e001') $q$);
 select uji.harus_berhasil('Admin desa: ubah alamat',
   $q$ update public.jamaah_pribadi set ktp_rt = 4 where jamaah_id = '00000000-0000-0000-0000-00000000e001' returning 1 $q$);
 
@@ -156,13 +168,23 @@ select uji.harus_berhasil('Admin desa: ubah alamat',
 select uji.sebagai('00000000-0000-0000-0000-0000000000d2');
 select uji.cek('Admin K1: lihat kontak K1', (select count(*) from public.jamaah_kontak) = 2);
 select uji.cek('Admin K1: lihat data pribadi K1', (select count(*) from public.jamaah_pribadi) = 2);
-select uji.cek('Admin K1: tidak melihat identitas', not exists (select 1 from public.jamaah_identitas));
+select uji.cek('Admin K1: identitas tidak terbaca langsung', not exists (select 1 from public.jamaah_identitas));
+select uji.cek('Admin K1: identitas K1 tampil tersamar',
+  (select nik like '%0001' and nik not like '3216%' from public.identitas_tersamar('00000000-0000-0000-0000-00000000e001')));
 select uji.harus_berhasil('Admin K1: ubah no. HP',
   $q$ update public.jamaah_kontak set no_hp = '081299999999' where jamaah_id = '00000000-0000-0000-0000-00000000e002' returning 1 $q$);
 select uji.harus_berhasil('Admin K1: isi alamat',
   $q$ update public.jamaah_pribadi set dom_jalan = 'Jl. Baru' where jamaah_id = '00000000-0000-0000-0000-00000000e002' returning 1 $q$);
-select uji.harus_ditolak('Admin K1: tidak bisa mengisi NIK',
+select uji.harus_ditolak('Admin K1: tulis langsung ke tabel identitas ditolak',
   $q$ insert into public.jamaah_identitas (jamaah_id, nik) values ('00000000-0000-0000-0000-00000000e002', '3216070101850001') returning 1 $q$);
+select public.simpan_identitas('00000000-0000-0000-0000-00000000e002', '3216070101850001', null);
+select uji.cek('Admin K1: mengisi NIK lewat simpan_identitas',
+  (select nik = '••••••••••••0001' and no_kk is null
+   from public.identitas_tersamar('00000000-0000-0000-0000-00000000e002')));
+select uji.harus_ditolak('Admin K1: NIK dobel ditolak',
+  $q$ select public.simpan_identitas('00000000-0000-0000-0000-00000000e002', '3216070101090001', null) $q$);
+select uji.harus_ditolak('Admin K1: NIK bukan 16 angka ditolak',
+  $q$ select public.simpan_identitas('00000000-0000-0000-0000-00000000e002', '1234', null) $q$);
 
 -- ---------------------------------------------------------------------
 -- Admin kelompok 2: tidak melihat data kelompok 1
@@ -200,6 +222,49 @@ select uji.harus_ditolak('Pengembang: tidak bisa mengisi kontak',
   $q$ insert into public.jamaah_kontak (jamaah_id, no_hp) values ('00000000-0000-0000-0000-00000000e001', '081200000002') returning 1 $q$);
 select uji.harus_ditolak('Pengembang: tidak bisa mengubah status muballigh',
   $q$ update public.jamaah set muballigh = false returning 1 $q$);
+select uji.cek('Pengembang: tidak melihat identitas tersamar sekalipun',
+  not exists (select 1 from public.identitas_tersamar('00000000-0000-0000-0000-00000000e001')));
+
+-- ---------------------------------------------------------------------
+-- Permintaan lihat NIK/KK lengkap (disetujui pengembang, berlaku 1 jam)
+-- ---------------------------------------------------------------------
+select uji.sebagai('00000000-0000-0000-0000-0000000000d3');
+select uji.harus_ditolak('Admin K2: tidak bisa meminta NIK jamaah K1',
+  $q$ insert into public.permintaan_identitas (jamaah_id, alasan) values ('00000000-0000-0000-0000-00000000e001', 'Pendataan BPJS') returning 1 $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000d4');
+select uji.harus_ditolak('Admin generus: tidak bisa meminta NIK',
+  $q$ insert into public.permintaan_identitas (jamaah_id, alasan) values ('00000000-0000-0000-0000-00000000e001', 'Pendataan BPJS') returning 1 $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000d2');
+select uji.harus_ditolak('Admin K1: permintaan langsung berstatus disetujui ditolak',
+  $q$ insert into public.permintaan_identitas (jamaah_id, alasan, status) values ('00000000-0000-0000-0000-00000000e001', 'Pendataan BPJS', 'disetujui') returning 1 $q$);
+insert into public.permintaan_identitas (jamaah_id, alasan) values ('00000000-0000-0000-0000-00000000e001', 'Pendataan BPJS kelompok');
+select uji.harus_ditolak('Admin K1: belum disetujui → NIK lengkap ditolak',
+  $q$ select * from public.lihat_identitas('00000000-0000-0000-0000-00000000e001') $q$);
+select uji.harus_ditolak('Admin K1: tidak bisa menyetujui sendiri',
+  $q$ select public.tangani_permintaan_identitas((select id from public.permintaan_identitas limit 1), true) $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000d1');
+select uji.cek('Admin desa: tidak melihat permintaan admin lain', not exists (select 1 from public.permintaan_identitas));
+select uji.sebagai('00000000-0000-0000-0000-0000000000d5');
+select uji.cek('Pengembang: melihat permintaan yang menunggu',
+  (select count(*) = 1 from public.permintaan_identitas where status = 'menunggu'));
+select public.tangani_permintaan_identitas((select id from public.permintaan_identitas limit 1), true, 'Silakan');
+select uji.harus_ditolak('Pengembang: permintaan yang sudah ditangani tidak bisa ditangani lagi',
+  $q$ select public.tangani_permintaan_identitas((select id from public.permintaan_identitas limit 1), false) $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000d2');
+select uji.cek('Admin K1: disetujui → NIK & KK lengkap terbaca',
+  (select nik = '3216070101090001' and no_kk = '3216070101090002' and berlaku_sampai > now()
+   from public.lihat_identitas('00000000-0000-0000-0000-00000000e001')));
+select uji.cek('Admin K1: setiap pembukaan NIK tercatat', (select count(*) = 1 from public.akses_identitas));
+select uji.cek('Admin K1: persetujuan hanya untuk jamaah yang diminta',
+  uji.harus_ditolak_teks($q$ select * from public.lihat_identitas('00000000-0000-0000-0000-00000000e002') $q$));
+reset role;
+update public.permintaan_identitas set berlaku_sampai = now() - interval '1 minute';
+set local role authenticated;
+select uji.sebagai('00000000-0000-0000-0000-0000000000d2');
+select uji.harus_ditolak('Admin K1: lewat 1 jam → NIK lengkap ditolak lagi',
+  $q$ select * from public.lihat_identitas('00000000-0000-0000-0000-00000000e001') $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000d5');
+select uji.cek('Pengembang: melihat catatan pembukaan NIK', (select count(*) = 1 from public.akses_identitas));
 
 reset role;
 
@@ -207,6 +272,6 @@ reset role;
 -- Hasil
 -- ---------------------------------------------------------------------
 select ok(lulus, nama || coalesce(' — ' || catatan, '')) from uji.hasil order by no;
-select cmp_ok((select count(*)::int from uji.hasil), '>=', 35, 'Jumlah skenario data pribadi');
+select cmp_ok((select count(*)::int from uji.hasil), '>=', 50, 'Jumlah skenario data pribadi');
 select * from finish();
 rollback;
