@@ -18,7 +18,6 @@ export function FormBuatKegiatan({ aksi, target }: { aksi: Aksi; target: TargetK
   const [jenis, setJenis] = useState<"rutin" | "agenda">("rutin");
   const [wilayah, setWilayah] = useState(target[0]?.nilai ?? "");
   const pilih = target.find((t) => t.nilai === wilayah);
-  const pilihanWilayah = jenis === "agenda" ? target.filter((t) => t.nilai !== "serentak") : target;
 
   return (
     <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
@@ -35,10 +34,7 @@ export function FormBuatKegiatan({ aksi, target }: { aksi: Aksi; target: TargetK
               name="jenis"
               value={j}
               checked={jenis === j}
-              onChange={() => {
-                setJenis(j);
-                if (j === "agenda" && wilayah === "serentak") setWilayah(pilihanWilayah.find((t) => t.nilai !== "serentak")?.nilai ?? "");
-              }}
+              onChange={() => setJenis(j)}
               className="sr-only"
             />
             <span className="block font-semibold">{j === "rutin" ? "Rutin berjadwal" : "Agenda sekali"}</span>
@@ -56,7 +52,7 @@ export function FormBuatKegiatan({ aksi, target }: { aksi: Aksi; target: TargetK
       <label className="flex flex-col gap-1.5">
         <span className={LABEL}>Wilayah</span>
         <select name="wilayah" value={wilayah} onChange={(e) => setWilayah(e.target.value)} className={INPUT_CLASS}>
-          {pilihanWilayah.map((t) => (
+          {target.map((t) => (
             <option key={t.nilai} value={t.nilai}>
               {t.nama}
             </option>

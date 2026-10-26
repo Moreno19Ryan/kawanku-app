@@ -43,7 +43,7 @@ async function Daftar() {
   ]);
   const namaKelompok = new Map(akses.kelompokFitur.map((k) => [k.id, k.nama]));
   const wilayah = (k: Kegiatan) =>
-    k.per_kelompok ? "Serentak di setiap kelompok" : k.kelompok_id ? (namaKelompok.get(k.kelompok_id) ?? "Kelompok") : "Tingkat desa";
+    k.kelompok_id ? (namaKelompok.get(k.kelompok_id) ?? "Kelompok") : "Tingkat desa";
 
   return (
     <div className="flex flex-col gap-5">

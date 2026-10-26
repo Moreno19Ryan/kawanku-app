@@ -39,7 +39,7 @@ export default function CetakKartuPage({ searchParams }: PageProps<"/cetak/kartu
 
 async function LembarKartu({ cari }: { cari: Promise<Cari> }) {
   const [akses, param] = await Promise.all([getAksesAbsensi(), cari]);
-  if (!akses || akses.kelompokKelola.length === 0) {
+  if (!akses || akses.kelompokKartu.length === 0) {
     return <p className="text-sm">Kamu tidak punya izin mencetak kartu absensi.</p>;
   }
 
@@ -52,7 +52,7 @@ async function LembarKartu({ cari }: { cari: Promise<Cari> }) {
     .eq("aktif", true)
     .eq("jamaah.aktif", true);
   if (UUID.test(jamaah)) query = query.eq("jamaah_id", jamaah);
-  else if (akses.kelompokKelola.some((k) => k.id === kelompok)) query = query.eq("jamaah.kelompok_id", kelompok);
+  else if (akses.kelompokKartu.some((k) => k.id === kelompok)) query = query.eq("jamaah.kelompok_id", kelompok);
   else {
     return (
       <p className="text-sm">

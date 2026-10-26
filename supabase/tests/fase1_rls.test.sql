@@ -239,17 +239,32 @@ select uji.cek('Admin desa: melihat 2 keterangan janda/duda (default izin hanya 
   (select count(*) = 2 from public.jamaah_janda_duda));
 select uji.cek('Admin desa: jamaah_tanpa_kategori berisi 1 baris',
   (select count(*) = 1 from public.jamaah_tanpa_kategori));
+-- Sejak 20261026100000: data jamaah hanya dikelola tingkat kelompok.
+select uji.harus_gagal('Admin desa: menambah jamaah ditolak (wewenang kelompok)',
+  $q$ insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin)
+      select id, 'Dari Desa', 'L' from public.kelompok where nomor = 1 $q$, 'row-level security');
+update public.jamaah set status_sekolah = 'sma_smk' where nama_lengkap = 'K1 SMP';
+select uji.cek('Admin desa: mengubah jamaah tidak berpengaruh (0 baris)',
+  (select status_sekolah = 'smp' from public.jamaah where nama_lengkap = 'K1 SMP'));
+update public.jamaah_janda_duda set jenis = 'cerai_hidup'
+  where jamaah_id = (select id from public.jamaah where nama_lengkap = 'K2 Janda 50');
+select uji.cek('Admin desa: mengubah keterangan janda/duda tidak berpengaruh (wewenang kelompok)',
+  (select jd.jenis = 'cerai_mati' from public.jamaah_janda_duda jd
+   join public.jamaah j on j.id = jd.jamaah_id where j.nama_lengkap = 'K2 Janda 50'));
 
 -- Admin kelompok 1
 select uji.sebagai('00000000-0000-0000-0000-00000000000b');
 select uji.cek('Admin kelompok 1: hanya melihat 8 jamaah Kelompok 1',
   (select count(*) = 8 and bool_and(nama_lengkap like 'K1 %') from public.jamaah));
-select uji.cek('Admin kelompok 1: melihat duda di kelompoknya, tapi TIDAK melihat keterangan janda/duda',
-  (select count(*) = 1 from public.jamaah where nama_lengkap = 'K1 Duda 45')
-  and (select count(*) = 0 from public.jamaah_janda_duda));
-select uji.harus_gagal('Admin kelompok 1: mengisi keterangan janda/duda ditolak',
-  $q$ insert into public.jamaah_janda_duda (jamaah_id, jenis)
-      select id, 'cerai_mati' from public.jamaah where nama_lengkap = 'K1 Duda 45' $q$, 'row-level security');
+select uji.cek('Admin kelompok 1: melihat keterangan janda/duda kelompoknya saja',
+  (select array_agg(j.nama_lengkap) = array['K1 Duda 45'] from public.jamaah_janda_duda jd
+   join public.jamaah j on j.id = jd.jamaah_id));
+select uji.harus_berhasil('Admin kelompok 1: mengubah keterangan janda/duda kelompoknya diterima',
+  $q$ update public.jamaah_janda_duda set jenis = 'cerai_mati'
+      where jamaah_id = (select id from public.jamaah where nama_lengkap = 'K1 Duda 45') $q$);
+select uji.harus_berhasil('Admin kelompok 1: menambah jamaah kelompoknya diterima',
+  $q$ insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin)
+      select id, 'Baru K1', 'L' from public.kelompok where nomor = 1 $q$);
 select uji.harus_gagal('Admin kelompok 1: menambah jamaah ke Kelompok 2 ditolak',
   $q$ insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin)
       select id, 'Penyusup', 'L' from public.kelompok where nomor = 2 $q$, 'row-level security');
@@ -277,21 +292,40 @@ select uji.cek('Admin generus desa: tidak melihat keterangan janda/duda',
   (select count(*) = 0 from public.jamaah_janda_duda));
 select uji.cek('Admin generus desa: tidak melihat keluarga (tanpa izin keluarga)',
   (select count(*) = 0 from public.keluarga));
-select uji.harus_gagal('Admin generus: mengubah status_sekolah hingga keluar cakupan ditolak (WITH CHECK)',
-  $q$ update public.jamaah set status_sekolah = 'sd' where nama_lengkap = 'K2 SMA' $q$, 'row-level security');
-select uji.harus_gagal('Admin generus: mengosongkan status_sekolah hingga keluar cakupan ditolak (WITH CHECK)',
-  $q$ update public.jamaah set status_sekolah = null where nama_lengkap = 'K2 SMA' $q$, 'row-level security');
-select uji.harus_gagal('Admin generus: mengubah status_pernikahan menjadi menikah ditolak (WITH CHECK)',
-  $q$ update public.jamaah set status_pernikahan = 'menikah' where nama_lengkap = 'K4 Kuliah' $q$, 'row-level security');
-select uji.harus_berhasil('Admin generus: mengubah status_sekolah yang tetap generus (sma_smk → kuliah) diterima',
-  $q$ update public.jamaah set status_sekolah = 'kuliah' where nama_lengkap = 'K2 SMA' $q$);
+update public.jamaah set status_sekolah = 'kuliah' where nama_lengkap = 'K2 SMA';
+select uji.cek('Admin generus desa: mengubah jamaah tidak berpengaruh (wewenang kelompok)',
+  (select status_sekolah = 'sma_smk' from public.jamaah where nama_lengkap = 'K2 SMA'));
 
 -- Admin generus Kelompok 1
 select uji.sebagai('00000000-0000-0000-0000-00000000000e');
+select uji.harus_gagal('Admin generus: mengubah status_sekolah hingga keluar cakupan ditolak (WITH CHECK)',
+  $q$ update public.jamaah set status_sekolah = 'sd' where nama_lengkap = 'K1 SMA Tahun Saja' $q$, 'row-level security');
+select uji.harus_gagal('Admin generus: mengosongkan status_sekolah hingga keluar cakupan ditolak (WITH CHECK)',
+  $q$ update public.jamaah set status_sekolah = null where nama_lengkap = 'K1 SMA Tahun Saja' $q$, 'row-level security');
+select uji.harus_gagal('Admin generus: mengubah status_pernikahan menjadi menikah ditolak (WITH CHECK)',
+  $q$ update public.jamaah set status_pernikahan = 'menikah' where nama_lengkap = 'K1 Lajang Bekerja 25' $q$, 'row-level security');
+select uji.harus_berhasil('Admin generus: mengubah status_sekolah yang tetap generus (sma_smk → kuliah) diterima',
+  $q$ update public.jamaah set status_sekolah = 'kuliah' where nama_lengkap = 'K1 SMA Tahun Saja' $q$);
 select uji.cek('Admin generus Kelompok 1: hanya melihat 3 generus Kelompok 1',
   (select count(*) = 3 and bool_and(nama_lengkap like 'K1 %') from public.jamaah));
 select uji.cek('Admin generus Kelompok 1: tidak melihat generus kelompok lain',
   (select count(*) = 0 from public.jamaah where nama_lengkap not like 'K1 %'));
+
+-- Izin hanya_kelompok yang diberikan lagi ke peran desa tetap tidak berlaku
+reset role;
+select uji.cek('Izin data jamaah, akun generus & kartu ditandai hanya_kelompok',
+  (select count(*) = 11 from public.izin where hanya_kelompok));
+insert into public.peran_izin (peran_id, izin_kode)
+  select id, 'jamaah.ubah' from public.peran where kode = 'admin_desa';
+set role authenticated;
+select uji.sebagai('00000000-0000-0000-0000-00000000000a');
+update public.jamaah set status_sekolah = 'sma_smk' where nama_lengkap = 'K1 SMP';
+select uji.cek('Admin desa + jamaah.ubah lewat data: tetap tidak bisa mengubah jamaah',
+  (select status_sekolah = 'smp' from public.jamaah where nama_lengkap = 'K1 SMP'));
+reset role;
+delete from public.peran_izin
+  where izin_kode = 'jamaah.ubah' and peran_id = (select id from public.peran where kode = 'admin_desa');
+set role authenticated;
 
 -- Izin global tidak pernah lolos untuk peran hanya_generus
 reset role;
@@ -305,9 +339,9 @@ reset role;
 delete from public.peran_izin
   where izin_kode = 'kelompok.kelola' and peran_id = (select id from public.peran where kode = 'admin_generus');
 
--- Perubahan status sekolah & pernikahan oleh admin desa
+-- Perubahan status sekolah & pernikahan oleh admin kelompok
 set role authenticated;
-select uji.sebagai('00000000-0000-0000-0000-00000000000a');
+select uji.sebagai('00000000-0000-0000-0000-00000000000b');
 update public.jamaah set status_sekolah = 'sma_smk' where nama_lengkap = 'K1 SMP';
 select uji.cek('Status sekolah SMP → SMA/SMK: kategori pra_remaja → remaja_muda (umur tidak berubah)',
   uji.kategori('K1 SMP') = 'remaja_muda');
@@ -317,7 +351,7 @@ update public.jamaah set status_pernikahan = 'menikah' where nama_lengkap = 'K1 
 select uji.cek('Lajang bekerja → menikah: kategori remaja_dewasa → berkeluarga',
   uji.kategori('K1 Lajang Bekerja 25') = 'berkeluarga');
 select uji.cek('updated_by terisi otomatis dengan admin yang mengubah',
-  (select updated_by = '00000000-0000-0000-0000-00000000000a' from public.jamaah where nama_lengkap = 'K1 Lajang Bekerja 25'));
+  (select updated_by = '00000000-0000-0000-0000-00000000000b' from public.jamaah where nama_lengkap = 'K1 Lajang Bekerja 25'));
 select uji.sebagai('00000000-0000-0000-0000-00000000000c');
 select uji.cek('... dan jamaah itu hilang dari cakupan admin generus desa (6 → 5)',
   (select count(*) = 5 from public.jamaah)
@@ -334,21 +368,18 @@ select uji.cek('Duda menikah lagi (sungguhan): keterangan terhapus, keterangan K
   (select array_agg(j.nama_lengkap) = array['K2 Janda 50'] from public.jamaah_janda_duda jd
    join public.jamaah j on j.id = jd.jamaah_id));
 
--- Izin bisa diberikan lewat data: admin_kelompok diberi janda_duda.lihat
+-- Sejak 20261026100000 admin_kelompok memegang janda_duda.lihat: admin K1
+-- melihat keterangan K1 saja, bukan K2.
 insert into public.jamaah (kelompok_id, nama_lengkap, jenis_kelamin, status_pernikahan)
   select id, 'K1 Janda 55', 'P', 'janda_duda' from public.kelompok where nomor = 1;
 insert into public.jamaah_janda_duda (jamaah_id, jenis)
   select id, 'cerai_hidup' from public.jamaah where nama_lengkap = 'K1 Janda 55';
-insert into public.peran_izin (peran_id, izin_kode)
-  select id, 'janda_duda.lihat' from public.peran where kode = 'admin_kelompok';
 set role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-00000000000b');
-select uji.cek('Izin janda_duda.lihat diberi ke admin_kelompok lewat data: admin K1 melihat keterangan K1 saja, bukan K2',
+select uji.cek('Admin K1 (janda_duda.lihat) melihat keterangan K1 saja, bukan K2',
   (select array_agg(j.nama_lengkap) = array['K1 Janda 55'] from public.jamaah_janda_duda jd
    join public.jamaah j on j.id = jd.jamaah_id));
 reset role;
-delete from public.peran_izin
-  where izin_kode = 'janda_duda.lihat' and peran_id = (select id from public.peran where kode = 'admin_kelompok');
 delete from public.jamaah where nama_lengkap = 'K1 Janda 55';
 set role authenticated;
 

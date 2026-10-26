@@ -60,7 +60,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
       <PageHeader
         title={k.nama}
         description={`${k.jenis === "rutin" ? "Rutin" : "Agenda"} · ${
-          k.per_kelompok ? "Serentak di setiap kelompok" : k.kelompok_id ? namaKelompok.get(k.kelompok_id) : "Tingkat desa"
+          k.kelompok_id ? namaKelompok.get(k.kelompok_id) : "Tingkat desa"
         }${k.hanya_generus ? " · Generus" : ""}${k.jenis === "rutin" ? ` · ${ringkasJadwal(jadwal ?? [])}` : ""}`}
       />
 

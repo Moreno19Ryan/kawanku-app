@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Tes Fase 3a (migrasi 20261021220000_kegiatan_rutin): kegiatan, jadwal,
--- pertemuan per wilayah & sasaran, kegiatan serentak per kelompok,
+-- pertemuan per wilayah & sasaran, kegiatan kelompok hanya oleh kelompoknya,
 -- buka absensi dari pertemuan, akses generus & pengembang.
 -- Satu transaksi, di-rollback.
 -- =====================================================================
@@ -73,6 +73,12 @@ $$;
 create function uji.keg(p_nama text) returns uuid language sql stable security definer as $$
   select id from public.kegiatan where nama = p_nama;
 $$;
+-- Sambung kelompok milik kelompok ke-N (sejak 20261026100000 tidak ada
+-- kegiatan serentak; kegiatan seed dipecah per kelompok).
+create function uji.kegk(p_nomor int) returns uuid language sql stable security definer as $$
+  select k.id from public.kegiatan k join public.kelompok g on g.id = k.kelompok_id
+  where k.nama = 'Pengajian Rutin Sambung Kelompok' and g.nomor = p_nomor;
+$$;
 grant execute on all functions in schema uji to anon, authenticated;
 
 insert into auth.users (id) values
@@ -94,12 +100,14 @@ insert into public.akun_generus (user_id, jamaah_id, username)
 values ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000f1', 'genk1');
 
 -- Seed
-select uji.cek('Seed: dua kegiatan rutin awal',
-  (select count(*) from public.kegiatan where jenis = 'rutin' and created_by is null) = 2);
-select uji.cek('Seed: sambung kelompok serentak, Minggu (libur pekan 3) & Selasa 20:00',
+select uji.cek('Seed: sambung desa + sambung kelompok di setiap kelompok (4), tanpa serentak',
+  (select count(*) from public.kegiatan where jenis = 'rutin' and created_by is null) = 5
+  and not exists (select 1 from public.kegiatan where per_kelompok)
+  and (select count(distinct kelompok_id) from public.kegiatan
+       where nama = 'Pengajian Rutin Sambung Kelompok') = 4);
+select uji.cek('Seed: sambung kelompok K1, Minggu (libur pekan 3) & Selasa 20:00 (jadwal disalin)',
   (select array_agg(j.hari || ':' || j.jam || ':' || j.kecuali_pekan_ke::text order by j.hari)
-   from public.kegiatan_jadwal j join public.kegiatan k on k.id = j.kegiatan_id
-   where k.nama = 'Pengajian Rutin Sambung Kelompok' and k.per_kelompok)
+   from public.kegiatan_jadwal j where j.kegiatan_id = uji.kegk(1))
   = array['0:20:00:00:{3}', '2:20:00:00:{}']);
 select uji.cek('Seed: sambung desa Kamis 20:00',
   (select j.hari = 4 and j.jam = '20:00' from public.kegiatan_jadwal j join public.kegiatan k on k.id = j.kegiatan_id
@@ -110,8 +118,8 @@ select uji.cek('Seed: izin kegiatan untuk admin & pengembang lihat',
   = array['admin_desa:kegiatan.kelola', 'admin_desa:kegiatan.lihat', 'admin_generus:kegiatan.kelola',
           'admin_generus:kegiatan.lihat', 'admin_kelompok:kegiatan.kelola', 'admin_kelompok:kegiatan.lihat',
           'pengembang:kegiatan.lihat']);
-select uji.harus_ditolak('Constraint: per_kelompok wajib tingkat desa',
-  $q$ insert into public.kegiatan (nama, kelompok_id, per_kelompok) values ('X', uji.kel(1), true) returning 1 $q$);
+select uji.harus_ditolak('Constraint: kegiatan serentak tidak bisa dibuat lagi',
+  $q$ insert into public.kegiatan (nama, per_kelompok) values ('X', true) returning 1 $q$);
 select uji.harus_ditolak('Constraint: pekan libur hanya 1-5',
   $q$ insert into public.kegiatan_jadwal (kegiatan_id, hari, jam, kecuali_pekan_ke)
       values (uji.keg('Pengajian Rutin Sambung Desa'), 1, '20:00', '{6}') returning 1 $q$);
@@ -132,26 +140,26 @@ select uji.harus_ditolak('K1: membuat kegiatan desa ditolak',
   $q$ insert into public.kegiatan (nama) values ('X') returning 1 $q$);
 select uji.harus_ditolak('K1: mengubah kegiatan desa ditolak',
   $q$ update public.kegiatan set nama = 'Y' where nama = 'Pengajian Rutin Sambung Desa' returning 1 $q$);
-select uji.harus_berhasil('K1: mengisi pemateri pertemuan serentak di K1',
-  $q$ insert into public.pertemuan (kegiatan_id, kelompok_id, tanggal, mulai, pemateri_nama, materi)
-      values (uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(1), '2026-10-25', '2026-10-25 20:00+07', 'Ust. A', 'Bab Sholat')
+select uji.harus_berhasil('K1: mengisi pemateri pertemuan sambung kelompok K1',
+  $q$ insert into public.pertemuan (kegiatan_id, tanggal, mulai, pemateri_nama, materi)
+      values (uji.kegk(1), '2026-10-25', '2026-10-25 20:00+07', 'Ust. A', 'Bab Sholat')
       returning 1 $q$);
-insert into public.pertemuan (kegiatan_id, kelompok_id, tanggal, mulai, pemateri_nama, materi)
-values (uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(1), '2026-10-25', '2026-10-25 20:00+07', 'Ust. A', 'Bab Sholat');
-select uji.harus_ditolak('K1: pertemuan serentak untuk K2 ditolak',
-  $q$ insert into public.pertemuan (kegiatan_id, kelompok_id, tanggal, mulai)
-      values (uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(2), '2026-10-25', '2026-10-25 20:00+07') returning 1 $q$);
+insert into public.pertemuan (kegiatan_id, tanggal, mulai, pemateri_nama, materi)
+values (uji.kegk(1), '2026-10-25', '2026-10-25 20:00+07', 'Ust. A', 'Bab Sholat');
+select uji.harus_ditolak('K1: pertemuan sambung kelompok K2 ditolak',
+  $q$ insert into public.pertemuan (kegiatan_id, tanggal, mulai)
+      values (uji.kegk(2), '2026-10-25', '2026-10-25 20:00+07') returning 1 $q$);
 select uji.harus_ditolak('K1: pertemuan sambung desa ditolak',
   $q$ insert into public.pertemuan (kegiatan_id, tanggal, mulai)
       values (uji.keg('Pengajian Rutin Sambung Desa'), '2026-10-22', '2026-10-22 20:00+07') returning 1 $q$);
 create temp table sesi_k1 on commit drop as
-  select public.buka_absensi_pertemuan(uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(1), '2026-10-27', '2026-10-27 20:00+07') id;
+  select public.buka_absensi_pertemuan(uji.kegk(1), uji.kel(1), '2026-10-27', '2026-10-27 20:00+07') id;
 grant select on sesi_k1 to authenticated;
-select uji.cek('K1: buka absensi → sesi K1 bernama kegiatan · kelompok',
-  (select nama = 'Pengajian Rutin Sambung Kelompok · Kelompok 1' and kelompok_id = uji.kel(1) and not ditutup
+select uji.cek('K1: buka absensi → sesi K1 bernama kegiatan',
+  (select nama = 'Pengajian Rutin Sambung Kelompok' and kelompok_id = uji.kel(1) and not ditutup
    from public.sesi_absensi where id = (select id from sesi_k1)));
 select uji.cek('K1: buka absensi kedua kali → sesi yang sama',
-  public.buka_absensi_pertemuan(uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(1), '2026-10-27', '2026-10-27 20:00+07')
+  public.buka_absensi_pertemuan(uji.kegk(1), uji.kel(1), '2026-10-27', '2026-10-27 20:00+07')
   = (select id from sesi_k1));
 select uji.cek('K1: pertemuan tertaut ke sesi',
   exists (select 1 from public.pertemuan where sesi_id = (select id from sesi_k1) and tanggal = '2026-10-27'));
@@ -163,7 +171,7 @@ select uji.harus_berhasil('K1: memindah jam pertemuan',
   $q$ update public.pertemuan set mulai = '2026-10-25 19:30+07' where tanggal = '2026-10-25' returning 1 $q$);
 update public.pertemuan set status = 'dibatalkan', alasan_batal = 'Libur' where tanggal = '2026-10-25';
 select uji.harus_ditolak('K1: buka absensi pertemuan yang dibatalkan',
-  $q$ select public.buka_absensi_pertemuan(uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(1), '2026-10-25', '2026-10-25 20:00+07') $q$);
+  $q$ select public.buka_absensi_pertemuan(uji.kegk(1), uji.kel(1), '2026-10-25', '2026-10-25 20:00+07') $q$);
 
 -- ---------------------------------------------------------------------
 -- Admin kelompok 2
@@ -172,18 +180,27 @@ select uji.sebagai('00000000-0000-0000-0000-0000000000a3');
 select uji.cek('K2: tidak melihat kegiatan & pertemuan K1',
   not exists (select 1 from public.kegiatan where nama like '%K1')
   and not exists (select 1 from public.pertemuan));
-select uji.harus_berhasil('K2: pertemuan serentak untuk K2 sendiri',
-  $q$ insert into public.pertemuan (kegiatan_id, kelompok_id, tanggal, mulai, pemateri_nama)
-      values (uji.keg('Pengajian Rutin Sambung Kelompok'), uji.kel(2), '2026-10-25', '2026-10-25 20:00+07', 'Ust. B') returning 1 $q$);
+select uji.harus_berhasil('K2: pertemuan sambung kelompok K2 sendiri',
+  $q$ insert into public.pertemuan (kegiatan_id, tanggal, mulai, pemateri_nama)
+      values (uji.kegk(2), '2026-10-25', '2026-10-25 20:00+07', 'Ust. B') returning 1 $q$);
 
 -- ---------------------------------------------------------------------
 -- Admin desa
 -- ---------------------------------------------------------------------
 select uji.sebagai('00000000-0000-0000-0000-0000000000a1');
-select uji.cek('Desa: melihat semua kegiatan', (select count(*) from public.kegiatan) = 4);
-select uji.harus_ditolak('Desa: pertemuan serentak tanpa kelompok ditolak',
+select uji.cek('Desa: melihat semua kegiatan', (select count(*) from public.kegiatan) = 7);
+-- Kegiatan kelompok wewenang kelompok (20261026100000).
+select uji.harus_ditolak('Desa: membuat kegiatan untuk kelompok ditolak',
+  $q$ insert into public.kegiatan (nama, kelompok_id) values ('X', uji.kel(3)) returning 1 $q$);
+select uji.harus_ditolak('Desa: mengubah kegiatan kelompok ditolak',
+  $q$ update public.kegiatan set nama = 'Y' where id = uji.kegk(3) returning 1 $q$);
+select uji.harus_ditolak('Desa: mengubah jadwal kegiatan kelompok ditolak',
+  $q$ update public.kegiatan_jadwal set jam = '19:00' where kegiatan_id = uji.kegk(3) returning 1 $q$);
+select uji.harus_ditolak('Desa: pertemuan kegiatan kelompok ditolak',
   $q$ insert into public.pertemuan (kegiatan_id, tanggal, mulai)
-      values (uji.keg('Pengajian Rutin Sambung Kelompok'), '2026-11-01', '2026-11-01 20:00+07') returning 1 $q$);
+      values (uji.kegk(3), '2026-11-01', '2026-11-01 20:00+07') returning 1 $q$);
+select uji.harus_ditolak('Desa: mengubah pertemuan kegiatan kelompok ditolak',
+  $q$ update public.pertemuan set materi = 'X' where kegiatan_id = uji.kegk(1) returning 1 $q$);
 select uji.harus_berhasil('Desa: pertemuan sambung desa',
   $q$ insert into public.pertemuan (kegiatan_id, kelompok_id, tanggal, mulai)
       values (uji.keg('Pengajian Rutin Sambung Desa'), uji.kel(3), '2026-10-22', '2026-10-22 20:00+07')
@@ -191,8 +208,6 @@ select uji.harus_berhasil('Desa: pertemuan sambung desa',
 insert into public.pertemuan (kegiatan_id, tanggal, mulai) values (uji.keg('Pengajian Rutin Sambung Desa'), '2026-10-22', '2026-10-22 20:00+07');
 select uji.cek('Desa: kelompok pertemuan desa dipaksa null (bukan dari isian)',
   (select kelompok_id is null from public.pertemuan where tanggal = '2026-10-22'));
-select uji.harus_ditolak('Desa: ubah jadi bukan serentak setelah ada pertemuan ditolak',
-  $q$ update public.kegiatan set per_kelompok = false where nama = 'Pengajian Rutin Sambung Kelompok' returning 1 $q$);
 select uji.harus_berhasil('Desa: ubah jam jadwal (hasil musyawarah) boleh',
   $q$ update public.kegiatan_jadwal set jam = '19:30' where hari = 4 returning 1 $q$);
 

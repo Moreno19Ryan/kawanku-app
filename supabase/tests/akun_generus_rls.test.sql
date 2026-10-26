@@ -108,15 +108,17 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000b1', 'desa@uji.id'),
   ('00000000-0000-0000-0000-0000000000b2', 'kel1@uji.id'),
   ('00000000-0000-0000-0000-0000000000b3', 'gen1@uji.id'),
+  ('00000000-0000-0000-0000-0000000000b4', 'kel2@uji.id'),
   ('00000000-0000-0000-0000-0000000000c1', 'g-satu@generus.kawanku.invalid'),   -- akun generus K1
   ('00000000-0000-0000-0000-0000000000c2', 'g-dua@generus.kawanku.invalid'),    -- calon akun (dewasa)
   ('00000000-0000-0000-0000-0000000000c3', 'g-tiga@generus.kawanku.invalid');   -- calon akun (generus K2)
 insert into public.admin (user_id, nama) values
   ('00000000-0000-0000-0000-0000000000b1', 'Desa'), ('00000000-0000-0000-0000-0000000000b2', 'Kelompok 1'),
-  ('00000000-0000-0000-0000-0000000000b3', 'Generus K1');
+  ('00000000-0000-0000-0000-0000000000b3', 'Generus K1'), ('00000000-0000-0000-0000-0000000000b4', 'Kelompok 2');
 select uji.beri('00000000-0000-0000-0000-0000000000b1', 'admin_desa', null);
 select uji.beri('00000000-0000-0000-0000-0000000000b2', 'admin_kelompok', 1);
 select uji.beri('00000000-0000-0000-0000-0000000000b3', 'admin_generus', 1);
+select uji.beri('00000000-0000-0000-0000-0000000000b4', 'admin_kelompok', 2);
 
 -- f1 generus K1 (punya akun), f2 dewasa K1, f3 generus K2, f4 generus K1 lain
 insert into public.jamaah (id, kelompok_id, nama_lengkap, jenis_kelamin, kode, status_pernikahan, status_sekolah, tahun_lahir)
@@ -141,9 +143,11 @@ from (values
 insert into public.absensi (sesi_id, jamaah_id, jalur)
 values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000f4', 'manual');
 
-select uji.cek('Seed: akun_generus.kelola untuk admin desa/kelompok/generus',
+-- Sejak 20261026100000 akun generus dikelola tingkat kelompok saja.
+select uji.cek('Seed: akun_generus.kelola untuk admin kelompok & generus (khusus kelompok)',
   (select array_agg(p.kode order by p.kode) from public.peran_izin pi join public.peran p on p.id = pi.peran_id
-   where pi.izin_kode = 'akun_generus.kelola') = array['admin_desa', 'admin_generus', 'admin_kelompok']);
+   where pi.izin_kode = 'akun_generus.kelola') = array['admin_generus', 'admin_kelompok']
+  and (select hanya_kelompok from public.izin where kode = 'akun_generus.kelola'));
 select uji.harus_ditolak('Trigger: akun untuk jamaah dewasa ditolak',
   $q$ insert into public.akun_generus (user_id, jamaah_id, username)
       values ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000f2', 'dua') returning 1 $q$);
@@ -254,9 +258,15 @@ select uji.cek('K1: token layar berformat sesi.detik.tanda',
 select uji.harus_ditolak('K1: token layar sesi K2 ditolak',
   $q$ select public.token_layar('00000000-0000-0000-0000-0000000000e2') $q$);
 reset role;
--- Token sesi K2 dibuat admin desa.
+-- Token sesi K2 hanya dibuat pengurus K2 (20261026100000), bukan desa.
 set local role authenticated;
 select uji.sebagai('00000000-0000-0000-0000-0000000000b1');
+select uji.harus_ditolak('Desa: kembalikan PIN ditolak (wewenang kelompok)',
+  $q$ select public.kembalikan_pin_awal('00000000-0000-0000-0000-0000000000f1', 'lupa') $q$);
+select uji.cek('Desa: tidak lagi melihat akun generus', not exists (select 1 from public.akun_generus));
+select uji.harus_ditolak('Desa: token layar sesi K2 ditolak',
+  $q$ select public.token_layar('00000000-0000-0000-0000-0000000000e2') $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000b4');
 create temp table tok2 on commit drop as select public.token_layar('00000000-0000-0000-0000-0000000000e2') t2;
 grant select on tok2 to authenticated;
 

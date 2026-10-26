@@ -146,7 +146,7 @@ select uji.cek('Data sensitif ikut terhapus bersama jamaah (cascade)',
 set local role authenticated;
 
 -- ---------------------------------------------------------------------
--- Admin desa: semua
+-- Admin desa: melihat semua, mengubah tidak (wewenang kelompok)
 -- ---------------------------------------------------------------------
 select uji.sebagai('00000000-0000-0000-0000-0000000000d1');
 select uji.cek('Admin desa: lihat kontak', (select count(*) from public.jamaah_kontak) = 2);
@@ -159,8 +159,10 @@ select uji.harus_ditolak('Admin desa: tidak lagi mengubah NIK (wewenang kelompok
   $q$ select public.simpan_identitas('00000000-0000-0000-0000-00000000e001', '3216070101090009', null) $q$);
 select uji.harus_ditolak('Admin desa: lihat NIK lengkap tanpa persetujuan ditolak',
   $q$ select * from public.lihat_identitas('00000000-0000-0000-0000-00000000e001') $q$);
-select uji.harus_berhasil('Admin desa: ubah alamat',
+select uji.harus_ditolak('Admin desa: ubah alamat ditolak (wewenang kelompok)',
   $q$ update public.jamaah_pribadi set ktp_rt = 4 where jamaah_id = '00000000-0000-0000-0000-00000000e001' returning 1 $q$);
+select uji.harus_ditolak('Admin desa: ubah kontak ditolak (wewenang kelompok)',
+  $q$ update public.jamaah_kontak set email = 'x@uji.id' where jamaah_id = '00000000-0000-0000-0000-00000000e001' returning 1 $q$);
 
 -- ---------------------------------------------------------------------
 -- Admin kelompok 1: kontak & pribadi kelompoknya, TANPA identitas

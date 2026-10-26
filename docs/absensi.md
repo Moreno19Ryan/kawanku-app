@@ -94,10 +94,22 @@ sudah punya catatan.
 | | Lihat sesi | Kelola sesi | Catat | Token kartu |
 | - | --- | --- | --- | --- |
 | Izin | `absensi.lihat` | `absensi.kelola` | `absensi.kelola` | `absensi.kelola` |
-| Admin desa | semua | semua | semua jamaah | semua |
-| Admin kelompok | kelompoknya + sesi desa | kelompoknya | jamaah kelompoknya (juga di sesi desa) | kelompoknya |
-| Admin generus | wilayahnya + sesi desa | sesi generus di wilayahnya | generus di wilayahnya | generus |
+| Admin desa | semua | sesi desa | sesi desa (semua jamaah) | semua |
+| Admin kelompok | kelompoknya + sesi desa | sesi kelompoknya | sesi kelompoknya + jamaahnya di sesi desa | kelompoknya |
+| Admin generus | wilayahnya + sesi desa | sesi generus tepat di wilayahnya | generus di wilayahnya (sesi kelompok hanya kelompoknya) | generus |
 | Pengembang | semua (hanya lihat) | - | - | - |
+
+- Sejak 26 Okt 2026 (migrasi `20261026100000_wewenang_wilayah`): sesi
+  dikelola tepat di wilayahnya (`boleh_kelola_sesi`), dan mencatat/
+  mengoreksi/QR layar memakai `private.boleh_catat_sesi` /
+  `boleh_absensi_di`: sesi kelompok hanya oleh penugasan kelompok itu, sesi
+  desa oleh pemegang `absensi.kelola` mana pun (jamaahnya dibatasi
+  `boleh_jamaah`). Persetujuan izin kegiatan kelompok juga hanya oleh
+  kelompok itu.
+- Kartu QR fisik (buat, ganti, cabut, cetak) memakai izin `kartu.kelola` dan
+  akun generus memakai `akun_generus.kelola`; keduanya hanya berlaku dari
+  penugasan kelompok (`izin.hanya_kelompok`). Melihat kartu tetap
+  `absensi.kelola` (dibutuhkan saat scan).
 
 - Catatan absensi yang terlihat dibatasi per jamaah (`boleh_jamaah`), jadi
   admin generus hanya melihat catatan generus.

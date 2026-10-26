@@ -73,6 +73,7 @@ $$;
 grant execute on all functions in schema uji to anon, authenticated;
 
 insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000b1', 'desa@uji.id'),
   ('00000000-0000-0000-0000-0000000000b2', 'kel1@uji.id'),
   ('00000000-0000-0000-0000-0000000000b3', 'kel2@uji.id'),
   ('00000000-0000-0000-0000-0000000000c1', 'g-satu@generus.kawanku.invalid'),
@@ -83,6 +84,9 @@ insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
 select v.u::uuid, p.id, k.id from (values
   ('00000000-0000-0000-0000-0000000000b2', 1), ('00000000-0000-0000-0000-0000000000b3', 2)) v(u, n)
 join public.kelompok k on k.nomor = v.n join public.peran p on p.kode = 'admin_kelompok';
+insert into public.admin (user_id, nama) values ('00000000-0000-0000-0000-0000000000b1', 'Desa');
+insert into public.penugasan_peran (user_id, peran_id)
+select '00000000-0000-0000-0000-0000000000b1', id from public.peran where kode = 'admin_desa';
 
 insert into public.jamaah (id, kelompok_id, nama_lengkap, jenis_kelamin, kode, status_pernikahan, status_sekolah, tahun_lahir)
 select v.id::uuid, (select id from public.kelompok where nomor = v.n), v.nama, 'L', 'x', 'lajang', 'sma_smk', 2009
@@ -94,10 +98,10 @@ insert into public.akun_generus (user_id, jamaah_id, username, pin_awal) values
   ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000f1', 'satu', false),
   ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000f2', 'dua', false);
 
--- a1: serentak setiap hari; a2: khusus K2 setiap hari; a3: hanya hari besok
+-- a1: khusus K1 setiap hari; a2: khusus K2 setiap hari; a3: desa, hanya hari besok
 insert into public.kegiatan (id, nama, kelompok_id, per_kelompok, berlaku_mulai)
 values
-  ('00000000-0000-0000-0000-0000000000a1', 'Pengajian Serentak', null, true, uji.hari(-30)),
+  ('00000000-0000-0000-0000-0000000000a1', 'Pengajian K1', (select id from public.kelompok where nomor = 1), false, uji.hari(-30)),
   ('00000000-0000-0000-0000-0000000000a2', 'Pengajian K2', (select id from public.kelompok where nomor = 2), false, uji.hari(-30)),
   ('00000000-0000-0000-0000-0000000000a3', 'Hanya Besok', null, false, uji.hari(-30));
 insert into public.kegiatan_jadwal (kegiatan_id, hari, jam)
@@ -156,6 +160,12 @@ select uji.cek('Gen K2: tidak melihat pengajuan orang lain', not exists (select 
 select uji.sebagai('00000000-0000-0000-0000-0000000000b3');
 select uji.cek('Admin K2: tidak melihat pengajuan K1', not exists (select 1 from public.pengajuan_izin));
 select uji.harus_ditolak('Admin K2: tidak bisa menyetujui pengajuan K1',
+  $q$ update public.pengajuan_izin set status = 'disetujui' returning 1 $q$);
+
+-- Kegiatan kelompok: izin disetujui pengurus kelompok itu (20261026100000).
+select uji.sebagai('00000000-0000-0000-0000-0000000000b1');
+select uji.cek('Admin desa: melihat pengajuan K1', (select count(*) from public.pengajuan_izin) = 4);
+select uji.harus_ditolak('Admin desa: tidak bisa menyetujui izin kegiatan K1',
   $q$ update public.pengajuan_izin set status = 'disetujui' returning 1 $q$);
 
 select uji.sebagai('00000000-0000-0000-0000-0000000000b2');

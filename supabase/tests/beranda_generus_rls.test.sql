@@ -146,10 +146,12 @@ select uji.sebagai('00000000-0000-0000-0000-0000000000b5');
 select uji.cek('Pengembang: pengumuman admin', uji.umum('admin', null) = 'ok');
 select uji.cek('Pengembang: pengumuman untuk semua', uji.umum('semua', null) = 'ok');
 
--- Admin desa (kegiatan.kelola seluruh desa): generus di mana pun, bukan admin.
+-- Admin desa (kegiatan.kelola tingkat desa): generus seluruh desa saja;
+-- pengumuman kelompok wewenang kelompoknya (20261026100000).
 select uji.sebagai('00000000-0000-0000-0000-0000000000b1');
 select uji.cek('Desa: pengumuman generus seluruh desa', uji.umum('generus', null) = 'ok');
-select uji.cek('Desa: pengumuman generus K2', uji.umum('generus', 2) = 'ok');
+select uji.harus_ditolak('Desa: pengumuman generus K2 ditolak (wewenang kelompok)',
+  $q$ select uji.umum('generus', 2) $q$);
 select uji.harus_ditolak('Desa: pengumuman admin ditolak (khusus pengumuman.kelola)',
   $q$ select uji.umum('admin', null) $q$);
 
@@ -160,7 +162,7 @@ select uji.harus_ditolak('K1: pengumuman generus K2 ditolak', $q$ select uji.umu
 select uji.harus_ditolak('K1: pengumuman admin ditolak', $q$ select uji.umum('admin', 1) $q$);
 select uji.harus_ditolak('K1: tidak bisa menyembunyikan pengumuman desa',
   $q$ update public.pengumuman set aktif = false where kelompok_id is null returning 1 $q$);
-select uji.cek('K1 (admin): melihat semua pengumuman', (select count(*) from public.pengumuman) = 5);
+select uji.cek('K1 (admin): melihat semua pengumuman', (select count(*) from public.pengumuman) = 4);
 
 select uji.sebagai('00000000-0000-0000-0000-0000000000b4');
 select uji.harus_berhasil('Admin generus K1: pengumuman generus K1',

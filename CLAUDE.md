@@ -19,6 +19,13 @@ cakupannya satu desa.
   hak akses disimpan sebagai **data** di database, bukan di-hardcode: wilayah
   (`penugasan_peran.kelompok_id`, kosong = seluruh desa) dan sasaran
   (`peran.hanya_generus`) adalah dua sumbu terpisah.
+- **Wewenang wilayah** (Reno, 26 Okt 2026, `docs/hak-akses.md`): mengelola
+  data jamaah hanya di tingkat kelompok (`izin.hanya_kelompok`, dihormati
+  `private.boleh` & `admin.ts`; desa hanya melihat). Kegiatan, jadwal,
+  pertemuan, pengajar, pengumuman generus, dan sesi absensi dikelola **tepat**
+  di wilayahnya (`private.boleh_kelola_wilayah`); tidak ada kegiatan
+  serentak (`kegiatan_tanpa_serentak`). Catat absensi:
+  `private.boleh_catat_sesi` (sesi kelompok hanya kelompoknya).
 - **Dua jenis entitas**:
   - Profil jamaah: semua orang, tanpa akun.
   - Akun login: hanya generus (username + PIN yang dibuat admin). Admin login
@@ -41,7 +48,8 @@ cakupannya satu desa.
   permintaan yang disetujui pengembang, berlaku 1 jam, tercatat; bukan ID,
   ID tetap kode `KW-`). Status pernikahan hanya
   `lajang`/`menikah`/`janda_duda`; untuk janda/duda hanya keterangan
-  `cerai_hidup`/`cerai_mati` di `jamaah_janda_duda` (default hanya admin desa).
+  `cerai_hidup`/`cerai_mati` di `jamaah_janda_duda` (diisi admin kelompok,
+  dilihat desa & kelompoknya).
   Tidak disimpan: tinggi/berat badan dan data kesehatan.
 
 ### Fase

@@ -152,7 +152,7 @@ export async function ubahStatusPeserta(
 
 export async function buatKartuKelompok(kelompokId: string): Promise<StateAksi> {
   const ctx = await konteks();
-  if (!ctx || !ctx.akses.kelompokKelola.some((k) => k.id === kelompokId)) return TIDAK_BERHAK;
+  if (!ctx || !ctx.akses.kelompokKartu.some((k) => k.id === kelompokId)) return TIDAK_BERHAK;
   const { data, error } = await ctx.supabase.rpc("buat_kartu_qr_kelompok", { p_kelompok_id: kelompokId });
   if (error) return GAGAL;
   refresh();
@@ -162,7 +162,7 @@ export async function buatKartuKelompok(kelompokId: string): Promise<StateAksi> 
 /** Kartu pertama, atau ganti kartu yang hilang/rusak (kartu lama tidak berlaku lagi). */
 export async function gantiKartu(jamaahId: string): Promise<StateAksi> {
   const ctx = await konteks();
-  if (!ctx) return TIDAK_BERHAK;
+  if (!ctx || ctx.akses.kelompokKartu.length === 0) return TIDAK_BERHAK;
   const { error } = await ctx.supabase.rpc("ganti_kartu_qr", { p_jamaah_id: jamaahId });
   if (error?.hint === "pakai_akun") {
     return { galat: "Generus absen lewat akunnya (scan QR layar). Kartu fisik hanya untuk yang berpenanda keringanan." };

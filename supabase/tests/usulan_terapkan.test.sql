@@ -78,13 +78,15 @@ grant execute on all functions in schema uji to anon, authenticated;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'desa@uji.id'),
   ('00000000-0000-0000-0000-0000000000d2', 'gen1@uji.id'),
-  ('00000000-0000-0000-0000-0000000000d3', 'kel2@uji.id');
+  ('00000000-0000-0000-0000-0000000000d3', 'kel2@uji.id'),
+  ('00000000-0000-0000-0000-0000000000d4', 'kel1@uji.id');
 insert into public.admin (user_id, nama) values
   ('00000000-0000-0000-0000-0000000000d1', 'Desa'), ('00000000-0000-0000-0000-0000000000d2', 'Generus K1'),
-  ('00000000-0000-0000-0000-0000000000d3', 'Kelompok 2');
+  ('00000000-0000-0000-0000-0000000000d3', 'Kelompok 2'), ('00000000-0000-0000-0000-0000000000d4', 'Kelompok 1');
 select uji.beri('00000000-0000-0000-0000-0000000000d1', 'admin_desa', null);
 select uji.beri('00000000-0000-0000-0000-0000000000d2', 'admin_generus', 1);
 select uji.beri('00000000-0000-0000-0000-0000000000d3', 'admin_kelompok', 2);
+select uji.beri('00000000-0000-0000-0000-0000000000d4', 'admin_kelompok', 1);
 
 -- e1 SMA kelas 12 (K1), e2 lajang bekerja (K1), e3 lajang kuliah (K1)
 insert into public.jamaah (id, kelompok_id, nama_lengkap, jenis_kelamin, kode, status_pernikahan, status_sekolah, tahun_lahir, kelas)
@@ -134,11 +136,15 @@ select uji.cek('Setelah ditolak: jamaah tetap lajang & laporan tetap menunggu',
   and (select status = 'menunggu' from public.usulan_koreksi where id = (select nikah from u)));
 
 set local role authenticated;
+-- Menerapkan = mengubah data jamaah: wewenang kelompok (20261026100000).
 select uji.sebagai('00000000-0000-0000-0000-0000000000d1');
-select uji.cek('Admin desa: terapkan lulus SMA → kuliah',
+select uji.harus_ditolak('Admin desa: tidak bisa menerapkan laporan (wewenang kelompok)',
+  $q$ select public.terapkan_usulan_koreksi((select lulus from u)) $q$);
+select uji.sebagai('00000000-0000-0000-0000-0000000000d4');
+select uji.cek('Admin K1: terapkan lulus SMA → kuliah',
   public.terapkan_usulan_koreksi((select lulus from u)) = 'status_sekolah');
-select uji.cek('Admin desa: terapkan menikah', public.terapkan_usulan_koreksi((select nikah from u), 'Barakallah') = 'status_pernikahan');
-select uji.cek('Admin desa: terapkan tanggal lahir', public.terapkan_usulan_koreksi((select lahir from u)) = 'tanggal_lahir');
+select uji.cek('Admin K1: terapkan menikah', public.terapkan_usulan_koreksi((select nikah from u), 'Barakallah') = 'status_pernikahan');
+select uji.cek('Admin K1: terapkan tanggal lahir', public.terapkan_usulan_koreksi((select lahir from u)) = 'tanggal_lahir');
 select uji.harus_ditolak('Laporan tanpa nilai tidak bisa diterapkan',
   $q$ select public.terapkan_usulan_koreksi((select bebas from u)) $q$);
 select uji.harus_ditolak('Laporan yang sudah selesai tidak bisa diterapkan lagi',
@@ -154,7 +160,7 @@ select uji.cek('Hasil: tanggal lahir & tahun lahir diperbarui',
   (select tanggal_lahir = '2004-03-05' and tahun_lahir = 2004 from public.jamaah where id = '00000000-0000-0000-0000-0000000000e3'));
 select uji.cek('Laporan selesai, tanggapan bawaan & tanggapan admin tersimpan, penanganan tercatat',
   (select status = 'selesai' and tanggapan = 'Sudah diperbarui sesuai laporanmu.'
-          and ditangani_by = '00000000-0000-0000-0000-0000000000d1' and ditangani_at is not null
+          and ditangani_by = '00000000-0000-0000-0000-0000000000d4' and ditangani_at is not null
    from public.usulan_koreksi where id = (select lulus from u))
   and (select tanggapan = 'Barakallah' from public.usulan_koreksi where id = (select nikah from u)));
 

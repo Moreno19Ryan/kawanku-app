@@ -51,7 +51,7 @@ async function MatriksIzin() {
       .select("id, nama, wilayah, hanya_generus, deskripsi, peran_izin(izin_kode)")
       .order("nama")
       .returns<BarisPeran[]>(),
-    supabase.from("izin").select("kode, deskripsi").order("kode"),
+    supabase.from("izin").select("kode, deskripsi, hanya_kelompok").order("kode"),
   ]);
 
   if (!peran || !izin) {
@@ -97,6 +97,9 @@ async function MatriksIzin() {
                 <th scope="row" className="px-5 py-3 text-left font-normal">
                   {i.deskripsi}
                   <span className="block font-mono text-xs text-muted">{i.kode}</span>
+                  {i.hanya_kelompok && (
+                    <span className="mt-1 block text-xs text-muted">Hanya berlaku di tingkat kelompok</span>
+                  )}
                 </th>
                 {peran.map((p) => (
                   <td key={p.id} className="px-3 py-3 text-center">

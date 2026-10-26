@@ -51,14 +51,18 @@ async function AksiAbsensi() {
         <ChartColumn className="size-4" aria-hidden />
         Rekap
       </Link>
-      <Link href="/absensi/akun" className={buttonClass("kedua")}>
-        <UserRound className="size-4" aria-hidden />
-        Akun generus
-      </Link>
-      <Link href="/absensi/kartu" className={buttonClass("kedua")}>
-        <IdCard className="size-4" aria-hidden />
-        Kartu QR
-      </Link>
+      {akses.kelompokAkun.length > 0 && (
+        <Link href="/absensi/akun" className={buttonClass("kedua")}>
+          <UserRound className="size-4" aria-hidden />
+          Akun generus
+        </Link>
+      )}
+      {akses.kelompokKartu.length > 0 && (
+        <Link href="/absensi/kartu" className={buttonClass("kedua")}>
+          <IdCard className="size-4" aria-hidden />
+          Kartu QR
+        </Link>
+      )}
     </>
   );
 }
