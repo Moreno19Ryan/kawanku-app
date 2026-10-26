@@ -62,6 +62,9 @@ async function IsiPanel() {
       <Suspense fallback={<Skeleton className="h-40" />}>
         <PermintaanIdentitas />
       </Suspense>
+      <Suspense fallback={<Skeleton className="h-32" />}>
+        <UnduhanCadangan />
+      </Suspense>
 
       <Card>
         <h2 className="text-lg font-semibold">Mode perawatan</h2>
@@ -162,6 +165,49 @@ type Permintaan = {
   pemohon: string;
   jamaah: { nama_lengkap: string; kode: string } | null;
 };
+
+/** Catatan unduhan cadangan data (admin desa & kelompok, Pengaturan → Cadangan data). */
+async function UnduhanCadangan() {
+  const supabase = await createClient();
+  const [{ data: unduhan }, { data: admin }, { data: kelompok }] = await Promise.all([
+    supabase
+      .from("unduhan_cadangan")
+      .select("id, oleh, kelompok_id, ringkasan, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase.from("admin").select("user_id, nama").returns<{ user_id: string; nama: string }[]>(),
+    supabase.from("kelompok").select("id, nama"),
+  ]);
+  const nama = new Map((admin ?? []).map((a) => [a.user_id, a.nama]));
+  const namaKelompok = new Map((kelompok ?? []).map((k) => [k.id, k.nama as string]));
+  return (
+    <Card>
+      <h2 className="text-lg font-semibold">Unduhan cadangan data</h2>
+      <p className="mt-1 mb-4 text-sm text-muted">
+        Setiap unduhan cadangan (Excel, tanpa NIK/KK) oleh admin desa & kelompok tercatat di sini.
+      </p>
+      {unduhan?.length ? (
+        <ul className="flex flex-col gap-1.5 text-sm">
+          {unduhan.map((u) => {
+            const r = u.ringkasan as Record<string, number>;
+            return (
+              <li key={u.id} className="flex flex-wrap justify-between gap-2">
+                <span>
+                  {nama.get(u.oleh ?? "") ?? "Admin"} ·{" "}
+                  {u.kelompok_id ? (namaKelompok.get(u.kelompok_id) ?? "Kelompok") : "Seluruh desa"}{" "}
+                  <span className="text-muted">({r.jamaah ?? 0} jamaah)</span>
+                </span>
+                <span className="text-muted">{tanggalJam(u.created_at)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted">Belum ada unduhan.</p>
+      )}
+    </Card>
+  );
+}
 
 /** Permintaan melihat NIK/KK lengkap (disetujui pengembang, berlaku 1 jam) + catatan pembukaan. */
 async function PermintaanIdentitas() {

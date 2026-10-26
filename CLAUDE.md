@@ -194,6 +194,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   sesi pemateri per pertemuan (`pertemuan_materi`, RPC
   `simpan_materi_pertemuan`) dipilih dari daftar pengajar rutin
   (`/kegiatan/pengajar`, tabel `pengajar`).
+- Cadangan data (`docs/cadangan-data.md`): Pengaturan → Cadangan data, izin
+  `cadangan.unduh` (admin desa & kelompok saja). File Excel (exceljs) dari
+  `/api/cadangan?wilayah=` dibuat dengan sesi pengguna (RLS), tanpa NIK/KK;
+  setiap unduhan dicatat di `unduhan_cadangan` sebelum file diberikan
+  (terlihat pengembang di panel & Beranda).
 - Asisten KawanKu (`docs/asisten.md`): kartu pengingat/peringatan/saran/
   apresiasi di Beranda admin & generus, dihitung dari data yang ada
   (`src/lib/asisten/`), tanpa tabel baru.
@@ -247,6 +252,7 @@ src/
     cetak/rekap/        # lembar cetak rekap absensi (KopDokumen, A4)
     cetak/akun/         # slip info masuk akun generus (alamat + QR, username, aturan PIN)
     api/rekap/          # GET ekspor rekap absensi (CSV)
+    api/cadangan/       # GET cadangan data wilayah (Excel, dicatat)
     (auth)/             # halaman tanpa navigasi (login)
       login/page.tsx    # login admin (email + kata sandi)
       masuk/page.tsx    # login generus (username + PIN)

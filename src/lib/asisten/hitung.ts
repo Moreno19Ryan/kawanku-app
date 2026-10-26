@@ -90,6 +90,20 @@ export function saranPermintaanIdentitas(jumlah: number): Saran[] {
   ];
 }
 
+/** Untuk pengembang: unduhan cadangan data 24 jam terakhir. */
+export function saranUnduhanCadangan(unduhan: { id: string; nama: string; wilayah: string }[]): Saran[] {
+  if (!unduhan.length) return [];
+  return [
+    {
+      kode: `unduhan-cadangan:${unduhan[0].id}`,
+      jenis: "pengingat",
+      judul: `${unduhan.length} unduhan cadangan data dalam 24 jam terakhir`,
+      isi: `Terakhir: ${unduhan[0].nama} (${unduhan[0].wilayah}). Pastikan memang untuk keperluan pengurus.`,
+      href: "/pengaturan/sistem",
+    },
+  ];
+}
+
 /** Pengajuan izin generus yang menunggu persetujuan admin ini. */
 export function saranIzin(jumlah: number): Saran[] {
   if (!jumlah) return [];

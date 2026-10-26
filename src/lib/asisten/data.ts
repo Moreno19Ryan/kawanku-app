@@ -15,6 +15,7 @@ import {
   saranKegiatan,
   saranLaporan,
   saranPermintaanIdentitas,
+  saranUnduhanCadangan,
   urutkanSaran,
   type Saran,
 } from "./hitung";
@@ -48,6 +49,29 @@ export async function getSaranAdmin(): Promise<Saran[]> {
         .select("id", { count: "exact", head: true })
         .eq("status", "menunggu");
       return saranPermintaanIdentitas(count ?? 0);
+    }),
+    aman(async () => {
+      if (!absensi || !punyaIzin(absensi.admin, "sistem.kelola")) return [];
+      const supabase = await createClient();
+      const kemarin = new Date(sekarang.getTime() - 24 * 3600_000).toISOString();
+      const [{ data: unduhan }, { data: admin }, { data: kelompok }] = await Promise.all([
+        supabase
+          .from("unduhan_cadangan")
+          .select("id, oleh, kelompok_id")
+          .gte("created_at", kemarin)
+          .order("created_at", { ascending: false }),
+        supabase.from("admin").select("user_id, nama"),
+        supabase.from("kelompok").select("id, nama"),
+      ]);
+      const nama = new Map((admin ?? []).map((a) => [a.user_id as string, a.nama as string]));
+      const namaKelompok = new Map((kelompok ?? []).map((k) => [k.id as string, k.nama as string]));
+      return saranUnduhanCadangan(
+        (unduhan ?? []).map((u) => ({
+          id: u.id,
+          nama: nama.get(u.oleh ?? "") ?? "Admin",
+          wilayah: u.kelompok_id ? (namaKelompok.get(u.kelompok_id) ?? "kelompok") : "seluruh desa",
+        })),
+      );
     }),
     aman(async () => {
       if (!absensi?.bolehLihat) return [];

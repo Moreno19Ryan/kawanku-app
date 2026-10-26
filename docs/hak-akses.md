@@ -86,6 +86,7 @@ Keterangan: ✅ boleh · 👁 hanya lihat · — tidak.
 | --- | :---: | :---: | :---: | :---: |
 | Kelola admin, peran & izin | ✅ | admin generus kelompoknya | — | ✅ (pemulihan akses) |
 | Kelompok | ✅ | — | — | — |
+| Cadangan data (Excel, tanpa NIK/KK, tercatat) | ✅ seluruh desa | ✅ kelompoknya | — | 👁 catatan unduhan |
 | Kategori jamaah | ✅ | — | — | — |
 | Pengumuman sistem (banner admin) | — | — | — | ✅ |
 | Mode perawatan, saklar fitur | — | — | — | ✅ |
