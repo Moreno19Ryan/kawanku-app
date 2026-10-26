@@ -123,3 +123,12 @@ Scan · Kehadiran · Profil.
   pertemuannya juga, supaya jadwal di HP generus tidak bertentangan.
 - **Jadwal** `/saya/jadwal`: 30 hari, pemateri & materi bila sudah diisi,
   tautan "Izin" per pertemuan yang belum lewat.
+
+## Rekap pengajar (F4, 26 Okt 2026)
+
+Di `/kegiatan/pengajar` ada "Rekap pengajar" per bulan (pilihan 12 bulan
+terakhir): pemateri, jumlah sesi (dan pertemuan bila berbeda), kegiatan,
+wilayah, dan materi terakhir. Dihitung dari `pertemuan_materi` (atau
+ringkasan `pertemuan.pemateri_nama` untuk pertemuan lama) pada pertemuan
+terjadwal yang sudah berlangsung; libur tidak dihitung. Batas data RLS
+`kegiatan.lihat`. Rekap yang sama muncul di laporan bulanan.

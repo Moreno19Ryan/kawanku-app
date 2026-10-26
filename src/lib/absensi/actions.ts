@@ -220,3 +220,22 @@ export async function tokenLayar(sesiId: string): Promise<{ token: string | null
   if (error) return null;
   return { token: (token as string | null) ?? null, hadir: count ?? 0 };
 }
+
+// ---------------------------------------------------------------------
+// Tindak lanjut "perlu disapa"
+// ---------------------------------------------------------------------
+
+const HASIL_SAPAAN = ["tersambung", "belum_tersambung", "berhalangan"] as const;
+
+/** Catat sapaan untuk jamaah yang perlu disapa (riwayat, tidak bisa diubah). */
+export async function catatSapaan(jamaahId: string, _prev: StateAksi, fd: FormData): Promise<StateAksi> {
+  const ctx = await konteks();
+  if (!ctx) return TIDAK_BERHAK;
+  const hasil = String(fd.get("hasil") ?? "");
+  if (!(HASIL_SAPAAN as readonly string[]).includes(hasil)) return { galat: "Pilih hasil sapaan." };
+  const catatan = String(fd.get("catatan") ?? "").trim().slice(0, 300) || null;
+  const { error } = await ctx.supabase.from("sapaan_jamaah").insert({ jamaah_id: jamaahId, hasil, catatan });
+  if (error) return error.code === "42501" ? TIDAK_BERHAK : GAGAL;
+  refresh();
+  return { pesan: "Sapaan tercatat. Alhamdulillah Jazakumullahu Khoiro." };
+}

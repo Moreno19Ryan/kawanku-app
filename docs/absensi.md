@@ -381,3 +381,21 @@ generus, admin kelompok hanya kelompoknya). Hak akses: `absensi.lihat`.
 ## Belum (berikutnya)
 
 - Keterangan telat (toleransi per sesi).
+
+## Tindak lanjut & laporan bulanan (F4, 26 Okt 2026)
+
+- **Tindak lanjut "perlu disapa"**: di Laporan kehadiran ada kartu "Tindak
+  lanjut" berisi jamaah yang tidak hadir 3 pertemuan terakhir, kapan terakhir
+  hadir, dan sapaan terakhirnya. Pengelola absensi mencatat sapaan (hasil:
+  sudah disapa / sedang berhalangan / belum tersambung + catatan singkat) di
+  tabel `sapaan_jamaah` (migrasi `20261027110000_sapaan_jamaah`; lihat:
+  `absensi.lihat`, catat: `absensi.kelola` atas nama sendiri; tidak bisa
+  diubah/dihapus). Asisten tidak lagi mengingatkan jamaah yang sudah disapa
+  dalam 14 hari terakhir.
+- **Laporan bulanan**: `/cetak/laporan?bulan=YYYY-MM&wilayah=&peserta=`
+  (A4, `KopDokumen`): ringkasan, sorotan, kehadiran per kegiatan/kelompok/
+  kategori, pengajar bulan itu, tindak lanjut (perlu disapa + status
+  sapaan), dan yang rajin. Dihitung dari data saat dibuka (`getLaporan(...,
+  { bulan })`), tanpa tabel baru. Tautannya ada di Laporan kehadiran; tanggal
+  1–7 setiap bulan Asisten di Beranda mengingatkan "Laporan <bulan lalu>
+  siap".
