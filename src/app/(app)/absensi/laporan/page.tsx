@@ -54,7 +54,7 @@ async function Isi({ cari }: { cari: Promise<Record<string, string | string[] | 
       : [{ nama: "Kehadiran", warna: "var(--kk-primary)", nilai: l.tren.map((t) => t.persen) }];
   const hitung = l.jamaah.reduce(
     (m, b) => ({ ...m, [b.status]: m[b.status] + 1 }),
-    { semua: l.jamaah.length, perlu_disapa: 0, menurun: 0, jarang: 0, rajin: 0, biasa: 0 } as Record<StatusJamaah | "semua", number>,
+    { semua: l.jamaah.length, perlu_disapa: 0, menurun: 0, mulai_jarang: 0, jarang: 0, rajin: 0, biasa: 0 } as Record<StatusJamaah | "semua", number>,
   );
   const peserta = param.peserta === "generus" ? "generus" : "jamaah";
 
@@ -166,6 +166,7 @@ async function Isi({ cari }: { cari: Promise<Record<string, string | string[] | 
         <h2 className="font-semibold">Pemantauan {peserta}</h2>
         <p className="mb-4 text-sm text-muted">
           Perlu disapa = tidak hadir 3 pertemuan terakhir yang diikutinya. Menurun = kehadiran paruh akhir turun ≥25 poin.
+          Mulai jarang = 2 dari 4 pertemuan terakhir tidak hadir padahal sebelumnya rajin (deteksi dini).
           Rajin = hadir ≥85% (minimal 4 pertemuan). Izin & sakit dihitung bukan hadir, tapi tidak memicu &ldquo;perlu disapa&rdquo;.
         </p>
         <TabelJamaah baris={l.jamaah} hitung={hitung} param={param} tautan={(status) => `?${queryLaporan(param, { status })}`} />

@@ -29,7 +29,7 @@ export type JamaahLaporan = {
 
 export type CatatanLaporan = { sesi_id: string; jamaah_id: string; status: "hadir" | "izin" | "sakit" };
 
-export type StatusJamaah = "perlu_disapa" | "menurun" | "jarang" | "rajin" | "biasa";
+export type StatusJamaah = "perlu_disapa" | "menurun" | "mulai_jarang" | "jarang" | "rajin" | "biasa";
 
 export type BarisJamaah = {
   id: string;
@@ -107,6 +107,21 @@ export function sesiSelesai(s: SesiLaporan, sekarang = new Date()): boolean {
 function daftarNama(nama: string[], maks = 4): string {
   if (nama.length <= maks) return nama.join(", ");
   return `${nama.slice(0, maks).join(", ")}, dan ${nama.length - maks} lainnya`;
+}
+
+/**
+ * Deteksi dini "mulai jarang hadir": minimal 2 dari 4 pertemuan terakhir
+ * tidak hadir tanpa keterangan (izin/sakit tidak dihitung), padahal
+ * sebelumnya cukup rajin (≥ 60% bila ada riwayat, selain itu belum kronis).
+ * jejak = H/I/S/A urut waktu. Murni.
+ */
+export function mulaiJarang(jejak: string[]): boolean {
+  if (jejak.length < 4) return false;
+  const akhir = jejak.slice(-4);
+  if (akhir.filter((x) => x === "A").length < 2) return false;
+  const awal = jejak.slice(0, -4);
+  const hadir = (xs: string[]) => xs.filter((x) => x === "H").length / xs.length;
+  return awal.length >= 2 ? hadir(awal) >= 0.6 : hadir(jejak) >= 0.4;
 }
 
 export function hitungLaporan(opsi: {
@@ -199,6 +214,7 @@ export function hitungLaporan(opsi: {
     // Urutan prioritas: yang paling perlu perhatian lebih dulu.
     if (jejak.length >= 3 && jejak.slice(-3).every((x) => x === "A")) b.status = "perlu_disapa";
     else if (b.tren !== null && b.tren <= -25) b.status = "menurun";
+    else if (mulaiJarang(jejak)) b.status = "mulai_jarang";
     else if (b.kesempatan >= 4 && (b.persen ?? 0) < 40) b.status = "jarang";
     else if (b.kesempatan >= 4 && (b.persen ?? 0) >= 85) b.status = "rajin";
     return b;
@@ -232,7 +248,7 @@ export function hitungLaporan(opsi: {
   const perKategori = [...kategori.entries()]
     .map(([nama, c]) => ({ nama, jumlah: c.jamaah.size, persen: persen(c.hadir, c.kesempatan) }))
     .sort((a, b) => (b.persen ?? -1) - (a.persen ?? -1));
-  const urutStatus: Record<StatusJamaah, number> = { perlu_disapa: 0, menurun: 1, jarang: 2, biasa: 3, rajin: 4 };
+  const urutStatus: Record<StatusJamaah, number> = { perlu_disapa: 0, menurun: 1, mulai_jarang: 2, jarang: 3, biasa: 4, rajin: 5 };
   jamaah.sort(
     (a, b) => urutStatus[a.status] - urutStatus[b.status] || (a.persen ?? 101) - (b.persen ?? 101) || a.nama.localeCompare(b.nama, "id"),
   );
@@ -247,6 +263,7 @@ export function hitungLaporan(opsi: {
     rajin: hitungStatus("rajin"),
     perluDisapa: hitungStatus("perlu_disapa"),
     menurun: hitungStatus("menurun"),
+    mulaiJarang: hitungStatus("mulai_jarang"),
   };
 
   // --- Sorotan otomatis -------------------------------------------------------
@@ -291,6 +308,9 @@ export function hitungLaporan(opsi: {
       sorotan.push(`${sapa.length} jamaah tidak hadir 3 pertemuan terakhir berturut-turut: ${daftarNama(sapa)}. Yuk disapa pekan ini.`);
     }
     if (ringkas.menurun) sorotan.push(`${ringkas.menurun} jamaah kehadirannya menurun tajam dibanding awal periode.`);
+    if (ringkas.mulaiJarang) {
+      sorotan.push(`${ringkas.mulaiJarang} jamaah mulai jarang hadir (2 dari 4 pertemuan terakhir tidak hadir). Sapa lebih awal, sebelum jadi kebiasaan.`);
+    }
     if (ringkas.rajin) sorotan.push(`MasyaAllah, ${ringkas.rajin} jamaah hadir minimal 85% pertemuan.`);
     if (kehadiran > 0) sorotan.push(`${ucapanSyukur()} atas kehadiran para jamaah.`);
   }
