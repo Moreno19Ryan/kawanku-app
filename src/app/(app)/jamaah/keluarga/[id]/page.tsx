@@ -175,7 +175,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
                 aksi={hapusKeluarga.bind(null, k.id)}
                 label="Hapus keluarga"
                 varian="bahaya"
-                konfirmasi={`Hapus ${k.nama}? Anggotanya tetap ada sebagai jamaah.`}
+                konfirmasi={`Hapus ${k.nama}? Anggotanya tetap ada sebagai jamaah. Keluarga masuk tempat sampah dan bisa dikembalikan dalam 30 hari.`}
               />
             </div>
           </Card>
