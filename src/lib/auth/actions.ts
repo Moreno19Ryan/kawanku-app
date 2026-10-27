@@ -10,7 +10,7 @@ export type StateMasuk = {
   email?: string;
 };
 
-const PESAN_SALAH = "Email atau kata sandi salah.";
+const PESAN_SALAH = "Mohon maaf, email atau kata sandi belum cocok. Silakan dicoba lagi.";
 
 /** Login admin dengan email + kata sandi (Supabase Auth). */
 export async function masuk(_prev: StateMasuk, formData: FormData): Promise<StateMasuk> {
@@ -19,7 +19,7 @@ export async function masuk(_prev: StateMasuk, formData: FormData): Promise<Stat
   const next = tujuanAman(formData.get("tujuan"));
 
   if (!email || !password) {
-    return { galat: "Isi email dan kata sandi.", email };
+    return { galat: "Mohon isi email dan kata sandi terlebih dahulu.", email };
   }
 
   const supabase = await createClient();
@@ -29,7 +29,7 @@ export async function masuk(_prev: StateMasuk, formData: FormData): Promise<Stat
     // Jangan bedakan "email tidak terdaftar" dan "sandi salah".
     const galat =
       error.status === 429
-        ? "Terlalu banyak percobaan. Coba lagi beberapa menit lagi."
+        ? "Mohon maaf, terlalu banyak percobaan. Silakan tunggu beberapa menit, lalu coba lagi."
         : PESAN_SALAH;
     return { galat, email };
   }
@@ -40,7 +40,7 @@ export async function masuk(_prev: StateMasuk, formData: FormData): Promise<Stat
     const { data: generus } = await supabase.from("akun_generus").select("user_id").maybeSingle();
     if (generus) redirect("/saya");
     await supabase.auth.signOut();
-    return { galat: "Akun ini bukan admin aktif. Hubungi admin desa.", email };
+    return { galat: "Akun ini belum terdaftar sebagai admin aktif. Silakan hubungi admin desa.", email };
   }
 
   redirect(next);

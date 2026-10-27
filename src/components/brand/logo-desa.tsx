@@ -7,9 +7,10 @@ type LogoDesaProps = {
   height: number;
   /**
    * `auto` = ikut tema (terang/gelap), `light` = selalu varian terang
-   * (mis. kertas/kartu putih), `grayscale` = cetak hitam putih.
+   * (mis. kertas/kartu putih), `dark` = selalu varian gelap (di atas panel
+   * biru), `grayscale` = cetak hitam putih.
    */
-  tone?: "auto" | "light" | "grayscale";
+  tone?: "auto" | "light" | "dark" | "grayscale";
   className?: string;
 };
 
@@ -31,10 +32,10 @@ export function LogoDesa({
   const width = Math.round(height * RATIO[variant]);
   const base = `/brand/desa/${FILE[variant]}`;
 
-  if (tone === "grayscale" || tone === "light") {
+  if (tone !== "auto") {
     return (
       <Image
-        src={`${base}${tone === "grayscale" ? "-grayscale" : ""}.svg`}
+        src={`${base}${{ grayscale: "-grayscale", dark: "-dark", light: "" }[tone]}.svg`}
         alt={ALT}
         width={width}
         height={height}
