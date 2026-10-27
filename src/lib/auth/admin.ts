@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { keadaanMfa } from "./mfa";
 
 export type PenugasanAdmin = {
   peranKode: string;
@@ -66,6 +67,14 @@ export const getAdminSaatIni = cache(async (): Promise<AdminSaatIni | null> => {
 /** Sama seperti getAdminSaatIni, tapi mengalihkan bila bukan admin aktif. */
 export async function wajibAdmin(): Promise<AdminSaatIni> {
   const admin = await getAdminSaatIni();
+  // Verifikasi dua langkah: akun ber-MFA yang belum memasukkan kode tidak
+  // bisa membaca data (kebijakan wajib_aal2), jadi minta kodenya dulu. Akun
+  // pengembang wajib mendaftarkan MFA sebelum bisa memakai area admin.
+  if (!admin || punyaIzin(admin, "sistem.kelola")) {
+    const mfa = await keadaanMfa(await createClient());
+    if (mfa.perluKode) redirect("/mfa");
+    if (admin && !mfa.punyaMfa) redirect("/mfa/daftar");
+  }
   if (!admin) {
     // Route handler /keluar menghapus sesi (Server Component tidak bisa
     // menulis cookie), lalu kembali ke /login dengan pesan yang sesuai:

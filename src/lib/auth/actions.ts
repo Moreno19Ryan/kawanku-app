@@ -1,8 +1,11 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { StateAksi } from "@/lib/pengaturan/actions";
 import { bacaAdmin } from "./admin";
+import { keadaanMfa } from "./mfa";
 import { tujuanAman } from "./tujuan";
 
 export type StateMasuk = {
@@ -34,6 +37,11 @@ export async function masuk(_prev: StateMasuk, formData: FormData): Promise<Stat
     return { galat, email };
   }
 
+  // Akun ber-MFA: data baru terbuka setelah kode 6 angka dimasukkan.
+  if ((await keadaanMfa(supabase)).perluKode) {
+    redirect(`/mfa?next=${encodeURIComponent(next)}`);
+  }
+
   // Akun ada di Auth, tapi belum tentu admin aktif (mis. akun generus nanti).
   const admin = await bacaAdmin(supabase);
   if (!admin) {
@@ -58,4 +66,20 @@ export async function keluarSemuaPerangkat() {
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "global" });
   redirect("/login");
+}
+
+/** Hapus satu perangkat verifikasi dua langkah. Akun pengembang wajib menyisakan minimal satu. */
+export async function hapusPerangkatMfa(factorId: string): Promise<StateAksi> {
+  const supabase = await createClient();
+  const admin = await bacaAdmin(supabase);
+  if (!admin) return { galat: "Mohon maaf, sesi sudah berakhir. Silakan masuk kembali." };
+  const { data } = await supabase.auth.mfa.listFactors();
+  const terverifikasi = (data?.totp ?? []).filter((f) => f.status === "verified");
+  if (admin.izinGlobal.includes("sistem.kelola") && terverifikasi.length <= 1) {
+    return { galat: "Mohon maaf, akun pengembang wajib menyimpan minimal satu perangkat. Silakan tambah perangkat baru dulu." };
+  }
+  const { error } = await supabase.auth.mfa.unenroll({ factorId });
+  if (error) return { galat: "Mohon maaf, perangkat belum berhasil dihapus. Silakan coba lagi." };
+  refresh();
+  return { pesan: "Perangkat dihapus." };
 }
