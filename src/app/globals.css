@@ -203,6 +203,35 @@ body {
   50% { opacity: 1; }
 }
 
+/*
+ * Halaman masuk (pedoman desain): muncul halus (naik + memudar) dan getar
+ * kecil saat galat. Tidak beranimasi bila perangkat memilih kurangi gerakan.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .kk-muncul {
+    animation: kk-muncul 420ms cubic-bezier(0.22, 0.25, 0, 1) both;
+  }
+  .kk-muncul-2 {
+    animation: kk-muncul 420ms 90ms cubic-bezier(0.22, 0.25, 0, 1) both;
+  }
+  .kk-goyang {
+    animation: kk-goyang 360ms ease-in-out;
+  }
+  .kk-panel[open] {
+    animation: kk-muncul 280ms cubic-bezier(0.22, 0.25, 0, 1) both;
+  }
+}
+@keyframes kk-muncul {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes kk-goyang {
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
 /* Angka yang baru bertambah (mis. jumlah hadir di layar QR). */
 .kk-angka-naik {
   animation: kk-angka-naik 520ms cubic-bezier(0.22, 0.25, 0, 1);

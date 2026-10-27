@@ -414,6 +414,12 @@ supabase/
   berlebihan. Di aplikasi tetap memakai istilah baku **Jamaah**.
 - Perubahan teks aplikasi ke gaya ini diusulkan dulu ke Reno sebelum
   diterapkan.
+- **Pedoman Bahasa** (`docs/pedoman-bahasa.md`, WAJIB untuk semua teks
+  aplikasi): berbicara seperti generus yang santun dan berakhlak baik
+  (sopan, rendah hati, ramah tidak berlebihan, jujur, tidak menyalahkan,
+  tidak menggurui). Galat: "Mohon maaf, … Silakan …". Kata ganti: generus
+  **kamu**; admin/pengurus **tanpa kata ganti** (bukan kamu/Anda/Bapak-Ibu);
+  umum tanpa kata ganti. Ejaan baku, tanpa emoji.
 
 ## Aturan kerja (WAJIB, sama dengan GENSITI)
 
@@ -442,6 +448,10 @@ supabase/
   (localStorage `kk-tema`); tanpa atribut = ikut perangkat. Pakai varian
   `dark:` (sudah mengikuti tema aplikasi), jangan `@media (prefers-color-scheme)`
   langsung. Token gelap di `globals.css` ditulis dua kali; ubah keduanya.
+- Desain mengikuti **Pedoman Desain** (`docs/pedoman-desain.md`, One UI):
+  area lihat di atas & area sentuh di bawah, latar netral + kartu membulat,
+  biru sebagai aksen; panel biru penuh hanya di halaman sambutan (masuk).
+  Redesign bertahap per halaman.
 - Warna, radius, dan spacing memakai token (`bg-surface`, `rounded-card`,
   `px-gutter`), bukan nilai hex/px langsung. `brand` = biru logo; `primary` =
   turunannya untuk teks/tombol (kontras AA).
