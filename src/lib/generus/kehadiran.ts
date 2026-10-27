@@ -107,15 +107,15 @@ export function ringkasKehadiran(catatan: CatatanKehadiran[], sekarang = new Dat
 
   let sapaan: string;
   if (selesai.length === 0) {
-    sapaan = "Selamat datang! Kehadiranmu akan tercatat di sini setelah pengajian pertama.";
+    sapaan = "Selamat datang. Kehadiranmu akan tercatat di sini setelah pengajian pertama.";
   } else if (selesai[0].status === "alpa") {
-    sapaan = "Pertemuan terakhir terlewat. InsyaAllah hadir di pengajian berikutnya, ya. Kami menunggumu 🤗";
+    sapaan = "Pertemuan terakhir terlewat. InsyaAllah sampai jumpa di pengajian berikutnya, ya.";
   } else if (rentetan >= 3) {
-    sapaan = `MasyaAllah, ${rentetan} pertemuan berturut-turut! Pertahankan, ya.`;
+    sapaan = `MasyaAllah, ${rentetan} pertemuan berturut-turut. Semoga istiqomah.`;
   } else if (bulanIni.persen !== null && bulanIni.persen >= 80) {
-    sapaan = `Alhamdulillah, kehadiranmu bulan ini ${bulanIni.persen}%. Luar biasa!`;
+    sapaan = `Alhamdulillah, kehadiranmu bulan ini ${bulanIni.persen}%.`;
   } else {
-    sapaan = "Alhamdulillah, terus semangat ngajinya!";
+    sapaan = "Alhamdulillah, semoga terus semangat mengaji.";
   }
 
   return { bulanIni, rentetan, totalHadir, lencana, sapaan };
@@ -202,11 +202,11 @@ export function raporBulan(catatan: CatatanKehadiran[], bulan: string): RaporBul
   const selisih = persen !== null && persenLalu !== null ? persen - persenLalu : null;
   let pesan: string;
   if (isi.length === 0) pesan = "Belum ada pertemuan tercatat di bulan ini.";
-  else if (hadir === isi.length) pesan = "MasyaAllah, hadir di semua pertemuan. Alhamdulillah, pertahankan, ya!";
-  else if (selisih !== null && selisih >= 10) pesan = `Alhamdulillah, kehadiranmu naik ${selisih} poin dari bulan sebelumnya. Terus semangat!`;
+  else if (hadir === isi.length) pesan = "MasyaAllah, hadir di semua pertemuan. Semoga bisa dipertahankan.";
+  else if (selisih !== null && selisih >= 10) pesan = `Alhamdulillah, kehadiranmu naik ${selisih} poin dari bulan sebelumnya. Semoga terus semangat.`;
   else if ((persen ?? 0) >= 75) pesan = "Alhamdulillah, kehadiranmu sudah baik. Semoga bulan depan bisa penuh.";
-  else if (selisih !== null && selisih <= -10) pesan = "Kehadiranmu turun dari bulan sebelumnya. Tidak apa-apa, yuk mulai lagi bulan ini.";
-  else pesan = "Yuk, bulan ini lebih semangat lagi ngajinya. Kami tunggu, ya.";
+  else if (selisih !== null && selisih <= -10) pesan = "Kehadiranmu bulan ini lebih sedikit dari bulan sebelumnya. InsyaAllah bulan depan bisa lebih baik.";
+  else pesan = "Semoga bulan ini lebih semangat mengaji. Kami tunggu kehadiranmu.";
 
   return {
     bulan,

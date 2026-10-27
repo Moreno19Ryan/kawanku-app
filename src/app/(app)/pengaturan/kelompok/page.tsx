@@ -39,7 +39,7 @@ async function DaftarKelompok() {
     .order("nomor");
 
   if (!kelompok) {
-    return <Card className="text-sm text-danger">Gagal memuat kelompok. Muat ulang halaman.</Card>;
+    return <Card className="text-sm text-danger">Mohon maaf, data kelompok belum berhasil dimuat. Silakan muat ulang halaman.</Card>;
   }
 
   return (

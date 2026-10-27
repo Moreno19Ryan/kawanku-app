@@ -46,7 +46,7 @@ export function sambutan(opsi: {
   // 1. Baru kembali hadir setelah ≥ 2 pertemuan terlewat berturut-turut.
   const [a, b, c] = selesai;
   if (a?.status === "hadir" && b?.status === "alpa" && c?.status === "alpa" && hariSejak(a.mulai) <= 7) {
-    return { salam, pesan: "Alhamdulillah, senang kamu hadir lagi! Semoga istiqomah, ya.", nada: "syukur" };
+    return { salam, pesan: "Alhamdulillah, senang kamu bisa hadir kembali. Semoga istiqomah.", nada: "syukur" };
   }
 
   // 2. Baru sakit (pertemuan terakhir, ≤ 14 hari).

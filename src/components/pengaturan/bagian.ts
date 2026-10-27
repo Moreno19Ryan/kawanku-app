@@ -37,7 +37,7 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
   {
     href: "/pengaturan/wewenang",
     judul: "Peran & wewenang saya",
-    keterangan: "Wilayah tugas dan apa saja yang boleh kamu lakukan",
+    keterangan: "Wilayah tugas dan apa saja yang bisa dilakukan",
     icon: BadgeCheck,
   },
   {
@@ -49,7 +49,7 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
   {
     href: "/pengaturan/admin",
     judul: "Admin & akses",
-    keterangan: "Buat dan kelola akun admin sesuai wewenangmu",
+    keterangan: "Buat dan kelola akun admin sesuai wewenang",
     icon: ShieldCheck,
     izin: "akses.kelola",
     izinWilayah: "akses.kelola_generus",

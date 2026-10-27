@@ -19,7 +19,7 @@ export async function simpanLangganan(langganan: Langganan, perangkat: string): 
     p_auth: keys.auth,
     p_perangkat: String(perangkat ?? "").slice(0, 120) || null,
   });
-  if (error) return { galat: "Gagal menyalakan notifikasi. Coba lagi." };
+  if (error) return { galat: "Mohon maaf, notifikasi belum berhasil dinyalakan. Silakan coba lagi." };
   return { pesan: "Notifikasi menyala di perangkat ini." };
 }
 
@@ -28,7 +28,7 @@ export async function matikanLangganan(endpoint: string): Promise<StateAksi> {
   if (typeof endpoint !== "string") return { galat: "Tidak valid." };
   const supabase = await createClient();
   const { error } = await supabase.rpc("matikan_langganan_notifikasi", { p_endpoint: endpoint });
-  if (error) return { galat: "Gagal mematikan notifikasi." };
+  if (error) return { galat: "Mohon maaf, notifikasi belum berhasil dimatikan. Silakan coba lagi." };
   return { pesan: "Notifikasi dimatikan di perangkat ini." };
 }
 

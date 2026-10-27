@@ -46,7 +46,7 @@ export function DaftarUsulan({ usulan, tampilkanNama = true }: { usulan: UsulanK
         ))}
       </ul>
       <p className="px-1 text-xs text-muted">
-        “Terapkan” langsung memperbarui data jamaah (kategori ikut menyesuaikan). Laporan lain: betulkan di Ubah data, lalu tandai “Sudah dibetulkan”. Jamaah melihat status dan tanggapanmu.
+        “Terapkan” langsung memperbarui data jamaah (kategori ikut menyesuaikan). Laporan lain: betulkan di Ubah data, lalu tandai “Sudah dibetulkan”. Jamaah dapat melihat status dan tanggapan admin.
       </p>
     </section>
   );

@@ -10,8 +10,8 @@ import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 import { dariInputWib } from "@/lib/waktu";
 
-const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
-const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
+const TIDAK_BERHAK: StateAksi = { galat: "Mohon maaf, tindakan ini di luar wewenang akun ini." };
+const GAGAL: StateAksi = { galat: "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
 
 async function konteks() {
   const akses = await getAksesKegiatan();
@@ -323,7 +323,7 @@ export async function bukaAbsensiPertemuan(k: KunciPertemuan & { mulai: string }
         ? "Pertemuan ini dibatalkan; aktifkan lagi dulu."
         : error?.hint === "belum_waktunya"
           ? "Absensi belum terbuka; tunggu jendela absensi kegiatan ini."
-          : "Gagal membuka absensi. Pastikan kamu pengelola absensi wilayah ini.",
+          : "Mohon maaf, absensi belum bisa dibuka. Fitur ini khusus pengelola absensi wilayah ini.",
     };
   }
   redirect(`/absensi/${data}`);

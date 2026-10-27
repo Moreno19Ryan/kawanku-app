@@ -178,7 +178,7 @@ async function Detail({
       <>
         <PageHeader title="Jamaah tidak ditemukan" />
         <Card className="text-sm text-muted">
-          Data ini tidak ada, sudah dihapus, atau di luar wewenangmu.
+          Mohon maaf, data ini tidak ditemukan, sudah dihapus, atau di luar wewenang akun ini.
         </Card>
       </>
     );

@@ -95,7 +95,7 @@ export function SaklarNotifikasi({
         setState(hasil);
         if (!hasil.galat) setKeadaan("nyala");
       } catch {
-        setState({ galat: "Gagal menyalakan notifikasi di browser ini. Periksa koneksi internet, lalu coba lagi." });
+        setState({ galat: "Mohon maaf, notifikasi belum berhasil dinyalakan di browser ini. Silakan periksa internet, lalu coba lagi." });
       }
     });
   }

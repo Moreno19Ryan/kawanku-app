@@ -7,8 +7,8 @@ import { LABEL_HUBUNGAN } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 
-const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
-const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
+const TIDAK_BERHAK: StateAksi = { galat: "Mohon maaf, tindakan ini di luar wewenang akun ini." };
+const GAGAL: StateAksi = { galat: "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
 
 /** Konteks pengelola keluarga (keluarga.kelola di kelompok yang menyala). */
 async function konteks() {
@@ -72,7 +72,7 @@ export async function buatKeluargaDariJamaah(jamaahId: string): Promise<StateAks
     .select("id");
   if (!ok?.length) {
     await ctx.supabase.from("keluarga").delete().eq("id", kel.id);
-    return { galat: "Gagal menjadikan kepala keluarga (di luar wewenangmu?)." };
+    return { galat: "Mohon maaf, belum bisa dijadikan kepala keluarga. Kemungkinan di luar wewenang akun ini." };
   }
   redirect(`/jamaah/keluarga/${kel.id}`);
 }
@@ -123,8 +123,8 @@ export async function tambahAnggota(
     .eq("id", jamaahId)
     .is("keluarga_id", null)
     .select("id");
-  if (error) return { galat: "Gagal: jamaah dan keluarga harus di kelompok yang sama." };
-  if (data.length === 0) return { galat: "Jamaah ini sudah punya keluarga atau di luar wewenangmu." };
+  if (error) return { galat: "Mohon maaf, jamaah dan keluarganya harus berada di kelompok yang sama." };
+  if (data.length === 0) return { galat: "Jamaah ini sudah punya keluarga atau di luar wewenang akun ini." };
   refresh();
   return { pesan: "Anggota ditambahkan." };
 }

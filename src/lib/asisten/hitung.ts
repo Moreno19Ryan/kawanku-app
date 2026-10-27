@@ -84,7 +84,7 @@ export function saranPermintaanIdentitas(jumlah: number): Saran[] {
       kode: `permintaan-identitas:${jumlah}`,
       jenis: "peringatan",
       judul: `${jumlah} permintaan lihat NIK/KK menunggu`,
-      isi: "Admin menunggu persetujuanmu untuk melihat nomor lengkap (berlaku 1 jam bila disetujui).",
+      isi: "Ada admin yang menunggu persetujuan untuk melihat nomor lengkap (berlaku 1 jam bila disetujui).",
       href: "/pengaturan/sistem",
     },
   ];
@@ -191,7 +191,7 @@ export function saranPola(opsi: {
         kosong.length === 1
           ? `Absensi ${label(kosong[0])} kosong`
           : `${kosong.length} pertemuan sepekan terakhir absensinya kosong`,
-      isi: `Tidak ada satu pun yang tercatat hadir${kosong.length > 1 ? ` (${kelompokDan(kosong.map(label))})` : ""}. Lupa scan? Admin masih bisa mencatat kehadiran di halaman pertemuannya.`,
+      isi: `Tidak ada satu pun yang tercatat hadir${kosong.length > 1 ? ` (${kelompokDan(kosong.map(label))})` : ""}. Bila lupa scan, kehadiran masih bisa dicatat di halaman pertemuannya.`,
       href: hrefPertemuan(kosong[0]),
     });
   }
@@ -224,7 +224,7 @@ export function saranPengajar(opsi: {
         lama.length === 1
           ? `${lama[0].nama} belum mengisi ${pekan} pekan terakhir`
           : `${lama.length} pengajar belum mengisi ${pekan} pekan terakhir`,
-      isi: `${lama.length > 1 ? `${daftarNama(lama.map((p) => p.nama))}. ` : ""}Mungkin perlu dijadwalkan lagi, atau ditanyakan kabarnya. Bila sudah tidak aktif mengajar, nonaktifkan di daftar pengajar.`,
+      isi: `${lama.length > 1 ? `${daftarNama(lama.map((p) => p.nama))}. ` : ""}Mungkin perlu dijadwalkan lagi, atau ditanyakan kabarnya. Bila sudah tidak aktif mengajar, bisa dinonaktifkan di daftar pengajar.`,
       href: "/kegiatan/pengajar",
     },
   ];
@@ -263,7 +263,7 @@ export function saranDataGanda(
       kode: `data-ganda:${ganda.map((g) => g.map((j) => j.id).sort().join("+")).join(",")}`,
       jenis: "peringatan",
       judul: `${ganda.length} kemungkinan data jamaah ganda`,
-      isi: `Nama & tanggal lahir sama: ${daftarNama(ganda.map((g) => `${g[0].nama_lengkap} (${g.length}×)`))}. Periksa lalu nonaktifkan/hapus yang dobel.`,
+      isi: `Nama & tanggal lahir sama: ${daftarNama(ganda.map((g) => `${g[0].nama_lengkap} (${g.length}×)`))}. Mohon diperiksa; bila memang dobel, salah satunya bisa dinonaktifkan atau dihapus.`,
       href: `/jamaah?q=${encodeURIComponent(ganda[0][0].nama_lengkap)}`,
     },
   ];
@@ -294,7 +294,7 @@ export function saranIzin(jumlah: number): Saran[] {
       kode: "izin-menunggu",
       jenis: "pengingat",
       judul: `${jumlah} pengajuan izin menunggu persetujuan`,
-      isi: "Generus menunggu jawabanmu. Yang disetujui otomatis tercatat di absensi.",
+      isi: "Generus menunggu jawaban. Yang disetujui otomatis tercatat di absensi.",
       href: "/absensi/izin",
     },
   ];
@@ -325,7 +325,7 @@ export function saranLaporan(l: Laporan, sudahDisapa: Set<string> = new Set()): 
       kode: `mulai-jarang:${mulai.map((b) => b.id).sort().join(",")}`,
       jenis: "saran",
       judul: `${mulai.length} jamaah mulai jarang hadir`,
-      isi: `2 dari 4 pertemuan terakhir tidak hadir, padahal sebelumnya rajin: ${daftarNama(mulai.map((b) => b.nama))}. Sapa lebih awal, sebelum jadi kebiasaan.`,
+      isi: `2 dari 4 pertemuan terakhir tidak hadir, padahal sebelumnya rajin: ${daftarNama(mulai.map((b) => b.nama))}. Mungkin baik disapa lebih awal, sebelum menjadi kebiasaan.`,
       href: "/absensi/laporan?status=mulai_jarang",
     });
   }
@@ -395,7 +395,7 @@ export function saranGenerus(opsi: {
       kode: `pin:${opsi.pinDikembalikan.id}`,
       jenis: "pengingat",
       judul: "PIN-mu dikembalikan ke PIN awal",
-      isi: `Pada ${tgl}, admin mengembalikan PIN-mu ke tanggal lahir (DDMMYY). Bila itu bukan permintaanmu, sampaikan ke admin kelompokmu.`,
+      isi: `Pada ${tgl}, admin mengembalikan PIN-mu ke tanggal lahir (DDMMYY). Bila bukan atas permintaanmu, mohon sampaikan ke admin kelompok.`,
       href: "/saya/pin",
     });
   }
@@ -428,7 +428,7 @@ export function saranGenerus(opsi: {
       kode: `lengkapi-data:${persen}`,
       jenis: "saran",
       judul: `Data dirimu baru ${persen}% lengkap`,
-      isi: `Yuk lengkapi: ${kurang.join(", ")}. Supaya pengurus punya data yang benar dan mudah menghubungimu.`,
+      isi: `Boleh dilengkapi bila sempat: ${kurang.join(", ")}, supaya pengurus memiliki data yang benar dan mudah menghubungimu.`,
       href: hanyaAlamat ? "/saya/alamat" : "/saya/profil",
     });
   }

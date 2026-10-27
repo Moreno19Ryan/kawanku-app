@@ -10,8 +10,8 @@ import { ucapanSyukur } from "@/lib/label";
 import { jam } from "@/lib/waktu";
 
 const PESAN: Record<HasilAbsen["hasil"], string> = {
-  tercatat: "Kamu sudah tercatat hadir",
-  sudah: "Alhamdulillah, kamu sudah absen sebelumnya",
+  tercatat: "Sudah tercatat hadir",
+  sudah: "Alhamdulillah, sudah tercatat hadir sebelumnya",
   kedaluwarsa: "QR sudah kedaluwarsa. Scan ulang QR yang sedang tampil di layar.",
   qr_tidak_sah: "QR tidak dikenal. Pastikan scan QR di layar admin.",
   sesi_ditutup: "Sesi absensi ini sudah ditutup.",
@@ -20,7 +20,7 @@ const PESAN: Record<HasilAbsen["hasil"], string> = {
   bukan_peserta: "Kamu bukan peserta sesi ini.",
   jamaah_nonaktif: "Akunmu tidak aktif. Hubungi admin.",
   bukan_generus: "Akunmu tidak aktif. Hubungi admin.",
-  galat: "Gagal terhubung. Periksa internet lalu scan ulang.",
+  galat: "Mohon maaf, koneksi sedang terputus. Silakan periksa internet, lalu scan ulang.",
 };
 
 /** Mencatat absen sekali saat halaman dibuka, lalu menampilkan hasilnya. */
@@ -61,7 +61,7 @@ export function HasilAbsen({ token }: { token: string }) {
       <div role="status" aria-live="assertive" className={`flex flex-col items-center gap-3 rounded-card px-6 py-10 text-center ${nada}`}>
         {ok ? <CircleCheck className="size-14" aria-hidden /> : <CircleAlert className="size-14" aria-hidden />}
         <p className="text-xl font-semibold">
-          {hasil.hasil === "tercatat" ? `${ucapanSyukur(hasil.jenisKelamin)}, kamu sudah tercatat hadir` : PESAN[hasil.hasil]}
+          {hasil.hasil === "tercatat" ? `${ucapanSyukur(hasil.jenisKelamin)}, sudah tercatat hadir` : PESAN[hasil.hasil]}
         </p>
         {(hasil.sesi || hasil.dicatat_at) && (
           <p className="text-sm">

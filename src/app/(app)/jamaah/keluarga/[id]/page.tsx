@@ -74,7 +74,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
     return (
       <>
         <PageHeader title="Keluarga tidak ditemukan" />
-        <Card className="text-sm text-muted">Data ini tidak ada, sudah dihapus, atau di luar wewenangmu.</Card>
+        <Card className="text-sm text-muted">Mohon maaf, data ini tidak ditemukan, sudah dihapus, atau di luar wewenang akun ini.</Card>
       </>
     );
   }

@@ -28,12 +28,12 @@ const TANYA_JAWAB: TanyaJawab[] = [
   {
     tanya: "Saya lupa kata sandi. Bagaimana?",
     jawab:
-      "Hubungi pengelola akunmu (tertulis di Pengaturan → Akun saya). Mereka bisa membuat kata sandi sementara dari Pengaturan → Admin & akses. Setelah login, segera ganti di Pengaturan → Akun saya.",
+      "Silakan hubungi pengelola akun (tertulis di Pengaturan → Akun saya). Mereka bisa membuat kata sandi sementara dari Pengaturan → Admin & akses. Setelah login, segera ganti di Pengaturan → Akun saya.",
   },
   {
     tanya: "Kenapa saya hanya melihat sebagian jamaah?",
     jawab:
-      "Admin generus hanya melihat jamaah berkategori generus di wilayah tugasnya. Kategori bertanda “sasaranmu” ada di Pengaturan → Kategori jamaah.",
+      "Admin generus hanya melihat jamaah berkategori generus di wilayah tugasnya. Kategori bertanda “sasaran” ada di Pengaturan → Kategori jamaah.",
     untuk: adalahAdminGenerus,
   },
   {
@@ -57,7 +57,7 @@ const TANYA_JAWAB: TanyaJawab[] = [
   {
     tanya: "Kenapa ada menu yang bertuliskan “Segera”?",
     jawab:
-      "Fitur itu sedang dibangun atau belum dinyalakan untuk kelompokmu. Menu akan aktif otomatis saat sudah siap.",
+      "Fitur itu sedang dibangun atau belum dinyalakan untuk kelompok tersebut. Menu akan aktif otomatis saat sudah siap.",
   },
   {
     tanya: "Kenapa saya tidak melihat data kelompok lain?",
@@ -73,7 +73,7 @@ const TANYA_JAWAB: TanyaJawab[] = [
   {
     tanya: "Aplikasi error, tidak bisa dibuka, atau fiturnya tidak jalan.",
     jawab:
-      "Muat ulang halaman dulu. Kalau masih bermasalah, hubungi pengembang lewat WhatsApp atau email di bawah, sertakan nama akunmu, halaman yang dibuka, dan tangkapan layar.",
+      "Silakan muat ulang halaman terlebih dahulu. Bila masih bermasalah, silakan hubungi pengembang lewat WhatsApp atau email di bawah, dan mohon sertakan nama akun, halaman yang dibuka, serta tangkapan layar.",
   },
   {
     tanya: "Muncul halaman “Sedang perawatan”.",
@@ -83,7 +83,7 @@ const TANYA_JAWAB: TanyaJawab[] = [
   {
     tanya: "Saya login di HP orang lain dan lupa keluar.",
     jawab:
-      "Buka Pengaturan → Akun saya → Keluar dari semua perangkat, lalu login lagi di perangkatmu sendiri.",
+      "Buka Pengaturan → Akun saya → Keluar dari semua perangkat, lalu masuk kembali di perangkat sendiri.",
   },
 ];
 
@@ -125,7 +125,7 @@ async function DaftarBantuan() {
         </ul>
       </Card>
       <p className="mt-4 mb-6 text-sm text-muted">
-        Urusan akun (lupa kata sandi, ganti peran) atau kesalahan data jamaah? Hubungi{" "}
+        Urusan akun (lupa kata sandi, ganti peran) atau kesalahan data jamaah? Silakan hubungi{" "}
         <span className="font-medium text-fg">{pengelolaAkun(admin)}</span>.
       </p>
       <KartuKontakPengembang />

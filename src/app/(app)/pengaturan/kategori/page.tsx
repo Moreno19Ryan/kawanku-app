@@ -90,7 +90,7 @@ async function DaftarKategori() {
   ]);
 
   if (!kategori) {
-    return <Card className="text-sm text-danger">Gagal memuat kategori. Muat ulang halaman.</Card>;
+    return <Card className="text-sm text-danger">Mohon maaf, data kategori belum berhasil dimuat. Silakan muat ulang halaman.</Card>;
   }
 
   const jumlah = new Map<string | null, number>();
@@ -108,12 +108,12 @@ async function DaftarKategori() {
         <Card className="flex gap-4 bg-primary-soft/50">
           <Target className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
           <div className="text-sm">
-            <p className="font-medium">Jamaah yang kamu urus</p>
+            <p className="font-medium">Jamaah yang diurus</p>
             <p className="mt-1 text-muted">
-              Sebagai admin generus, kamu hanya melihat dan mengurus jamaah berkategori generus
+              Admin generus hanya melihat dan mengurus jamaah berkategori generus
               {sasaran.length > 0 ? `: ${sasaran.join(", ")}` : ""}. Bila status sekolah atau
               pernikahan jamaah berubah sehingga kategorinya bukan generus lagi, jamaah itu
-              otomatis keluar dari daftarmu.
+              otomatis keluar dari daftar.
             </p>
           </div>
         </Card>
@@ -160,7 +160,7 @@ async function DaftarKategori() {
                   <p className="flex flex-wrap items-center gap-2 font-semibold">
                     {k.nama}
                     {k.termasuk_generus && (
-                      <Badge nada="utama">{generus ? "Generus · sasaranmu" : "Generus"}</Badge>
+                      <Badge nada="utama">{generus ? "Generus · sasaran" : "Generus"}</Badge>
                     )}
                   </p>
                   <ul className="mt-1 text-sm text-muted">

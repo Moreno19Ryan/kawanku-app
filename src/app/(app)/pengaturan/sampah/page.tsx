@@ -35,7 +35,7 @@ export default function SampahPage() {
       <KembaliKePengaturan />
       <PageHeader
         title="Tempat sampah"
-        description="Jamaah, keluarga, dan kegiatan yang dihapus di wilayahmu. Bisa dikembalikan seperti semula dalam 30 hari, setelah itu terhapus permanen."
+        description="Jamaah, keluarga, dan kegiatan yang dihapus di wilayah tugas. Bisa dikembalikan seperti semula dalam 30 hari, setelah itu terhapus permanen."
       />
       <Suspense fallback={<Skeleton className="h-64" />}>
         <Daftar />
@@ -71,7 +71,7 @@ async function Daftar() {
       <Card className="flex flex-col items-center gap-2 py-10 text-center">
         <Trash2 className="size-10 text-muted" aria-hidden />
         <p className="font-semibold">Tempat sampah kosong</p>
-        <p className="max-w-md text-sm text-muted">Data yang dihapus di wilayahmu akan muncul di sini selama 30 hari.</p>
+        <p className="max-w-md text-sm text-muted">Data yang dihapus di wilayah tugas akan muncul di sini selama 30 hari.</p>
       </Card>
     );
   }

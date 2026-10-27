@@ -41,7 +41,7 @@ export function bacaNilaiUsulan(
 ): NilaiUsulan | string {
   if (!bagianTerstruktur(bagian)) return { nilai: null, nilai_kelas: null };
   if (bagian === "status_sekolah") {
-    if (!(nilai in LABEL_STATUS_SEKOLAH)) return "Pilih status sekolah yang benar.";
+    if (!(nilai in LABEL_STATUS_SEKOLAH)) return "Mohon pilih status sekolah.";
     const rentang = RENTANG_KELAS[nilai];
     if (!rentang || !kelasTeks) return { nilai, nilai_kelas: null };
     const kelas = Number(kelasTeks);
@@ -54,7 +54,7 @@ export function bacaNilaiUsulan(
     if (!(nilai in LABEL_STATUS_PERNIKAHAN)) return "Pilih status pernikahan yang benar.";
     return { nilai, nilai_kelas: null };
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(nilai) || Number.isNaN(Date.parse(nilai))) return "Isi tanggal lahir yang benar.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(nilai) || Number.isNaN(Date.parse(nilai))) return "Mohon isi tanggal lahir dengan benar.";
   if (nilai <= "1900-01-01" || nilai > hariIni) return "Tanggal lahir tidak masuk akal.";
   return { nilai, nilai_kelas: null };
 }

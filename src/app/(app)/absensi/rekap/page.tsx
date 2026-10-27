@@ -85,7 +85,7 @@ async function Rekap({ cari }: { cari: Promise<Record<string, string | string[] 
                 </Link>
               </div>
             ) : (
-              <p className="text-sm text-muted">Peranmu hanya bisa melihat; cetak & ekspor oleh pengelola absensi.</p>
+              <p className="text-sm text-muted">Peran akun ini hanya untuk melihat; cetak & ekspor oleh pengelola absensi.</p>
             )}
           </div>
           <div className="overflow-x-auto rounded-card bg-paper p-5 shadow-sm sm:p-8">

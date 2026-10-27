@@ -32,7 +32,7 @@ async function Layar({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const { data: sesi } = await supabase.from("sesi_absensi").select(KOLOM_SESI).eq("id", id).maybeSingle<Sesi>();
   if (!sesi) notFound();
-  if (!bolehCatatSesi(akses, sesi)) return <p className="text-center">Kamu tidak berwenang mencatat di sesi ini.</p>;
+  if (!bolehCatatSesi(akses, sesi)) return <p className="text-center">Mohon maaf, akun ini tidak berwenang mencatat di sesi ini.</p>;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6">

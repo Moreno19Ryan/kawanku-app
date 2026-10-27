@@ -7,8 +7,8 @@ import { masalahAturan, urutanSistem, type AturanKategori } from "@/lib/jamaah/k
 import { LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 
-const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
-const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
+const TIDAK_BERHAK: StateAksi = { galat: "Mohon maaf, tindakan ini di luar wewenang akun ini." };
+const GAGAL: StateAksi = { galat: "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
 
 /** Client + admin bila memegang pengaturan.kelola (RLS tetap pembatasnya). */
 async function konteks() {

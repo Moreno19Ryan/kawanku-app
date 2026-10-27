@@ -30,7 +30,7 @@ export default function WewenangPage() {
       <KembaliKePengaturan />
       <PageHeader
         title="Peran & wewenang saya"
-        description="Wilayah tugasmu dan apa saja yang boleh kamu lakukan di KawanKu."
+        description="Wilayah tugas dan apa saja yang bisa dilakukan akun ini di KawanKu."
       />
       <Suspense fallback={<Memuat className="h-80" />}>
         <DaftarWewenang />
@@ -55,7 +55,7 @@ async function DaftarWewenang() {
   const pengelola = pengelolaAkun(admin);
 
   if (!penugasan) {
-    return <Card className="text-sm text-danger">Gagal memuat wewenang. Muat ulang halaman.</Card>;
+    return <Card className="text-sm text-danger">Mohon maaf, data wewenang belum berhasil dimuat. Silakan muat ulang halaman.</Card>;
   }
 
   return (
@@ -72,11 +72,11 @@ async function DaftarWewenang() {
             <p className="mt-3 rounded-control bg-surface-muted p-3 text-sm">
               Berlaku hanya untuk jamaah berkategori generus
               {kategoriGenerus?.length ? ` (${kategoriGenerus.map((k) => k.nama).join(", ")})` : ""}{" "}
-              di {p.kelompok?.nama ?? "seluruh desa"}. Jamaah lain tidak terlihat olehmu.
+              di {p.kelompok?.nama ?? "seluruh desa"}. Jamaah di luar wilayah ini tidak ditampilkan.
             </p>
           )}
 
-          <p className="mt-5 mb-2 text-sm font-medium">Yang boleh kamu lakukan</p>
+          <p className="mt-5 mb-2 text-sm font-medium">Yang bisa dilakukan</p>
           {p.peran && p.peran.peran_izin.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {p.peran.peran_izin
@@ -98,8 +98,8 @@ async function DaftarWewenang() {
         </Card>
       ))}
       <p className="text-sm text-muted">
-        Akunmu dikelola oleh <span className="font-medium text-fg">{pengelola}</span>. Hubungi
-        mereka kalau kamu butuh akses tambahan atau perubahan peran.
+        Akun ini dikelola oleh <span className="font-medium text-fg">{pengelola}</span>. Silakan
+        hubungi pengelola tersebut bila memerlukan akses tambahan atau perubahan peran.
       </p>
     </div>
   );

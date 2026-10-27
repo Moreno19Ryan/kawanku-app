@@ -40,7 +40,7 @@ async function DaftarPeriksa() {
   if (periksa.daftar.length === 0) {
     return (
       <Card className="text-sm text-muted">
-        Peranmu hanya bisa melihat data jamaah, jadi tidak ada yang perlu kamu rapikan di sini.
+        Peran akun ini hanya untuk melihat data jamaah, jadi tidak ada yang perlu dirapikan di sini.
       </Card>
     );
   }

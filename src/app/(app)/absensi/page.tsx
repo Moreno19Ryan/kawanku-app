@@ -115,7 +115,7 @@ async function DaftarSesi() {
         <span className="min-w-0 flex-1 text-sm">
           <span className="block font-medium">Pengajuan izin dari generus</span>
           <span className="block text-muted">
-            {izinMenunggu ? `${izinMenunggu} menunggu persetujuanmu` : "Tidak ada yang menunggu"}
+            {izinMenunggu ? `${izinMenunggu} menunggu persetujuan` : "Tidak ada yang menunggu"}
           </span>
         </span>
         <ChevronRight className="size-5 shrink-0 text-muted" aria-hidden />

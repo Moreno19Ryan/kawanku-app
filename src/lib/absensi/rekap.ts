@@ -228,7 +228,7 @@ export async function getRekap(
   if (p.jenis === "sesi") {
     if (!p.sesi) return { galat: "Pilih kegiatan (sesi) yang ingin direkap." };
     const { data } = await supabase.from("sesi_absensi").select(KOLOM_SESI).eq("id", p.sesi).maybeSingle<Sesi>();
-    if (!data) return { galat: "Sesi tidak ditemukan atau di luar wewenangmu." };
+    if (!data) return { galat: "Sesi tidak ditemukan atau di luar wewenang akun ini." };
     sesi = [data];
   } else {
     const [awal, akhir] = rentangBulan(p.bulan);

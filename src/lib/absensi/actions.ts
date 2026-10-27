@@ -11,8 +11,8 @@ import { LABEL_ALASAN_IZIN } from "@/lib/label";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 
-const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
-const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
+const TIDAK_BERHAK: StateAksi = { galat: "Mohon maaf, tindakan ini di luar wewenang akun ini." };
+const GAGAL: StateAksi = { galat: "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
 
 async function konteks() {
   const akses = await getAksesAbsensi();
@@ -123,7 +123,7 @@ export async function ubahStatusPeserta(
 
   const [status, alasan] = nilai.split(":");
   if (!["hadir", "izin", "sakit"].includes(status)) return { galat: "Pilih status." };
-  if (status === "izin" && !(alasan in LABEL_ALASAN_IZIN)) return { galat: "Pilih alasan izin." };
+  if (status === "izin" && !(alasan in LABEL_ALASAN_IZIN)) return { galat: "Mohon pilih alasan izin." };
   const { error } = await ctx.supabase.from("absensi").upsert(
     {
       sesi_id: sesiId,
@@ -186,7 +186,7 @@ export async function tanganiPengajuanIzin(id: string, _prev: StateAksi, formDat
     .eq("id", id)
     .eq("status", "menunggu")
     .select("id");
-  if (error || !data?.length) return { galat: "Pengajuan ini sudah ditangani atau di luar wewenangmu." };
+  if (error || !data?.length) return { galat: "Pengajuan ini sudah ditangani atau di luar wewenang akun ini." };
   refresh();
   return { pesan: status === "disetujui" ? "Disetujui." : "Ditolak." };
 }
