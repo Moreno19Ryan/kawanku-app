@@ -112,7 +112,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   area admin menahan admin selain pengembang saat mode perawatan
   (`pengaturan_sistem` atau env `MODE_PERAWATAN=1`); `BannerPengumuman`
   menampilkan pengumuman. Pembacaan tabel sistem bersifat fail-open
-  (tabel/galat → aplikasi tetap jalan normal).
+  (tabel/galat → aplikasi tetap jalan normal). Kartu Kesehatan sistem
+  (RPC `kesehatan_sistem`, penilaian di `src/lib/sistem/kesehatan.ts`) &
+  Tugas otomatis (`jalankan_tugas`/`atur_tugas`, hanya `kawanku-*`). Tugas
+  pg_cron baru → tambahkan ke `INFO_TUGAS` & `jalankan_tugas`.
 - Verifikasi dua langkah (`docs/mfa.md`, TOTP): wajib untuk pemegang
   `sistem.kelola` (`wajibAdmin()` → `/mfa/daftar`; masuk → `/mfa`,
   `keadaanMfa()` di `src/lib/auth/mfa.ts`). Database: kebijakan RESTRICTIVE

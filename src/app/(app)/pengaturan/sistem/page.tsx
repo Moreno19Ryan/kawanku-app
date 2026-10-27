@@ -4,12 +4,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { FormFitur } from "@/components/sistem/form-fitur";
 import { FormPerawatan } from "@/components/sistem/form-perawatan";
+import { KartuKesehatan, KartuTugas } from "@/components/sistem/kesehatan-sistem";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
 import { simpanFitur, tandaiGalatDicek, tanganiPermintaanIdentitas } from "@/lib/sistem/actions";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { getFitur } from "@/lib/sistem/data";
+import type { DataKesehatan } from "@/lib/sistem/kesehatan";
 import { createClient } from "@/lib/supabase/server";
 import { keInputWib, tanggalJam, waktuRelatif } from "@/lib/waktu";
 
@@ -51,14 +53,17 @@ async function IsiPanel() {
   if (galatPengaturan || !pengaturan) {
     return (
       <Card className="text-sm text-danger">
-        Tabel panel pengembang belum ada di database. Migrasi
-        <code className="mx-1">20261021090000_panel_pengembang</code> belum diterapkan.
+        Mohon maaf, pengaturan sistem belum bisa dimuat dari database. Silakan muat ulang halaman; bila tetap
+        begini, periksa status Supabase.
       </Card>
     );
   }
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
+      <Suspense fallback={<Skeleton className="h-64" />}>
+        <Kesehatan />
+      </Suspense>
       <Suspense fallback={<Skeleton className="h-40" />}>
         <PermintaanIdentitas />
       </Suspense>
@@ -84,8 +89,8 @@ async function IsiPanel() {
       <Card>
         <h2 className="text-lg font-semibold">Saklar fitur</h2>
         <p className="mt-1 mb-5 text-sm text-muted">
-          Nyalakan modul per kelompok, mis. Jamaah untuk Kelompok 1 dulu. Modul yang belum selesai
-          dibangun tetap tampil &ldquo;Segera&rdquo; walau dinyalakan.
+          Nyalakan modul per kelompok, mis. Jamaah untuk Kelompok 1 dulu. Modul yang dimatikan tidak tampil di
+          menu kelompok tersebut.
         </p>
         <ul className="flex flex-col divide-y divide-border">
           {fitur.map((f) => (
@@ -135,6 +140,26 @@ async function IsiPanel() {
         </dl>
       </Card>
     </div>
+  );
+}
+
+/** Kesehatan sistem & tugas otomatis (RPC kesehatan_sistem, khusus pengembang). */
+async function Kesehatan() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("kesehatan_sistem");
+  if (error || !data) {
+    return (
+      <Card className="text-sm text-muted">
+        Mohon maaf, kesehatan sistem belum bisa dimuat. Silakan muat ulang halaman.
+      </Card>
+    );
+  }
+  const kesehatan = data as DataKesehatan;
+  return (
+    <>
+      <KartuKesehatan data={kesehatan} />
+      <KartuTugas data={kesehatan} />
+    </>
   );
 }
 
@@ -273,7 +298,7 @@ async function PemantauGalat() {
   if (error) {
     return (
       <Card className="text-sm text-muted">
-        Pemantau galat belum aktif: migrasi <code>20261028090000_pemantau_galat</code> belum diterapkan.
+        Mohon maaf, daftar galat belum bisa dimuat. Silakan muat ulang halaman.
       </Card>
     );
   }
