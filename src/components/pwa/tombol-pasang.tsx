@@ -3,7 +3,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Check, Copy, Download, X } from "lucide-react";
 import { usePerangkat } from "@/components/perangkat/use-perangkat";
-import { namaPerangkat } from "@/lib/perangkat";
 
 type PromptPasang = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
@@ -150,7 +149,7 @@ export function TombolPasang({ className = "" }: { className?: string }) {
       <div className="flex items-start gap-3">
         <Download className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-primary">Pasang KawanKu di {namaPerangkat(jenis)} ini</p>
+          <p className="font-semibold text-primary">Pasang KawanKu di perangkat ini</p>
           <p className="mt-0.5 text-muted">
             {jenis === "laptop"
               ? "Buka lebih cepat dari ikon di desktop atau taskbar, seperti aplikasi biasa."

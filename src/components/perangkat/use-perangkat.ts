@@ -18,9 +18,9 @@ function baca(): JenisPerangkat {
 const tanpaLangganan = () => () => {};
 
 /**
- * Jenis perangkat yang sedang dipakai (HP, tablet, laptop). Saat render
- * server & sebelum hidrasi bernilai `null`: tampilkan teks netral
- * ("perangkat ini") lewat `namaPerangkat(null)`.
+ * Jenis perangkat yang sedang dipakai (HP, tablet, laptop/PC), untuk
+ * perilaku & kata kerja ("Klik"/"Ketuk"). Saat render server & sebelum
+ * hidrasi bernilai `null`.
  */
 export function usePerangkat(): JenisPerangkat | null {
   return useSyncExternalStore(tanpaLangganan, baca, () => null);

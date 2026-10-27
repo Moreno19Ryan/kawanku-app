@@ -6,7 +6,7 @@ import { CameraOff, RotateCw } from "lucide-react";
 import { kenaliBrowser, type Browser } from "@/components/pwa/tombol-pasang";
 import { buttonClass } from "@/components/ui/button";
 import { usePerangkat } from "@/components/perangkat/use-perangkat";
-import { kataTekan, kenaliPerangkat, namaPerangkat } from "@/lib/perangkat";
+import { kataTekan, kenaliPerangkat } from "@/lib/perangkat";
 
 type GalatKamera = "ditolak" | "tidak-ada" | "dipakai" | "tidak-didukung";
 
@@ -149,7 +149,7 @@ export function KameraQr({
         : galat.jenis === "dipakai"
           ? ["Tutup aplikasi lain yang memakai kamera (mis. kamera, video call).", `${kataTekan(perangkat)} Coba lagi.`]
           : galat.jenis === "tidak-ada"
-            ? [`Pastikan kamera ${namaPerangkat(perangkat)} ini menyala dan tidak tertutup.`, `${kataTekan(perangkat)} Coba lagi.`]
+            ? ["Pastikan kamera perangkat ini menyala dan tidak tertutup.", `${kataTekan(perangkat)} Coba lagi.`]
             : ["Buka KawanKu di Chrome atau Safari versi terbaru, lalu scan lagi."];
     return (
       <div role="alert" className="flex flex-col gap-4 rounded-card bg-surface px-5 py-6">

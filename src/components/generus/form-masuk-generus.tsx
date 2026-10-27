@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { INPUT_CLASS } from "@/components/ui/input";
 import { Saklar } from "@/components/ui/saklar";
 import { usePerangkat } from "@/components/perangkat/use-perangkat";
-import { namaPerangkat } from "@/lib/perangkat";
 import { siapkanMasukGenerus } from "@/lib/generus/masuk-actions";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
 import { createClient } from "@/lib/supabase/client";
@@ -56,7 +55,7 @@ function langganan(berubah: () => void) {
 export function FormMasukGenerus() {
   const diingat = useSyncExternalStore(langganan, bacaIngat, () => null);
   const perangkat = usePerangkat();
-  const labelIngat = `Ingat username di ${namaPerangkat(perangkat)} ini`;
+  const labelIngat = "Ingat username di perangkat ini";
   const [galat, setGalat] = useState<string>();
   const [pending, setPending] = useState(false);
   // Naik setiap kali PIN belum cocok: mengosongkan kotak PIN & memicu getar.

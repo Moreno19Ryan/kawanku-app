@@ -6,7 +6,6 @@ import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { usePerangkat } from "@/components/perangkat/use-perangkat";
-import { namaPerangkat as sebutPerangkat } from "@/lib/perangkat";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { kirimTesNotifikasi, matikanLangganan, simpanLangganan } from "@/lib/notifikasi/actions";
 
@@ -124,7 +123,7 @@ export function SaklarNotifikasi({
 
   if (ringkas && keadaan !== "mati") return null;
 
-  const di = `di ${sebutPerangkat(perangkat)} ini`;
+  const di = "di perangkat ini";
 
   const isi = {
     memeriksa: "Memeriksa…",

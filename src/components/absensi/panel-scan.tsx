@@ -6,11 +6,9 @@ import { Camera, CircleAlert, CircleCheck, ScanLine, X } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
 import { KameraQr } from "@/components/ui/kamera-qr";
-import { usePerangkat } from "@/components/perangkat/use-perangkat";
 import type { HasilScan } from "@/lib/absensi/actions";
 import { bunyi, type JenisBunyi } from "@/lib/absensi/bunyi";
 import { ucapanSyukur } from "@/lib/label";
-import { namaPerangkat } from "@/lib/perangkat";
 import { jam } from "@/lib/waktu";
 
 /** Teks besar di layar setelah scan. */
@@ -59,7 +57,6 @@ export function PanelScan({
   const [riwayat, setRiwayat] = useState<Riwayat[]>([]);
   const [suara, setSuara] = useState(true);
   const [kamera, setKamera] = useState(false);
-  const perangkat = usePerangkat();
   const [pending, startTransition] = useTransition();
   const sibuk = useRef(false);
   const kodeKamera = useRef<{ kode: string; waktu: number } | null>(null);
@@ -129,7 +126,7 @@ export function PanelScan({
         className={buttonClass(kamera ? "netral" : "kedua", "self-start")}
       >
         {kamera ? <X className="size-4" aria-hidden /> : <Camera className="size-4" aria-hidden />}
-        {kamera ? "Tutup kamera" : `Scan pakai kamera ${namaPerangkat(perangkat)}`}
+        {kamera ? "Tutup kamera" : "Scan pakai kamera"}
       </button>
       <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row">
         <div className="relative sm:flex-1">
