@@ -12,7 +12,14 @@ export async function kembalikanSampah(id: string): Promise<StateAksi> {
   const { data: entri } = await supabase.from("tempat_sampah").select("jenis, label").eq("id", id).maybeSingle();
   const { data, error } = await supabase.rpc("kembalikan_dari_sampah", { p_id: id });
   if (error?.code === "42501") return { galat: "Di luar wewenang akun ini atau sudah tidak ada." };
-  if (error) return { galat: error.message.replace(/^Tidak bisa dikembalikan: /, "Tidak bisa dikembalikan: ") };
+  if (error) {
+    // Pesan database bisa berupa galat teknis (mis. bentrok data); jangan tampilkan apa adanya.
+    return {
+      galat: error.message.includes("data induknya")
+        ? "Mohon maaf, data ini belum bisa dikembalikan karena data induknya sudah tidak ada."
+        : "Mohon maaf, data ini belum bisa dikembalikan karena bentrok dengan data yang ada sekarang (mis. sudah ada data yang sama). Silakan periksa, lalu coba lagi.",
+    };
+  }
   refresh();
   const dilewati = (data as { dilewati?: string[] } | null)?.dilewati ?? [];
   const nama = entri ? `${LABEL[entri.jenis] ?? ""} ${entri.label}`.trim() : "Data";

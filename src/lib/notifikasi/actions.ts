@@ -49,7 +49,7 @@ export async function kirimTesNotifikasi(endpoint: string): Promise<StateAksi> {
       p256dh: data.p256dh,
       auth: data.auth_key,
       judul: "Notifikasi KawanKu menyala",
-      isi: "InsyaAllah pengingat pengajian akan muncul seperti ini.",
+      isi: "InsyaAllah pengingat akan muncul seperti ini.",
       url: "/saya",
       tag: "uji",
     },
