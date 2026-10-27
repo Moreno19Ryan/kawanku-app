@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense, type ReactNode } from "react";
+import { Suspense } from "react";
 import { CalendarClock, CalendarX, ChevronRight, FileText, LogOut, MapPin, ScanLine, UserRound } from "lucide-react";
-import { LogoPutih, PolaK } from "@/components/brand/hiasan-sambutan";
+import { PanelSambutan } from "@/components/layout/panel-sambutan";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { keluarGenerus } from "@/lib/generus/actions";
 import { KartuKehadiran } from "@/components/generus/kartu-kehadiran";
@@ -42,7 +42,7 @@ export default function SayaPage() {
       <Suspense
         fallback={
           <>
-            <PanelSambutan />
+            <PanelSambutan kanan={<KananPanel />} />
             <Memuat className="mt-8 h-72" />
           </>
         }
@@ -53,31 +53,22 @@ export default function SayaPage() {
   );
 }
 
-/** Panel biru sambutan: logo, tema, keluar, lalu sapaan (children). */
-function PanelSambutan({ children }: { children?: ReactNode }) {
+/** Tombol putih di kanan atas panel: tema & keluar. */
+function KananPanel() {
   return (
-    <section className="relative -mx-gutter overflow-hidden rounded-b-[2.25rem] bg-primary px-gutter pt-2 pb-24 text-white sm:mx-0 sm:mt-4 sm:rounded-card dark:bg-primary-soft">
-      <PolaK className="-top-6 -right-24 size-72" />
-      <div className="relative -mx-2 flex items-center justify-between">
-        <div className="-my-[6px]">
-          <LogoPutih height={24} priority />
-        </div>
-        <div className="flex items-center gap-1">
-          <TombolTema className="text-white! hover:bg-white/15!" />
-          <form action={keluarGenerus}>
-            <button
-              type="submit"
-              aria-label="Keluar"
-              title="Keluar"
-              className="flex size-11 items-center justify-center rounded-pill text-white transition-colors duration-200 ease-oneui hover:bg-white/15"
-            >
-              <LogOut className="size-5" aria-hidden />
-            </button>
-          </form>
-        </div>
-      </div>
-      {children && <div className="kk-muncul relative mt-6">{children}</div>}
-    </section>
+    <>
+      <TombolTema className="text-white! hover:bg-white/15!" />
+      <form action={keluarGenerus}>
+        <button
+          type="submit"
+          aria-label="Keluar"
+          title="Keluar"
+          className="flex size-11 items-center justify-center rounded-pill text-white transition-colors duration-200 ease-oneui hover:bg-white/15"
+        >
+          <LogOut className="size-5" aria-hidden />
+        </button>
+      </form>
+    </>
   );
 }
 
@@ -145,7 +136,7 @@ async function BerandaGenerus() {
 
   return (
     <>
-      <PanelSambutan>
+      <PanelSambutan kanan={<KananPanel />}>
         <p className="text-sm text-white/80">Assalamu&apos;alaikum · {sapa.salam}</p>
         <h1 className="mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
           {generus.jamaah.panggilan ?? generus.jamaah.nama}

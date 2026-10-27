@@ -26,12 +26,13 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="group/admin flex min-h-dvh flex-col">
       <Suspense fallback={<Sidebar akun={akunSidebar} />}>
         <SidebarTerbuka akun={akunSidebar} />
       </Suspense>
 
-      <div className="sticky top-0 z-10 flex items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg lg:hidden">
+      {/* Halaman sambutan (Beranda, `data-sambutan`) membawa kepala sendiri di panel biru. */}
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg group-has-[[data-sambutan]]/admin:hidden lg:hidden">
         <BrandMark height={24} />
         <div className="flex items-center gap-1">
           <TombolTema />

@@ -176,7 +176,8 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   admin membuka Beranda/Absensi/pertemuan sebagai cadangan; tanpa tombol
   buka/tutup. Lembar
   cetak kartu di `/cetak/kartu` (di luar layout admin). Pertemuan hari
-  ini (`PertemuanHariIni`) tampil di Beranda admin & Absensi. Kamera QR
+  ini: `KartuHariIni` (kartu mengambang di Beranda admin: terdekat + hadir +
+  tombol absensi) dan `PertemuanHariIni` (daftar di Absensi). Kamera QR
   (`KameraQr`, jsQR + bantuan izin per browser) dipakai pemindai generus dan
   "Scan pakai kamera HP" di halaman sesi.
 - Akun generus (Fase 2b): login di `/masuk` (username + PIN). PIN diperiksa
@@ -221,8 +222,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Asisten KawanKu (`docs/asisten.md`): kartu pengingat/peringatan/saran/
   apresiasi di Beranda admin & generus, dihitung dari data yang ada
   (`src/lib/asisten/`), termasuk deteksi pola kegiatan & data ganda.
-  "Kawan" (F7): kartu Ringkasan hari ini di Beranda admin (RPC
-  `ringkasan_hari_ini`, aturan izin = RLS) + notifikasi pagi ke HP admin;
+  "Kawan" (F7): ringkasan hari ini di Beranda admin (RPC
+  `ringkasan_hari_ini`, aturan izin = RLS; tampil di panel sambutan,
+  pintasan Izin masuk, & Perlu perhatian) + notifikasi pagi ke HP admin;
   sambutan generus (`src/lib/generus/sambutan.ts`); rapor bulanan
   `/saya/rapor` (`raporBulan()`) + notifikasi tanggal 1.
   Pemantau galat: `src/instrumentation.ts` + halaman galat → RPC
