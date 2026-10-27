@@ -4,6 +4,7 @@ import {
   CircleHelp,
   DatabaseBackup,
   KeyRound,
+  LifeBuoy,
   Megaphone,
   Palette,
   ShieldCheck,
@@ -86,6 +87,13 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     judul: "Panel pengembang",
     keterangan: "Mode perawatan, saklar fitur, info sistem",
     icon: Wrench,
+    izin: "sistem.kelola",
+  },
+  {
+    href: "/pengaturan/bantuan-akun",
+    judul: "Bantuan akun",
+    keterangan: "Cari akun, buka kunci PIN, keluarkan dari semua perangkat",
+    icon: LifeBuoy,
     izin: "sistem.kelola",
   },
   {

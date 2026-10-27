@@ -84,7 +84,8 @@ insert into cron.job_run_details (jobid, runid, command, status, start_time, end
 select jobid, 900000001, 'uji', 'succeeded', now() - interval '10 days', now() - interval '10 days'
 from cron.job where jobname = 'kawanku-buka-absensi';
 insert into cron.job_run_details (jobid, runid, command, status, return_message, start_time, end_time)
-select jobid, 900000002, 'uji', 'failed', 'galat uji', now() - interval '1 hour', now() - interval '1 hour'
+-- Waktunya sedikit di depan supaya tetap yang terakhir walau pg_cron sungguh berjalan selama tes.
+select jobid, 900000002, 'uji', 'failed', 'galat uji', now() + interval '1 minute', now() + interval '1 minute'
 from cron.job where jobname = 'kawanku-buka-absensi';
 insert into public.notifikasi_terkirim (user_id, kunci, created_at) values
   ('00000000-0000-0000-0000-0000000000a5', 'lama', now() - interval '100 days'),
