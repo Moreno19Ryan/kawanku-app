@@ -5,6 +5,7 @@ import { CalendarDays, CalendarX, ChartColumn, ChevronRight, Plus, QrCode, UserP
 import { KartuHariIni } from "@/components/absensi/kartu-hari-ini";
 import { AkunAdmin } from "@/components/auth/akun-admin";
 import { PanelSambutan } from "@/components/layout/panel-sambutan";
+import { BannerPengumuman } from "@/components/sistem/banner-pengumuman";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
@@ -268,6 +269,12 @@ async function Ringkasan() {
         <div className="kk-muncul-2 relative -mt-16 sm:mx-4 lg:-mt-20 lg:mx-6 [&>*]:shadow-[0_8px_28px_rgb(0_0_0/0.10)]">
           <Suspense fallback={<Skeleton className="h-40" />}>
             <KartuHariIni />
+          </Suspense>
+        </div>
+        {/* Pengumuman di bawah kartu, sama dengan Beranda generus. */}
+        <div className="mt-4 empty:hidden [&>div]:mt-0">
+          <Suspense fallback={null}>
+            <BannerPengumuman />
           </Suspense>
         </div>
       </div>

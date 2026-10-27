@@ -70,6 +70,8 @@ Mulai dari halaman masuk (`/masuk` & `/login`).
   angka, Laporan, Kegiatan, Kartu QR) dan "Perlu perhatian"; di laptop
   keduanya di kolom kanan.
 - Menu bawah admin bergaya sama dengan generus; Absensi menonjol di tengah.
+- Pengumuman di Beranda tampil di bawah kartu Hari ini (sama dengan generus);
+  di halaman admin lain tetap di atas isi halaman.
 
 **Aturan sejak tahap 3 (Reno, 27 Okt 2026): setiap tahap redesign
 mencakup area admin dan area jamaah sekaligus**, supaya tampilan tidak

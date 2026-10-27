@@ -44,9 +44,12 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 
       {/* Konten flex-1 mendorong footer ke paling bawah walau isi halaman pendek. */}
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-gutter pb-[calc(var(--spacing-bottomnav)+env(safe-area-inset-bottom)+1.5rem)] lg:ml-sidebar lg:mr-0 lg:w-auto lg:px-10 lg:pb-8">
-        <Suspense fallback={null}>
-          <BannerPengumuman />
-        </Suspense>
+        {/* Di Beranda (halaman sambutan) pengumuman tampil di bawah kartu Hari ini. */}
+        <div className="group-has-[[data-sambutan]]/admin:hidden">
+          <Suspense fallback={null}>
+            <BannerPengumuman />
+          </Suspense>
+        </div>
         {/* Perpindahan halaman: isi memudar halus (globals.css, .kk-halaman). */}
         <ViewTransition update={{ diam: "none", default: "kk-halaman" }} default="none">
           <div className="flex-1">
