@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Saklar } from "@/components/ui/saklar";
 import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { useFormAksi } from "@/components/pengaturan/use-form-aksi";
 import { buttonClass } from "@/components/ui/button";
@@ -155,10 +156,13 @@ export function FormUbahKegiatan({
         <span className={LABEL}>Keterangan</span>
         <textarea name="keterangan" maxLength={500} rows={2} defaultValue={awal.keterangan ?? ""} className={`${INPUT_CLASS} h-auto py-3`} />
       </label>
-      <label className="flex items-center gap-2 text-sm sm:col-span-2">
-        <input type="checkbox" name="aktif" defaultChecked={awal.aktif} className="size-4" />
-        Aktif (nonaktif = tidak muncul lagi di kalender)
-      </label>
+      <div className="flex items-center justify-between gap-4 rounded-control bg-surface-muted p-4 sm:col-span-2">
+        <div>
+          <p className="text-sm font-medium">Aktif</p>
+          <p className="text-xs text-muted">Nonaktif = tidak muncul lagi di kalender.</p>
+        </div>
+        <Saklar name="aktif" label="Kegiatan aktif" defaultChecked={awal.aktif} />
+      </div>
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
         <button type="submit" disabled={pending} className={buttonClass("utama")}>
           {pending ? "Menyimpan…" : "Simpan"}

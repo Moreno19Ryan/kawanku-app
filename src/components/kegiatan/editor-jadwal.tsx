@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Chip } from "@/components/ui/chip";
 import { Plus, Trash2 } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
@@ -40,14 +41,13 @@ export function EditorJadwal({ awal }: { awal?: BarisJadwal[] }) {
             aria-label="Jam"
             className={`${INPUT_CLASS} h-10 py-0 text-sm sm:w-32`}
           />
-          <fieldset className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <fieldset className="flex flex-wrap items-center gap-1.5 text-sm">
             <legend className="sr-only">Pekan libur</legend>
-            <span className="text-muted">Libur pekan ke-</span>
+            <span className="mr-1 basis-full text-muted sm:basis-auto">Libur pekan ke-</span>
             {[1, 2, 3, 4, 5].map((p) => (
-              <label key={p} className="flex items-center gap-1">
-                <input type="checkbox" name={`libur_${i}`} value={p} defaultChecked={b.kecuali_pekan_ke.includes(p)} className="size-4" />
+              <Chip key={p} kecil name={`libur_${i}`} value={p} defaultChecked={b.kecuali_pekan_ke.includes(p)} aria-label={`Libur pekan ke-${p}`}>
                 {p}
-              </label>
+              </Chip>
             ))}
           </fieldset>
           {baris.length > 1 && (

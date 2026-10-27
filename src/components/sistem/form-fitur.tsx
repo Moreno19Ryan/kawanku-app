@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Chip } from "@/components/ui/chip";
 import { buttonClass } from "@/components/ui/button";
 import { Saklar } from "@/components/ui/saklar";
 import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
@@ -66,18 +67,11 @@ export function FormFitur({
           ))}
         </div>
         {cakupan === "pilih" && (
-          <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
+          <div className="flex flex-wrap gap-2 pt-1">
             {kelompok.map((k) => (
-              <label key={k.id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  name="kelompok"
-                  value={k.id}
-                  defaultChecked={terpilih.includes(k.id)}
-                  className="size-4 accent-primary"
-                />
+              <Chip key={k.id} name="kelompok" value={k.id} defaultChecked={terpilih.includes(k.id)}>
                 {k.nama}
-              </label>
+              </Chip>
             ))}
           </div>
         )}
