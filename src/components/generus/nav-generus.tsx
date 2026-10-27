@@ -40,7 +40,7 @@ function Bilah({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Menu generus"
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg"
+      className="fixed inset-x-0 bottom-0 z-20 rounded-t-[1.75rem] bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_24px_rgb(0_0_0/0.07)] backdrop-blur-lg"
     >
       <Menu pathname={pathname} />
     </nav>
@@ -73,7 +73,7 @@ function Menu({ pathname }: { pathname: string }) {
                   <Icon className="size-5" aria-hidden />
                 </span>
               )}
-              <span className="text-[0.7rem] font-medium">{m.label}</span>
+              <span className={`text-[0.7rem] ${nyala ? "font-semibold" : "font-medium"}`}>{m.label}</span>
             </Link>
           </li>
         );

@@ -7,11 +7,15 @@ import { SegarkanLangsung } from "@/components/sistem/segarkan-langsung";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { keluarGenerus } from "@/lib/generus/actions";
 
-/** Kerangka halaman generus: ringkas, nyaman di HP, tanpa menu admin. */
+/**
+ * Kerangka halaman generus: ringkas, nyaman di HP, tanpa menu admin.
+ * Halaman sambutan (Beranda) membawa kepala sendiri di panel biru dan
+ * menandai dirinya `data-sambutan`, sehingga kepala biasa disembunyikan.
+ */
 export default function GenerusLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg">
+    <div className="group/generus flex min-h-dvh flex-col">
+      <header className="sticky top-0 z-10 flex group-has-[[data-sambutan]]/generus:hidden items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg">
         <BrandMark height={24} />
         <div className="flex items-center gap-1">
           <TombolTema />

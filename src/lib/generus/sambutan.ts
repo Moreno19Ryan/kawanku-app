@@ -12,6 +12,8 @@ export type Sambutan = {
   /** Satu kalimat konteks, atau null bila tidak ada yang khusus. */
   pesan: string | null;
   nada: "biasa" | "syukur";
+  /** "berikut" = kalimatnya tentang kegiatan terdekat (Beranda sudah menampilkannya di kartu). */
+  topik?: "berikut";
 };
 
 type Berikut = { nama: string; tanggal: string; mulai: string } | null | undefined;
@@ -58,10 +60,10 @@ export function sambutan(opsi: {
   const k = opsi.berikut;
   if (k && k.mulai > sekarang.toISOString()) {
     if (k.tanggal === hariIni) {
-      return { salam, pesan: `Nanti pukul ${pukul(k.mulai)} ada ${k.nama}. InsyaAllah hadir, ya.`, nada: "biasa" };
+      return { salam, pesan: `Nanti pukul ${pukul(k.mulai)} ada ${k.nama}. InsyaAllah hadir, ya.`, nada: "biasa", topik: "berikut" };
     }
     if (k.tanggal === tambahHari(hariIni, 1)) {
-      return { salam, pesan: `Besok pukul ${pukul(k.mulai)} ada ${k.nama}.`, nada: "biasa" };
+      return { salam, pesan: `Besok pukul ${pukul(k.mulai)} ada ${k.nama}.`, nada: "biasa", topik: "berikut" };
     }
   }
   return { salam, pesan: null, nada: "biasa" };

@@ -43,9 +43,23 @@ Mulai dari halaman masuk (`/masuk` & `/login`).
 - **Logo**: `BrandMark` (atau varian putih di atas panel biru);
   logo desa hanya di footer 28–36 px (`LogoDesa`).
 
+## Beranda generus (tahap 2)
+
+- Halaman sambutan: panel biru di atas (logo putih, tema, keluar, salam,
+  nama, kelompok, satu kalimat sambutan). Halaman menandai dirinya
+  `data-sambutan` sehingga kepala biasa di layout generus disembunyikan.
+- Kartu kegiatan terdekat **mengambang** di tepi bawah panel (bayangan
+  halus); bila belum ada jadwal, kartu kehadiran bulan ini yang mengambang.
+- Di bawahnya: pengumuman, pintasan (Ajukan izin, Rapor, Data diri: halaman
+  yang tidak ada di menu bawah), kehadiran, asisten, jadwal, riwayat, lalu
+  ajakan notifikasi & pasang aplikasi paling bawah.
+- Menu bawah: tanpa garis atas, sudut atas membulat, bayangan halus; Scan
+  tetap menonjol di tengah. Hiasan panel (`PolaK`, `LogoPutih`) di
+  `src/components/brand/hiasan-sambutan.tsx`, dipakai bersama halaman masuk.
+
 ## Urutan redesign (usulan)
 
-1. Halaman masuk (generus & admin). ← tahap ini
-2. Beranda generus & menu bawah.
+1. Halaman masuk (generus & admin). Selesai.
+2. Beranda generus & menu bawah. ← tahap ini
 3. Beranda admin.
 4. Halaman kerja (Jamaah, Absensi, Kegiatan, Pengaturan), satu per satu.
