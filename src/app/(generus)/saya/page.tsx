@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
-import { CalendarClock, CalendarX, ChevronRight, FileText, MapPin, ScanLine, UserRound } from "lucide-react";
+import { Suspense, type ReactNode } from "react";
+import { CalendarClock, CalendarX, ChevronRight, FileText, LogOut, MapPin, ScanLine, UserRound } from "lucide-react";
+import { LogoPutih, PolaK } from "@/components/brand/hiasan-sambutan";
+import { TombolTema } from "@/components/tema/tombol-tema";
+import { keluarGenerus } from "@/lib/generus/actions";
 import { KartuKehadiran } from "@/components/generus/kartu-kehadiran";
 import { TautanIzin } from "@/components/generus/tautan-izin";
 import { DaftarKejadian } from "@/components/kegiatan/daftar-kejadian";
@@ -27,11 +30,54 @@ export const metadata: Metadata = {
   title: "Beranda",
 };
 
+/**
+ * Beranda generus = halaman sambutan (docs/pedoman-desain.md): panel biru di
+ * atas (area lihat: sapaan & nama), kartu pengajian terdekat "mengambang"
+ * di tepinya, lalu pintasan dan isi lain di area sentuh. `data-sambutan`
+ * membuat layout menyembunyikan kepala biasa (kepalanya ada di panel).
+ */
 export default function SayaPage() {
   return (
-    <Suspense fallback={<Memuat className="mt-8 h-96" />}>
-      <BerandaGenerus />
-    </Suspense>
+    <div data-sambutan className="flex flex-col">
+      <Suspense
+        fallback={
+          <>
+            <PanelSambutan />
+            <Memuat className="mt-8 h-72" />
+          </>
+        }
+      >
+        <BerandaGenerus />
+      </Suspense>
+    </div>
+  );
+}
+
+/** Panel biru sambutan: logo, tema, keluar, lalu sapaan (children). */
+function PanelSambutan({ children }: { children?: ReactNode }) {
+  return (
+    <section className="relative -mx-gutter overflow-hidden rounded-b-[2.25rem] bg-primary px-gutter pt-2 pb-24 text-white sm:mx-0 sm:mt-4 sm:rounded-card dark:bg-primary-soft">
+      <PolaK className="-top-6 -right-24 size-72" />
+      <div className="relative -mx-2 flex items-center justify-between">
+        <div className="-my-[6px]">
+          <LogoPutih height={24} priority />
+        </div>
+        <div className="flex items-center gap-1">
+          <TombolTema className="text-white! hover:bg-white/15!" />
+          <form action={keluarGenerus}>
+            <button
+              type="submit"
+              aria-label="Keluar"
+              title="Keluar"
+              className="flex size-11 items-center justify-center rounded-pill text-white transition-colors duration-200 ease-oneui hover:bg-white/15"
+            >
+              <LogOut className="size-5" aria-hidden />
+            </button>
+          </form>
+        </div>
+      </div>
+      {children && <div className="kk-muncul relative mt-6">{children}</div>}
+    </section>
   );
 }
 
@@ -56,130 +102,170 @@ async function BerandaGenerus() {
   // Pekan pertama tiap bulan: ajakan membuka rapor bulan lalu.
   const rapor = Number(hariIni.slice(8, 10)) <= 7 ? raporBulan(kehadiran, bulanLalu()) : null;
 
-  return (
-    <div className="flex flex-col gap-5 pt-6">
+  const kartuBerikut = berikut && (
+    <Card className={`flex flex-col gap-3 ${berlangsung ? "ring-2 ring-primary" : ""}`}>
+      <p className="flex items-center gap-2 text-sm font-medium text-primary">
+        <CalendarClock className="size-4" aria-hidden />
+        {berlangsung ? "Sedang berlangsung" : `Berikutnya · ${waktuRelatif(berikut.mulai)}`}
+      </p>
       <div>
-        <p className="text-sm text-muted">Assalamu&apos;alaikum · {sapa.salam}</p>
-        <h1 className="text-2xl font-semibold tracking-tight">{generus.jamaah.panggilan ?? generus.jamaah.nama}</h1>
-        <p className="text-sm text-muted">
+        <p className="text-lg font-semibold">{berikut.kegiatan.nama}</p>
+        <p className="text-sm text-muted">{tanggalJam(berikut.mulai)}</p>
+      </div>
+      <div className="flex flex-col gap-1 text-sm">
+        <span className="inline-flex items-center gap-1.5">
+          <UserRound className="size-4 text-muted" aria-hidden />
+          {berikut.pemateri ?? "Pemateri belum diumumkan"}
+        </span>
+        {berikut.materi && <span className="text-muted">Materi: {berikut.materi}</span>}
+        {berikut.kegiatan.lokasi && (
+          <span className="inline-flex items-center gap-1.5 text-muted">
+            <MapPin className="size-4" aria-hidden />
+            {berikut.kegiatan.lokasi}
+          </span>
+        )}
+      </div>
+      {berlangsung ? (
+        <Link href="/saya/scan" className={buttonClass("utama", "h-14 text-base")}>
+          <ScanLine className="size-5" aria-hidden />
+          Scan QR absen
+        </Link>
+      ) : (
+        <Link
+          href={`/saya/izin?k=${berikut.kegiatan.id}&t=${berikut.tanggal}`}
+          className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-medium text-primary"
+        >
+          <CalendarX className="size-4" aria-hidden />
+          Berhalangan? Ajukan izin
+        </Link>
+      )}
+    </Card>
+  );
+  const kehadiranBulanIni = <KartuKehadiran ringkasan={ringkasan} />;
+
+  return (
+    <>
+      <PanelSambutan>
+        <p className="text-sm text-white/80">Assalamu&apos;alaikum · {sapa.salam}</p>
+        <h1 className="mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
+          {generus.jamaah.panggilan ?? generus.jamaah.nama}
+        </h1>
+        <p className="mt-1 text-sm text-white/80">
           {[generus.jamaah.kelompok, `@${generus.username}`].filter(Boolean).join(" · ")}
         </p>
         {sapa.pesan && (
-          <p className={`mt-3 rounded-card px-4 py-3 text-sm font-medium ${sapa.nada === "syukur" ? "bg-primary-soft text-primary" : "bg-surface"}`}>
-            {sapa.pesan}
-          </p>
+          <p className="mt-4 rounded-card bg-white/15 px-4 py-3 text-sm font-medium">{sapa.pesan}</p>
         )}
+      </PanelSambutan>
+
+      {/* Kartu yang mengambang di tepi panel: pengajian terdekat, atau
+          kehadiran bulan ini bila belum ada jadwal. */}
+      <div className="kk-muncul-2 relative -mt-16 sm:mx-4 [&>*]:shadow-[0_8px_28px_rgb(0_0_0/0.10)]">
+        {kartuBerikut || kehadiranBulanIni}
       </div>
 
-      {/* Urutan: yang paling perlu diketahui dulu (pengajian terdekat &
-          pengumuman), baru saran & ajakan pasang aplikasi. */}
-      {pengumuman.length > 0 && (
-        <DaftarPengumuman pengumuman={pengumuman.map(({ id, pesan, nada }) => ({ id, pesan, nada }))} />
-      )}
-
-      {berikut && (
-        <Card className={`flex flex-col gap-3 ${berlangsung ? "bg-primary-soft" : ""}`}>
-          <p className="flex items-center gap-2 text-sm font-medium text-primary">
-            <CalendarClock className="size-4" aria-hidden />
-            {berlangsung ? "Sedang berlangsung" : `Berikutnya · ${waktuRelatif(berikut.mulai)}`}
-          </p>
-          <div>
-            <p className="text-lg font-semibold">{berikut.kegiatan.nama}</p>
-            <p className="text-sm text-muted">{tanggalJam(berikut.mulai)}</p>
+      <div className="mt-5 flex flex-col gap-5">
+        {/* Urutan: yang paling perlu diketahui dulu (kegiatan terdekat &
+            pengumuman), baru pintasan, ringkasan, saran, dan ajakan. */}
+        {pengumuman.length > 0 && (
+          <div className="-mt-4">
+            <DaftarPengumuman pengumuman={pengumuman.map(({ id, pesan, nada }) => ({ id, pesan, nada }))} />
           </div>
-          <div className="flex flex-col gap-1 text-sm">
-            <span className="inline-flex items-center gap-1.5">
-              <UserRound className="size-4 text-muted" aria-hidden />
-              {berikut.pemateri ?? "Pemateri belum diumumkan"}
-            </span>
-            {berikut.materi && <span className="text-muted">Materi: {berikut.materi}</span>}
-            {berikut.kegiatan.lokasi && (
-              <span className="inline-flex items-center gap-1.5 text-muted">
-                <MapPin className="size-4" aria-hidden />
-                {berikut.kegiatan.lokasi}
-              </span>
-            )}
-          </div>
-          {berlangsung ? (
-            <Link href="/saya/scan" className={buttonClass("utama", "h-14 text-base")}>
-              <ScanLine className="size-5" aria-hidden />
-              Scan QR absen
-            </Link>
-          ) : (
-            <Link
-              href={`/saya/izin?k=${berikut.kegiatan.id}&t=${berikut.tanggal}`}
-              className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-primary"
-            >
-              <CalendarX className="size-4" aria-hidden />
-              Berhalangan? Ajukan izin
-            </Link>
-          )}
-        </Card>
-      )}
+        )}
 
-      <KartuKehadiran ringkasan={ringkasan} />
+        <Pintasan />
 
-      {rapor && rapor.total > 0 && (
-        <Link
-          href={`/saya/rapor?bulan=${rapor.bulan}`}
-          className="flex items-center gap-3 rounded-card bg-surface p-5 transition-colors duration-200 ease-oneui hover:bg-surface-muted"
-        >
-          <FileText className="size-5 shrink-0 text-primary" aria-hidden />
-          <span className="min-w-0 flex-1 text-sm">
-            <span className="block font-medium">Rapor {rapor.judul} sudah siap</span>
-            <span className="block text-muted">
-              Hadir {rapor.hadir} dari {rapor.total} pertemuan{rapor.lencana.length ? ` · ${rapor.lencana.length} lencana` : ""}
-            </span>
-          </span>
-          <ChevronRight className="size-4 text-muted" aria-hidden />
-        </Link>
-      )}
+        {kartuBerikut && kehadiranBulanIni}
 
-      <KartuAsisten saran={saran} />
-      <TombolPasang />
-      <SaklarNotifikasi ringkas />
-
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3 px-1">
-          <h2 className="text-sm font-semibold text-muted">Jadwal 7 hari ke depan</h2>
-          <Link href="/saya/jadwal" className="text-sm font-medium text-primary">
-            Lihat semua
-          </Link>
-        </div>
-        <DaftarKejadian
-          kejadian={jadwal}
-          namaKelompok={namaKelompok}
-          tautan={false}
-          kosong="Belum ada jadwal kegiatan pekan ini."
-          aksi={(k) => <TautanIzin k={k} />}
-        />
-      </section>
-
-      {kehadiran.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="px-1 text-sm font-semibold text-muted">Kehadiran terakhir</h2>
-          <ul className="divide-y divide-border overflow-hidden rounded-card bg-surface">
-            {kehadiran.slice(0, 3).map((c) => {
-              const l = labelKehadiran(c);
-              return (
-                <li key={c.sesi_id} className="flex items-center gap-3 px-5 py-3">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{c.nama}</span>
-                    <span className="block text-sm text-muted">{tanggalJam(c.mulai)}</span>
-                  </span>
-                  <Badge nada={l.nada}>{l.label}</Badge>
-                </li>
-              );
-            })}
-          </ul>
+        {rapor && rapor.total > 0 && (
           <Link
-            href="/saya/kehadiran"
-            className="flex items-center justify-center gap-1 text-sm font-medium text-primary"
+            href={`/saya/rapor?bulan=${rapor.bulan}`}
+            className="flex items-center gap-3 rounded-card bg-surface p-5 transition-colors duration-200 ease-oneui hover:bg-surface-muted"
           >
-            Riwayat lengkap <ChevronRight className="size-4" aria-hidden />
+            <FileText className="size-5 shrink-0 text-primary" aria-hidden />
+            <span className="min-w-0 flex-1 text-sm">
+              <span className="block font-medium">Rapor {rapor.judul} sudah siap</span>
+              <span className="block text-muted">
+                Hadir {rapor.hadir} dari {rapor.total} pertemuan{rapor.lencana.length ? ` · ${rapor.lencana.length} lencana` : ""}
+              </span>
+            </span>
+            <ChevronRight className="size-4 text-muted" aria-hidden />
           </Link>
+        )}
+
+        <KartuAsisten saran={saran} />
+
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3 px-1">
+            <h2 className="text-sm font-semibold text-muted">Jadwal 7 hari ke depan</h2>
+            <Link href="/saya/jadwal" className="text-sm font-medium text-primary">
+              Lihat semua
+            </Link>
+          </div>
+          <DaftarKejadian
+            kejadian={jadwal}
+            namaKelompok={namaKelompok}
+            tautan={false}
+            kosong="Belum ada jadwal kegiatan pekan ini."
+            aksi={(k) => <TautanIzin k={k} />}
+          />
         </section>
-      )}
-    </div>
+
+        {kehadiran.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h2 className="px-1 text-sm font-semibold text-muted">Kehadiran terakhir</h2>
+            <ul className="divide-y divide-border overflow-hidden rounded-card bg-surface">
+              {kehadiran.slice(0, 3).map((c) => {
+                const l = labelKehadiran(c);
+                return (
+                  <li key={c.sesi_id} className="flex items-center gap-3 px-5 py-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{c.nama}</span>
+                      <span className="block text-sm text-muted">{tanggalJam(c.mulai)}</span>
+                    </span>
+                    <Badge nada={l.nada}>{l.label}</Badge>
+                  </li>
+                );
+              })}
+            </ul>
+            <Link
+              href="/saya/kehadiran"
+              className="flex items-center justify-center gap-1 text-sm font-medium text-primary"
+            >
+              Riwayat lengkap <ChevronRight className="size-4" aria-hidden />
+            </Link>
+          </section>
+        )}
+
+        <SaklarNotifikasi ringkas />
+        <TombolPasang />
+      </div>
+    </>
+  );
+}
+
+const PINTASAN = [
+  { href: "/saya/izin", label: "Ajukan izin", ikon: CalendarX },
+  { href: "/saya/rapor", label: "Rapor", ikon: FileText },
+  { href: "/saya/profil", label: "Data diri", ikon: UserRound },
+] as const;
+
+/** Pintasan ke halaman yang tidak ada di menu bawah (area sentuh). */
+function Pintasan() {
+  return (
+    <nav aria-label="Pintasan" className="grid grid-cols-3 gap-3">
+      {PINTASAN.map(({ href, label, ikon: Ikon }) => (
+        <Link
+          key={href}
+          href={href}
+          className="flex flex-col items-center gap-2 rounded-card bg-surface px-2 py-4 text-sm font-medium transition-colors duration-200 ease-oneui hover:bg-surface-muted"
+        >
+          <span className="flex size-11 items-center justify-center rounded-pill bg-primary-soft text-primary">
+            <Ikon className="size-5" aria-hidden />
+          </span>
+          {label}
+        </Link>
+      ))}
+    </nav>
   );
 }

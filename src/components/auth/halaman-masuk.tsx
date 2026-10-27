@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { BellRing, CalendarDays, ChartColumn, ClipboardCheck, QrCode, Users } from "lucide-react";
+import { LogoPutih, PolaK } from "@/components/brand/hiasan-sambutan";
 import { LogoDesa } from "@/components/brand/logo-desa";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { PanelBantuan } from "./panel-bantuan";
@@ -30,26 +30,6 @@ const ISI = {
   },
 } as const;
 
-/** Pola huruf "K" samar di panel biru (hiasan, bukan logo). */
-function PolaK({ className }: { className: string }) {
-  return (
-    <svg aria-hidden viewBox="0 0 520 520" className={`pointer-events-none absolute fill-white opacity-[0.13] ${className}`}>
-      <path d="M60 60H130V460H60Z" />
-      <path d="M130 260 330 60H460L260 260Z" />
-      <path d="M130 260 330 460H460L260 260Z" />
-    </svg>
-  );
-}
-
-/** Logo KawanKu varian untuk latar gelap/biru (tulisan terang). */
-function LogoPutih({ height }: { height: number }) {
-  return (
-    <span className="inline-flex p-[0.5em]" style={{ fontSize: height }}>
-      <Image src="/brand/logo-horizontal-dark.svg" alt="KawanKu" width={Math.round((height * 458.4) / 68)} height={height} priority />
-    </span>
-  );
-}
-
 /**
  * Halaman masuk gaya One UI (docs/pedoman-desain.md): panel biru sambutan
  * (HP: di atas & melengkung, kartu form menumpuk; laptop: kolom kiri) dan
@@ -63,7 +43,7 @@ export function HalamanMasuk({ jenis, children }: { jenis: JenisMasuk; children:
         <PolaK className="-right-24 top-10 size-80 lg:-right-36 lg:top-auto lg:-bottom-32 lg:size-[32rem]" />
         <div className="relative flex items-center justify-between">
           <div className="-m-[14px]">
-            <LogoPutih height={28} />
+            <LogoPutih height={28} priority />
           </div>
           <TombolTema className="text-white! hover:bg-white/15! lg:hidden" />
         </div>
