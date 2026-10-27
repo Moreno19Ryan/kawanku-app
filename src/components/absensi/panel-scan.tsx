@@ -126,7 +126,7 @@ export function PanelScan({
         className={buttonClass(kamera ? "netral" : "kedua", "self-start")}
       >
         {kamera ? <X className="size-4" aria-hidden /> : <Camera className="size-4" aria-hidden />}
-        {kamera ? "Tutup kamera" : "Scan pakai kamera HP"}
+        {kamera ? "Tutup kamera" : "Scan pakai kamera"}
       </button>
       <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row">
         <div className="relative sm:flex-1">

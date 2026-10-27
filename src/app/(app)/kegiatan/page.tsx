@@ -14,6 +14,7 @@ import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { jam, waktuRelatif } from "@/lib/waktu";
 import { FormOtomatis } from "@/components/ui/form-otomatis";
 import { Memuat } from "@/components/ui/memuat";
+import { KataTekan } from "@/components/perangkat/kata-tekan";
 
 export const metadata: Metadata = {
   title: "Kegiatan",
@@ -100,7 +101,7 @@ async function Kalender({ cari }: { cari: Promise<Cari> }) {
       {tanpaPemateri > 0 && (
         <Card className="text-sm">
           <span className="font-semibold">{tanpaPemateri} pertemuan</span> dalam 7 hari ke depan belum ada
-          pematerinya. Ketuk pertemuannya untuk mengisi.
+          pematerinya. <KataTekan /> pertemuannya untuk mengisi.
         </Card>
       )}
 
