@@ -116,6 +116,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   (RPC `kesehatan_sistem`, penilaian di `src/lib/sistem/kesehatan.ts`) &
   Tugas otomatis (`jalankan_tugas`/`atur_tugas`, hanya `kawanku-*`). Tugas
   pg_cron baru → tambahkan ke `INFO_TUGAS` & `jalankan_tugas`.
+- Bantuan akun (`/pengaturan/bantuan-akun`, hanya `sistem.kelola`): RPC
+  `cari_akun` / `buka_kunci_akun` / `keluarkan_akun` (hapus `auth.sessions`),
+  tercatat di `bantuan_akun_log`.
 - Form pengaturan dikirim lewat `useFormAksi()` (onSubmit), bukan prop
   `action`, supaya React tidak mereset isian setelah validasi server gagal.
 - Setiap admin aktif wajib punya minimal satu peran (dijaga database,
