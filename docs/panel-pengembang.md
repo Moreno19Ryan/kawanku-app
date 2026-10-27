@@ -1,10 +1,8 @@
 # Panel pengembang
 
-Status: **usulan**. Migrasi `supabase/migrations/20261021090000_panel_pengembang.sql`
-diterapkan ke produksi hanya setelah Reno menjawab "OK, jalankan".
-Kode aplikasinya aman di-merge lebih dulu: selama tabelnya belum ada,
-aplikasi berjalan normal (tidak dalam mode perawatan, tanpa pengumuman), dan
-Panel pengembang menampilkan pesan bahwa migrasi belum diterapkan.
+Status: **di produksi** (migrasi awal `20261021090000_panel_pengembang`).
+Ruang kendali tahap 1 (kesehatan sistem & tugas otomatis): migrasi
+`20261101090000_ruang_kendali`, diterapkan setelah "OK, jalankan".
 
 ## Isi
 
@@ -13,6 +11,8 @@ Panel pengembang menampilkan pesan bahwa migrasi belum diterapkan.
 | Mode perawatan | Pengaturan → Panel pengembang | `sistem.kelola` |
 | Saklar fitur per kelompok | Pengaturan → Panel pengembang | `sistem.kelola` |
 | Info sistem | Pengaturan → Panel pengembang | `sistem.kelola` |
+| Kesehatan sistem | Pengaturan → Panel pengembang | `sistem.kelola` |
+| Tugas otomatis | Pengaturan → Panel pengembang | `sistem.kelola` |
 | Pengumuman (banner) | Pengaturan → Pengumuman | `pengumuman.kelola` (baru) |
 
 `pengumuman.kelola` awalnya hanya dipegang peran Pengembang. Izin ini bisa
@@ -42,6 +42,21 @@ diberikan ke peran lain (mis. admin desa) lewat data, tanpa migrasi.
 - Modul yang belum dibangun tetap tampil "Segera" di menu walau
   dinyalakan. Saklar mulai berpengaruh saat modulnya selesai (mis. halaman
   Jamaah untuk trial Kelompok 1).
+
+### Kesehatan sistem (migrasi `20261101090000_ruang_kendali`)
+Satu kartu hijau/kuning/merah dari RPC `kesehatan_sistem()`: tugas otomatis
+(gagal/macet/dimatikan), notifikasi HP (langganan, terkirim, gagal kirim ke
+server aplikasi), cadangan (terakhir berhasil, gagal 7 hari), ruang database
+(dari 500 MB), dan galat yang belum dicek. Aturan penilaiannya ada di
+`src/lib/sistem/kesehatan.ts` (murni).
+
+### Tugas otomatis
+Daftar tugas pg_cron KawanKu (`kawanku-*`) dengan jalan terakhir, jumlah
+jalan/gagal 24 jam, dan pesan galatnya. Tombol **Jalankan sekarang**
+(`jalankan_tugas`; cadangan = cadangan manual) dan **Matikan/Nyalakan**
+(`atur_tugas`). Tugas baru `kawanku-bersihkan` (02.30 WIB) menghapus riwayat
+tugas > 7 hari dan catatan notifikasi > 90 hari, supaya ruang database tidak
+habis oleh riwayat tugas tiap menit.
 
 ### Bantuan akun (Pengaturan → Bantuan akun, migrasi `20261101100000_bantuan_akun`)
 Cari akun admin & generus (nama, email, username, kode jamaah) lewat RPC

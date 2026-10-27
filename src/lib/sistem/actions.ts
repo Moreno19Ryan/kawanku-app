@@ -187,3 +187,25 @@ export async function tandaiGalatDicek(id: string | null): Promise<StateAksi> {
   refresh();
   return { pesan: id ? "Ditandai sudah dicek." : `${data.length} galat ditandai sudah dicek.` };
 }
+
+// ---------------------------------------------------------------------
+// Tugas otomatis (sistem.kelola): jalankan sekarang & nyalakan/matikan
+// ---------------------------------------------------------------------
+
+export async function jalankanTugas(nama: string): Promise<StateAksi> {
+  const ctx = await konteks("sistem.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+  const { data, error } = await ctx.supabase.rpc("jalankan_tugas", { p_nama: nama });
+  if (error) return { galat: `Mohon maaf, tugas belum berhasil dijalankan. Keterangan teknis: ${error.message}` };
+  refresh();
+  return { pesan: `Alhamdulillah, selesai (${Number(data ?? 0)} diproses).` };
+}
+
+export async function aturTugas(nama: string, aktif: boolean): Promise<StateAksi> {
+  const ctx = await konteks("sistem.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+  const { error } = await ctx.supabase.rpc("atur_tugas", { p_nama: nama, p_aktif: aktif });
+  if (error) return GAGAL;
+  refresh();
+  return { pesan: aktif ? "Tugas dinyalakan." : "Tugas dimatikan." };
+}
