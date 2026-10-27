@@ -113,6 +113,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   (`pengaturan_sistem` atau env `MODE_PERAWATAN=1`); `BannerPengumuman`
   menampilkan pengumuman. Pembacaan tabel sistem bersifat fail-open
   (tabel/galat → aplikasi tetap jalan normal).
+- Verifikasi dua langkah (`docs/mfa.md`, TOTP): wajib untuk pemegang
+  `sistem.kelola` (`wajibAdmin()` → `/mfa/daftar`; masuk → `/mfa`,
+  `keadaanMfa()` di `src/lib/auth/mfa.ts`). Database: kebijakan RESTRICTIVE
+  `wajib_aal2` (`private.aal_cukup()`) di semua tabel `public` → **tabel
+  public baru wajib diberi kebijakan ini**.
 - Form pengaturan dikirim lewat `useFormAksi()` (onSubmit), bukan prop
   `action`, supaya React tidak mereset isian setelah validasi server gagal.
 - Setiap admin aktif wajib punya minimal satu peran (dijaga database,

@@ -166,11 +166,12 @@ select uji.harus_berhasil('Penugasan: admin_generus dengan kelompok_id diterima'
   $q$ insert into public.penugasan_peran (user_id, peran_id, kelompok_id)
       select '00000000-0000-0000-0000-00000000000d', p.id, k.id from public.peran p, public.kelompok k
       where p.kode = 'admin_generus' and k.nomor = 3 $q$);
+-- Kebijakan RESTRICTIVE (mis. wajib_aal2 untuk MFA) tidak dihitung: hanya mempersempit.
 select uji.cek('Policy: tidak ada policy FOR ALL',
-  (select count(*) = 0 from pg_policies where schemaname = 'public' and cmd = 'ALL'));
+  (select count(*) = 0 from pg_policies where schemaname = 'public' and cmd = 'ALL' and permissive = 'PERMISSIVE'));
 select uji.cek('Policy: maksimal satu policy per tabel per perintah',
   (select coalesce(max(n), 0) = 1 from (select count(*) n from pg_policies
-     where schemaname = 'public' group by tablename, cmd) s));
+     where schemaname = 'public' and permissive = 'PERMISSIVE' group by tablename, cmd) s));
 select uji.cek('RLS: aktif di semua tabel public',
   (select bool_and(relrowsecurity) from pg_class c join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public' and c.relkind = 'r'));

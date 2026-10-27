@@ -88,4 +88,4 @@ end $$;
 
 - Panel pengembang: mode perawatan, saklar fitur (per kelompok), pengumuman,
   dan info sistem. Butuh tabel `pengaturan_sistem`.
-- MFA (aplikasi authenticator) wajib untuk akun pengembang.
+- ~~MFA (aplikasi authenticator) wajib untuk akun pengembang.~~ Selesai: `docs/mfa.md`.

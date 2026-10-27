@@ -16,6 +16,8 @@ export function IsianPin({
   onUbah,
   autoFocus = false,
   galat = false,
+  label = "Angka PIN",
+  tersembunyi = true,
 }: {
   name?: string;
   onLengkap?: (pin: string) => void;
@@ -23,6 +25,10 @@ export function IsianPin({
   onUbah?: () => void;
   autoFocus?: boolean;
   galat?: boolean;
+  /** Awalan label tiap kotak untuk pembaca layar, mis. "Angka kode". */
+  label?: string;
+  /** false: angka terlihat (kode sekali pakai dari aplikasi authenticator). */
+  tersembunyi?: boolean;
 }) {
   const [angka, setAngka] = useState<string[]>(() => Array(PANJANG).fill(""));
   const kotak = useRef<(HTMLInputElement | null)[]>([]);
@@ -73,10 +79,10 @@ export function IsianPin({
           ref={(el) => {
             kotak.current[i] = el;
           }}
-          type="password"
+          type={tersembunyi ? "password" : "text"}
           inputMode="numeric"
-          autoComplete="off"
-          aria-label={`Angka PIN ke-${i + 1}`}
+          autoComplete={tersembunyi ? "off" : "one-time-code"}
+          aria-label={`${label} ke-${i + 1}`}
           aria-invalid={galat || undefined}
           value={a}
           maxLength={PANJANG}
