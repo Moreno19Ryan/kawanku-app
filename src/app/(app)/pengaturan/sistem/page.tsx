@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
@@ -8,9 +9,10 @@ import { KartuKesehatan, KartuTugas } from "@/components/sistem/kesehatan-sistem
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
-import { simpanFitur, tandaiGalatDicek, tanganiPermintaanIdentitas } from "@/lib/sistem/actions";
+import { perbaikiData, simpanFitur, tandaiGalatDicek, tanganiPermintaanIdentitas } from "@/lib/sistem/actions";
 import { TombolAksi } from "@/components/pengaturan/tombol-aksi";
 import { getFitur } from "@/lib/sistem/data";
+import { jelaskanGalat } from "@/lib/sistem/galat-jelas";
 import type { DataKesehatan } from "@/lib/sistem/kesehatan";
 import { createClient } from "@/lib/supabase/server";
 import { keInputWib, tanggalJam, waktuRelatif } from "@/lib/waktu";
@@ -63,6 +65,9 @@ async function IsiPanel() {
     <div className="flex flex-col gap-4 sm:gap-6">
       <Suspense fallback={<Skeleton className="h-64" />}>
         <Kesehatan />
+      </Suspense>
+      <Suspense fallback={<Skeleton className="h-40" />}>
+        <PemeriksaanData />
       </Suspense>
       <Suspense fallback={<Skeleton className="h-40" />}>
         <PermintaanIdentitas />
@@ -343,6 +348,7 @@ async function PemantauGalat() {
 }
 
 function BarisGalat({ g }: { g: Galat }) {
+  const jelas = jelaskanGalat(g.pesan);
   return (
     <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start">
       <div className="min-w-0 flex-1 text-sm">
@@ -358,8 +364,75 @@ function BarisGalat({ g }: { g: Galat }) {
             </>
           ) : null}
         </p>
+        {jelas && (
+          <p className="mt-1.5 rounded-control bg-surface-muted px-3 py-2">
+            <span className="font-medium">Artinya:</span> {jelas.arti}{" "}
+            <span className="font-medium">Saran:</span> {jelas.saran}
+          </p>
+        )}
       </div>
       {!g.dicek_at && <TombolAksi aksi={tandaiGalatDicek.bind(null, g.id)} label="Sudah dicek" varian="netral" />}
     </li>
+  );
+}
+
+type Temuan = {
+  kode: string;
+  judul: string;
+  jumlah: number;
+  contoh: string | null;
+  saran: string;
+  bisa_diperbaiki: boolean;
+  tautan: string | null;
+};
+
+/** Pemeriksaan kejanggalan data sekali buka (RPC periksa_data). */
+async function PemeriksaanData() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("periksa_data");
+  if (error) {
+    return <Card className="text-sm text-muted">Mohon maaf, pemeriksaan data belum bisa dimuat.</Card>;
+  }
+  const temuan = (data as Temuan[]).filter((t) => t.jumlah > 0);
+  return (
+    <Card>
+      <h2 className="text-lg font-semibold">Pemeriksaan data</h2>
+      <p className="mt-1 text-sm text-muted">
+        Diperiksa otomatis setiap halaman ini dibuka: akun, absensi, permintaan, galat, dan data yang janggal.
+      </p>
+      {temuan.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">Alhamdulillah, tidak ada kejanggalan.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-border">
+          {temuan.map((t) => (
+            <li key={t.kode} className="flex flex-col gap-2 py-3 first:pt-0 sm:flex-row sm:items-start">
+              <div className="min-w-0 flex-1 text-sm">
+                <p className="font-medium">
+                  {t.judul} <span className="text-warning">({t.jumlah})</span>
+                </p>
+                {t.contoh && <p className="mt-0.5 line-clamp-2 text-muted">{t.contoh}</p>}
+                <p className="mt-0.5 text-muted">{t.saran}</p>
+              </div>
+              <div className="flex gap-2">
+                {t.bisa_diperbaiki && (
+                  <TombolAksi
+                    aksi={perbaikiData.bind(null, t.kode)}
+                    label="Perbaiki"
+                    varian="kedua"
+                    tampilkanPesan
+                    konfirmasi={`Perbaiki otomatis: ${t.judul.toLowerCase()}?`}
+                  />
+                )}
+                {t.tautan && (
+                  <Link href={t.tautan} className="inline-flex h-9 items-center rounded-pill px-4 text-sm font-medium text-primary hover:bg-primary-soft">
+                    Buka
+                  </Link>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }

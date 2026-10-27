@@ -119,6 +119,11 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Bantuan akun (`/pengaturan/bantuan-akun`, hanya `sistem.kelola`): RPC
   `cari_akun` / `buka_kunci_akun` / `keluarkan_akun` (hapus `auth.sessions`),
   tercatat di `bantuan_akun_log`.
+- Pemeriksaan data (`periksa_data`/`perbaiki_data`, kartu di Panel
+  pengembang), penjelasan galat (`jelaskanGalat()`), notifikasi galat baru
+  ke HP pengembang (maks. 3/jam), Panduan perbaikan
+  (`/pengaturan/panduan-pengembang`). Pemeriksaan baru → tambah butir di
+  `periksa_data` (+ `perbaiki_data` bila aman).
 - Jejak aktivitas (`/pengaturan/jejak`, hanya `sistem.kelola`): trigger
   `catat_jejak` → `jejak_aktivitas` (nama kolom saja, tanpa isi; 180 hari).
   Tabel penting baru → pasang trigger `catat_jejak` & tambahkan ke

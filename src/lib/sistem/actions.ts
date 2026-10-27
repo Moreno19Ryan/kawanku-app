@@ -209,3 +209,13 @@ export async function aturTugas(nama: string, aktif: boolean): Promise<StateAksi
   refresh();
   return { pesan: aktif ? "Tugas dinyalakan." : "Tugas dimatikan." };
 }
+
+/** Perbaikan otomatis untuk temuan Pemeriksaan data yang aman. */
+export async function perbaikiData(kode: string): Promise<StateAksi> {
+  const ctx = await konteks("sistem.kelola");
+  if (!ctx) return TIDAK_BERHAK;
+  const { data, error } = await ctx.supabase.rpc("perbaiki_data", { p_kode: kode });
+  if (error) return { galat: "Mohon maaf, belum berhasil diperbaiki. Silakan coba lagi." };
+  refresh();
+  return { pesan: `Alhamdulillah, ${Number(data ?? 0)} data diperbaiki.` };
+}
