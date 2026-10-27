@@ -59,7 +59,16 @@ export async function pulihkanBaris(id: string, tabel: string, baris: string): P
   const supabase = await konteks();
   if (!supabase) return TIDAK_BERHAK;
   const { error } = await supabase.rpc("pulihkan_dari_cadangan", { p_id: id, p_tabel: tabel, p_baris: baris });
-  if (error) return { galat: `Mohon maaf, baris belum berhasil dipulihkan: ${error.message}` };
+  if (error) {
+    const pesan = error.message.includes("tidak ada di cadangan")
+      ? "Mohon maaf, baris ini tidak ada di cadangan tersebut."
+      : error.message.includes("per baris")
+        ? "Mohon maaf, tabel ini tidak bisa dipulihkan per baris."
+        : error.code === "42501"
+          ? "Mohon maaf, fitur ini khusus pengembang."
+          : `Mohon maaf, baris belum berhasil dipulihkan. Keterangan teknis: ${error.message}`;
+    return { galat: pesan };
+  }
   refresh();
   return { pesan: "Baris dipulihkan dan tercatat di riwayat." };
 }
