@@ -122,7 +122,8 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Pemeriksaan data (`periksa_data`/`perbaiki_data`, kartu di Panel
   pengembang), penjelasan galat (`jelaskanGalat()`), notifikasi galat baru
   ke HP pengembang (maks. 3/jam), Panduan perbaikan
-  (`/pengaturan/panduan-pengembang`). Pemeriksaan baru → tambah butir di
+  (`/pengaturan/panduan-pengembang`), Salin laporan masalah
+  (`susunLaporan()`, tanpa data pribadi jamaah). Pemeriksaan baru → tambah butir di
   `periksa_data` (+ `perbaiki_data` bila aman).
 - Jejak aktivitas (`/pengaturan/jejak`, hanya `sistem.kelola`): trigger
   `catat_jejak` → `jejak_aktivitas` (nama kolom saja, tanpa isi; 180 hari).
