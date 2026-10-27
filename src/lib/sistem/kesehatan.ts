@@ -61,7 +61,7 @@ export const INFO_TUGAS: Record<string, InfoTugas> = {
   },
   "kawanku-bersihkan": {
     judul: "Bersihkan riwayat",
-    keterangan: "Menghapus riwayat tugas lebih dari 7 hari dan catatan notifikasi lebih dari 90 hari.",
+    keterangan: "Menghapus riwayat tugas lebih dari 7 hari, catatan notifikasi lebih dari 90 hari, dan jejak aktivitas lebih dari 180 hari.",
     jadwal: "Tiap hari 02.30 WIB",
     selangMenit: 24 * 60,
   },
