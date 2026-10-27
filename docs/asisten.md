@@ -48,8 +48,10 @@ tabel baru). Batas data tetap RLS dan wewenang tiap admin.
 
 ## "Kawan": ringkasan pagi, sambutan, rapor (F7)
 
-- **Ringkasan hari ini (admin)**: kartu di atas Beranda admin
-  (`RingkasanHariIni`, RPC `ringkasan_hari_ini`): pertemuan hari ini,
+- **Ringkasan hari ini (admin)**: sejak redesign Beranda admin, isinya
+  tersebar di panel sambutan (kalimat "Hari ini N pertemuan, M izin
+  menunggu persetujuan"), angka di pintasan Izin masuk, dan butir "Perlu
+  perhatian" (pertemuan tanpa pemateri). RPC `ringkasan_hari_ini`: pertemuan hari ini,
   pertemuan hari ini/besok yang belum ada pemateri (yang dikelola admin
   itu), dan izin menunggu persetujuannya (tanpa info milad, keputusan Reno). Isinya
   dihitung `private.ringkasan_hari` memakai fungsi izin yang sama dengan RLS

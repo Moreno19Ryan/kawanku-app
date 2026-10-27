@@ -57,9 +57,29 @@ Mulai dari halaman masuk (`/masuk` & `/login`).
   tetap menonjol di tengah. Hiasan panel (`PolaK`, `LogoPutih`) di
   `src/components/brand/hiasan-sambutan.tsx`, dipakai bersama halaman masuk.
 
+## Beranda admin (tahap 3)
+
+- Bahasa desain sama dengan Beranda generus: `PanelSambutan`
+  (`src/components/layout/panel-sambutan.tsx`, dipakai keduanya) berisi
+  salam, nama, peran, dan satu kalimat ringkas hari ini; di HP membawa
+  kepala sendiri (logo, tema, akun), di laptop menjadi kartu karena logo &
+  akun ada di menu samping.
+- `KartuHariIni` mengambang di tepi panel: pertemuan terdekat hari ini,
+  jumlah hadir, tombol Buka absensi (laptop: + Tampilkan QR layar).
+- Pintasan **hanya untuk yang berwenang** (Tambah jamaah, Izin masuk +
+  angka, Laporan, Kegiatan, Kartu QR) dan "Perlu perhatian"; di laptop
+  keduanya di kolom kanan.
+- Menu bawah admin bergaya sama dengan generus; Absensi menonjol di tengah.
+- Pengumuman di Beranda tampil di bawah kartu Hari ini (sama dengan generus);
+  di halaman admin lain tetap di atas isi halaman.
+
+**Aturan sejak tahap 3 (Reno, 27 Okt 2026): setiap tahap redesign
+mencakup area admin dan area jamaah sekaligus**, supaya tampilan tidak
+berbeda antarakun.
+
 ## Urutan redesign (usulan)
 
 1. Halaman masuk (generus & admin). Selesai.
-2. Beranda generus & menu bawah. ← tahap ini
-3. Beranda admin.
+2. Beranda generus & menu bawah. Selesai.
+3. Beranda admin & menu admin. ← tahap ini
 4. Halaman kerja (Jamaah, Absensi, Kegiatan, Pengaturan), satu per satu.

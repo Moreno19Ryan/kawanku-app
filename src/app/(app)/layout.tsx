@@ -26,12 +26,13 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="group/admin flex min-h-dvh flex-col">
       <Suspense fallback={<Sidebar akun={akunSidebar} />}>
         <SidebarTerbuka akun={akunSidebar} />
       </Suspense>
 
-      <div className="sticky top-0 z-10 flex items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg lg:hidden">
+      {/* Halaman sambutan (Beranda, `data-sambutan`) membawa kepala sendiri di panel biru. */}
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-bg/85 px-2 pr-gutter backdrop-blur-lg group-has-[[data-sambutan]]/admin:hidden lg:hidden">
         <BrandMark height={24} />
         <div className="flex items-center gap-1">
           <TombolTema />
@@ -43,9 +44,12 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 
       {/* Konten flex-1 mendorong footer ke paling bawah walau isi halaman pendek. */}
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-gutter pb-[calc(var(--spacing-bottomnav)+env(safe-area-inset-bottom)+1.5rem)] lg:ml-sidebar lg:mr-0 lg:w-auto lg:px-10 lg:pb-8">
-        <Suspense fallback={null}>
-          <BannerPengumuman />
-        </Suspense>
+        {/* Di Beranda (halaman sambutan) pengumuman tampil di bawah kartu Hari ini. */}
+        <div className="group-has-[[data-sambutan]]/admin:hidden">
+          <Suspense fallback={null}>
+            <BannerPengumuman />
+          </Suspense>
+        </div>
         {/* Perpindahan halaman: isi memudar halus (globals.css, .kk-halaman). */}
         <ViewTransition update={{ diam: "none", default: "kk-halaman" }} default="none">
           <div className="flex-1">
