@@ -6,6 +6,7 @@ import { KembaliKePengaturan } from "@/components/pengaturan/kembali";
 import { FormFitur } from "@/components/sistem/form-fitur";
 import { FormPerawatan } from "@/components/sistem/form-perawatan";
 import { KartuKesehatan, KartuTugas } from "@/components/sistem/kesehatan-sistem";
+import { LaporanMasalah } from "@/components/sistem/laporan-masalah";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wajibIzin } from "@/lib/auth/admin";
@@ -66,6 +67,15 @@ async function IsiPanel() {
       <Suspense fallback={<Skeleton className="h-64" />}>
         <Kesehatan />
       </Suspense>
+      <Card>
+        <h2 className="text-lg font-semibold">Salin laporan masalah</h2>
+        <p className="mt-1 mb-5 text-sm text-muted">
+          Untuk masalah yang belum selesai lewat Panduan perbaikan. Kesehatan sistem, galat, pemeriksaan data, dan
+          jejak aktivitas disusun jadi satu teks untuk ditempel ke chat asisten pengembang, tanpa nama, kontak, atau
+          NIK jamaah.
+        </p>
+        <LaporanMasalah />
+      </Card>
       <Suspense fallback={<Skeleton className="h-40" />}>
         <PemeriksaanData />
       </Suspense>

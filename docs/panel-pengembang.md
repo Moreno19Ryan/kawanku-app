@@ -88,6 +88,13 @@ pengembang.
   pengembang (maks. 3 per jam).
 - **Panduan perbaikan** (Pengaturan → Panduan perbaikan): langkah singkat
   untuk masalah ringan, menautkan alat-alat di atas.
+- **Salin laporan masalah** (kartu di Panel pengembang): untuk masalah besar.
+  Kesehatan sistem, tugas otomatis, temuan pemeriksaan data (jumlah saja),
+  galat, dan jejak aktivitas (tabel & kolom saja, tanpa nama jamaah) dalam
+  rentang 6 jam – 7 hari disusun jadi satu teks (`susunLaporan()`,
+  `src/lib/sistem/laporan-masalah.ts`, murni; bahan dari
+  `susunLaporanMasalah`), lalu disalin untuk ditempel ke chat asisten
+  pengembang. Tanpa migrasi.
 
 ### Info sistem
 Lingkungan, region fungsi, commit dan pesannya, waktu build, latensi

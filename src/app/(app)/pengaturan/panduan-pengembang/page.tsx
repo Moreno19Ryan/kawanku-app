@@ -145,7 +145,7 @@ export default function PanduanPengembangPage() {
       <KembaliKePengaturan />
       <PageHeader
         title="Panduan perbaikan"
-        description="Langkah singkat untuk masalah ringan yang sering terjadi. Bila langkahnya sudah dicoba dan masih bermasalah, sampaikan ke Claude."
+        description="Langkah singkat untuk masalah ringan yang sering terjadi. Bila langkahnya sudah dicoba dan masih bermasalah, buat Salin laporan masalah di Panel pengembang lalu sampaikan ke Claude."
       />
       <Suspense fallback={<Skeleton className="h-96" />}>
         <Isi />
