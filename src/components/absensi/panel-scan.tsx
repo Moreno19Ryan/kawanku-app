@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition, type FormEvent } from "react";
+import { Saklar } from "@/components/ui/saklar";
 import { Camera, CircleAlert, CircleCheck, ScanLine, X } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
 import { INPUT_CLASS } from "@/components/ui/input";
@@ -202,10 +203,10 @@ export function PanelScan({
         </ul>
       )}
 
-      <label className="flex items-center gap-2 text-sm text-muted">
-        <input type="checkbox" checked={suara} onChange={(e) => setSuara(e.target.checked)} className="size-4" />
-        Bunyi saat scan
-      </label>
+      <div className="flex items-center justify-between gap-3 text-sm text-muted">
+        <span>Bunyi saat scan</span>
+        <Saklar label="Bunyi saat scan" checked={suara} onChange={(e) => setSuara(e.target.checked)} />
+      </div>
     </div>
   );
 }

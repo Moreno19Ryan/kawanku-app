@@ -1,6 +1,7 @@
 "use client";
 
 import { buttonClass } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 import { INPUT_CLASS } from "@/components/ui/input";
 import { Saklar } from "@/components/ui/saklar";
 import { LABEL_STATUS_PERNIKAHAN, LABEL_STATUS_SEKOLAH } from "@/lib/label";
@@ -43,18 +44,9 @@ function PilihanChip({
       <legend className="mb-2 text-sm font-medium">{label}</legend>
       <div className="flex flex-wrap gap-2">
         {Object.entries(opsi).map(([nilai, teks]) => (
-          <label key={nilai} className="cursor-pointer">
-            <input
-              type="checkbox"
-              name={name}
-              value={nilai}
-              defaultChecked={terpilih?.includes(nilai)}
-              className="peer sr-only"
-            />
-            <span className="inline-flex rounded-pill bg-surface-muted px-3.5 py-1.5 text-sm font-medium transition-colors duration-200 ease-oneui peer-checked:bg-primary-soft peer-checked:text-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40">
-              {teks}
-            </span>
-          </label>
+          <Chip key={nilai} name={name} value={nilai} defaultChecked={terpilih?.includes(nilai)}>
+            {teks}
+          </Chip>
         ))}
       </div>
     </fieldset>
