@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KameraQr } from "@/components/ui/kamera-qr";
+import { usePerangkat } from "@/components/perangkat/use-perangkat";
 
 /** Ambil token absen dari isi QR: URL ".../absen?t=..." atau token mentah. */
 function tokenDari(isi: string): string | null {
@@ -19,6 +20,7 @@ function tokenDari(isi: string): string | null {
 export function PemindaiQr() {
   const router = useRouter();
   const [bukanAbsen, setBukanAbsen] = useState(false);
+  const perangkat = usePerangkat();
   return (
     <KameraQr
       onBaca={(isi) => {
@@ -30,7 +32,11 @@ export function PemindaiQr() {
         router.push(`/absen?t=${encodeURIComponent(token)}`);
         return "berhenti";
       }}
-      catatanGagal="Masih tidak bisa? Scan QR di layar admin dengan aplikasi kamera HP, atau minta admin mencatat kehadiranmu."
+      catatanGagal={
+        perangkat === "laptop"
+          ? "Masih tidak bisa? Buka KawanKu di HP lalu scan dari sana, atau minta admin mencatat kehadiranmu."
+          : `Masih tidak bisa? Scan QR di layar admin dengan aplikasi kamera ${perangkat === "tablet" ? "tablet" : "HP"}, atau minta admin mencatat kehadiranmu.`
+      }
       keterangan={
         <p role="status" className="text-center text-sm text-muted">
           {bukanAbsen ? "QR ini bukan QR absen. Arahkan ke QR di layar admin." : "Arahkan kamera ke QR di layar admin…"}

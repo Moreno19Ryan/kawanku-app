@@ -5,6 +5,8 @@ import jsQR from "jsqr";
 import { CameraOff, RotateCw } from "lucide-react";
 import { kenaliBrowser, type Browser } from "@/components/pwa/tombol-pasang";
 import { buttonClass } from "@/components/ui/button";
+import { usePerangkat } from "@/components/perangkat/use-perangkat";
+import { kataTekan, kenaliPerangkat, namaPerangkat } from "@/lib/perangkat";
 
 type GalatKamera = "ditolak" | "tidak-ada" | "dipakai" | "tidak-didukung";
 
@@ -82,6 +84,9 @@ export function KameraQr({
   const baca = useRef(onBaca);
   const [galat, setGalat] = useState<{ jenis: GalatKamera; browser: Browser }>();
   const [percobaan, setPercobaan] = useState(0);
+  // Kamera depan (webcam laptop) ditampilkan seperti cermin supaya gerakan terasa wajar.
+  const [cermin, setCermin] = useState(false);
+  const perangkat = usePerangkat();
 
   useEffect(() => {
     baca.current = onBaca;
@@ -118,6 +123,8 @@ export function KameraQr({
       .then((s) => {
         aliran = s;
         if (berhenti || !video.current) return;
+        const arah = s.getVideoTracks()[0]?.getSettings().facingMode;
+        setCermin(arah ? arah === "user" : kenaliPerangkat(navigator.userAgent, navigator.maxTouchPoints) === "laptop");
         video.current.srcObject = s;
         void video.current.play();
         pindai();
@@ -140,9 +147,9 @@ export function KameraQr({
       galat.jenis === "ditolak" || galat.browser === "dalam-aplikasi"
         ? LANGKAH_IZIN[galat.browser]
         : galat.jenis === "dipakai"
-          ? ["Tutup aplikasi lain yang memakai kamera (mis. kamera, video call).", "Ketuk Coba lagi."]
+          ? ["Tutup aplikasi lain yang memakai kamera (mis. kamera, video call).", `${kataTekan(perangkat)} Coba lagi.`]
           : galat.jenis === "tidak-ada"
-            ? ["Pastikan HP/laptop punya kamera yang menyala.", "Ketuk Coba lagi."]
+            ? [`Pastikan kamera ${namaPerangkat(perangkat)} ini menyala dan tidak tertutup.`, `${kataTekan(perangkat)} Coba lagi.`]
             : ["Buka KawanKu di Chrome atau Safari versi terbaru, lalu scan lagi."];
     return (
       <div role="alert" className="flex flex-col gap-4 rounded-card bg-surface px-5 py-6">
@@ -173,7 +180,7 @@ export function KameraQr({
   return (
     <div className="flex flex-col gap-3">
       <div className="relative overflow-hidden rounded-card bg-black">
-        <video ref={video} playsInline muted className={`${className} object-cover`} />
+        <video ref={video} playsInline muted className={`${className} object-cover ${cermin ? "-scale-x-100" : ""}`} />
         <div className="pointer-events-none absolute inset-[12%] rounded-card border-4 border-white/80" />
       </div>
       {keterangan}

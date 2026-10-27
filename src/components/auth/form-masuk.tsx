@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useActionState, useState, type KeyboardEvent } from "react";
+import { Suspense, useActionState, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowUp, Eye, EyeOff } from "lucide-react";
 import { masuk, type StateMasuk } from "@/lib/auth/actions";
 import { tujuanAman } from "@/lib/auth/tujuan";
 import { INPUT_CLASS } from "@/components/ui/input";
+import { usePerangkat } from "@/components/perangkat/use-perangkat";
 
 const PESAN_PARAM: Record<string, string> = {
   "bukan-admin": "Akun ini belum terdaftar sebagai admin aktif. Silakan hubungi admin desa.",
@@ -23,12 +24,20 @@ export function FormMasuk() {
   const [lihat, setLihat] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const cekCaps = (e: KeyboardEvent<HTMLInputElement>) => setCapsLock(e.getModifierState("CapsLock"));
+  const perangkat = usePerangkat();
+  const isianEmail = useRef<HTMLInputElement>(null);
+
+  // Laptop: email langsung siap diketik; HP/tablet tidak (papan ketik menutupi layar).
+  useEffect(() => {
+    if (perangkat === "laptop" && !isianEmail.current?.value) isianEmail.current?.focus();
+  }, [perangkat]);
 
   return (
     <form action={action} className="mt-5 flex flex-col gap-5">
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">Email</span>
         <input
+          ref={isianEmail}
           type="email"
           name="email"
           required

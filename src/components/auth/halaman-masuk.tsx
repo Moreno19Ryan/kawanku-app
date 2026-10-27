@@ -15,7 +15,7 @@ const ISI = {
     keterangan: "Silakan masuk dengan username dan PIN dari admin kelompok.",
     fitur: [
       { ikon: QrCode, teks: "Absen pakai QR" },
-      { ikon: BellRing, teks: "Pengingat di HP" },
+      { ikon: BellRing, teks: "Pengingat otomatis" },
       { ikon: ChartColumn, teks: "Rapor kehadiran" },
     ],
   },

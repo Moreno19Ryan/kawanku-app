@@ -5,6 +5,8 @@ import { Bell, BellOff, BellRing } from "lucide-react";
 import { PesanAksi } from "@/components/pengaturan/pesan-aksi";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { usePerangkat } from "@/components/perangkat/use-perangkat";
+import { namaPerangkat as sebutPerangkat } from "@/lib/perangkat";
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { kirimTesNotifikasi, matikanLangganan, simpanLangganan } from "@/lib/notifikasi/actions";
 
@@ -54,6 +56,7 @@ export function SaklarNotifikasi({
   const [keadaan, setKeadaan] = useState<Keadaan>("memeriksa");
   const [state, setState] = useState<StateAksi>({});
   const [pending, mulai] = useTransition();
+  const perangkat = usePerangkat();
 
   useEffect(() => {
     (async () => {
@@ -121,17 +124,19 @@ export function SaklarNotifikasi({
 
   if (ringkas && keadaan !== "mati") return null;
 
+  const di = `di ${sebutPerangkat(perangkat)} ini`;
+
   const isi = {
     memeriksa: "Memeriksa…",
     "tidak-didukung": KUNCI_PUBLIK
       ? "Browser ini belum mendukung notifikasi. Coba buka KawanKu di Chrome."
       : "Notifikasi belum disiapkan pengembang.",
-    "perlu-pasang": "Di iPhone, pasang dulu KawanKu ke layar utama (Bagikan → Tambah ke Layar Utama), lalu buka dari ikonnya.",
+    "perlu-pasang": `Di ${perangkat === "tablet" ? "iPad" : "iPhone"}, pasang dulu KawanKu ke layar utama (Bagikan → Tambah ke Layar Utama), lalu buka dari ikonnya.`,
     ditolak: "Notifikasi diblokir di browser ini. Izinkan lewat pengaturan situs (ikon gembok di sebelah alamat), lalu muat ulang.",
     mati: {
-      pengembang: "Dapat peringatan di HP saat cadangan gagal, cadangan rusak, atau ruang database hampir penuh.",
-      admin: "Dapat ringkasan hari ini di HP tiap pagi: pertemuan, izin yang menunggu, dan pemateri yang belum diisi.",
-      generus: "Dapat pengingat di HP: malam sebelum pengajian dan sekitar 1 jam sebelum mulai.",
+      pengembang: `Dapat peringatan ${di} saat cadangan gagal, cadangan rusak, atau ruang database hampir penuh.`,
+      admin: `Dapat ringkasan hari ini ${di} tiap pagi: pertemuan, izin yang menunggu, dan pemateri yang belum diisi.`,
+      generus: `Dapat pengingat ${di}: malam sebelum pengajian dan sekitar 1 jam sebelum mulai.`,
     }[untuk],
     nyala: {
       pengembang: "Peringatan sistem akan muncul di perangkat ini.",
@@ -139,7 +144,7 @@ export function SaklarNotifikasi({
       generus: "Pengingat pengajian akan muncul di perangkat ini: malam sebelumnya dan sekitar 1 jam sebelum mulai.",
     }[untuk],
   }[keadaan];
-  const judul = { pengembang: "Peringatan di HP", admin: "Ringkasan pagi di HP", generus: "Pengingat di HP" }[untuk];
+  const judul = { pengembang: `Peringatan ${di}`, admin: `Ringkasan pagi ${di}`, generus: `Pengingat ${di}` }[untuk];
 
   return (
     <Card className={`flex flex-col gap-3 ${className}`}>

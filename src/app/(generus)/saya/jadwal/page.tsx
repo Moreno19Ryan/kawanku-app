@@ -6,6 +6,7 @@ import { wajibGenerus } from "@/lib/generus/akun";
 import { getKalender } from "@/lib/kegiatan/data";
 import { hariIniWib, tambahHari } from "@/lib/kegiatan/jadwal";
 import { Memuat } from "@/components/ui/memuat";
+import { KataTekan } from "@/components/perangkat/kata-tekan";
 
 export const metadata: Metadata = {
   title: "Jadwal",
@@ -28,7 +29,7 @@ async function Jadwal() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Jadwal</h1>
         <p className="text-sm text-muted">
-          30 hari ke depan, lengkap dengan pemateri & materi bila sudah diumumkan. Berhalangan? Ketuk “Izin”.
+          30 hari ke depan, lengkap dengan pemateri & materi bila sudah diumumkan. Berhalangan? <KataTekan /> “Izin”.
         </p>
       </div>
       <DaftarKejadian

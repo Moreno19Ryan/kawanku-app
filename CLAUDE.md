@@ -235,6 +235,12 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   (memudar halus saat pindah halaman); pembaruan yang bukan pindah halaman
   (Realtime, pencarian, simpan form) ditandai `addTransitionType("diam")`
   supaya tidak beranimasi.
+- Sadar perangkat: teks yang menyebut perangkat ("di HP ini", "Klik"/"Ketuk")
+  memakai `usePerangkat()` (`src/components/perangkat/`) + `namaPerangkat()`/
+  `kataTekan()` (`src/lib/perangkat.ts`, murni); jangan menulis "HP" langsung
+  untuk perangkat yang sedang dipakai. Sebelum hidrasi bernilai netral
+  ("perangkat", "Pilih"). Laptop: isian pertama langsung difokuskan, kamera
+  depan ditampilkan seperti cermin; HP/tablet: tanpa fokus otomatis.
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
   diketahui saat runtime.

@@ -1,9 +1,11 @@
 "use client";
 
-import { Suspense, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { INPUT_CLASS } from "@/components/ui/input";
 import { Saklar } from "@/components/ui/saklar";
+import { usePerangkat } from "@/components/perangkat/use-perangkat";
+import { namaPerangkat } from "@/lib/perangkat";
 import { siapkanMasukGenerus } from "@/lib/generus/masuk-actions";
 import { tujuanGenerus } from "@/lib/generus/tujuan";
 import { createClient } from "@/lib/supabase/client";
@@ -53,11 +55,20 @@ function langganan(berubah: () => void) {
  */
 export function FormMasukGenerus() {
   const diingat = useSyncExternalStore(langganan, bacaIngat, () => null);
+  const perangkat = usePerangkat();
+  const labelIngat = `Ingat username di ${namaPerangkat(perangkat)} ini`;
   const [galat, setGalat] = useState<string>();
   const [pending, setPending] = useState(false);
   // Naik setiap kali PIN belum cocok: mengosongkan kotak PIN & memicu getar.
   const [ulang, setUlang] = useState(0);
   const form = useRef<HTMLFormElement>(null);
+  const isianUsername = useRef<HTMLInputElement>(null);
+
+  // Laptop: username langsung siap diketik. HP/tablet: jangan memunculkan
+  // papan ketik yang menutupi layar sebelum diketuk.
+  useEffect(() => {
+    if (perangkat === "laptop" && !diingat) isianUsername.current?.focus();
+  }, [perangkat, diingat]);
 
   function gagal(pesan: string) {
     setGalat(pesan);
@@ -130,6 +141,7 @@ export function FormMasukGenerus() {
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
+            ref={isianUsername}
             placeholder="mis. abdulazizsyahputra"
             className={INPUT_CLASS}
           />
@@ -153,10 +165,10 @@ export function FormMasukGenerus() {
       {!diingat && (
         <div className="flex items-center justify-between gap-4">
           <span className="text-sm">
-            <span className="block font-medium">Ingat username di HP ini</span>
+            <span className="block font-medium">{labelIngat}</span>
             <span className="block text-xs text-muted">Lain kali cukup ketik PIN.</span>
           </span>
-          <Saklar name="ingat" label="Ingat username di HP ini" defaultChecked />
+          <Saklar name="ingat" label={labelIngat} defaultChecked />
         </div>
       )}
 
