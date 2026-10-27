@@ -61,7 +61,9 @@ tabel baru). Batas data tetap RLS dan wewenang tiap admin.
 - **Sambutan generus** (`src/lib/generus/sambutan.ts`, murni): salam sesuai
   jam WIB, lalu satu kalimat paling relevan: baru hadir lagi
   setelah ≥ 2 pertemuan terlewat (≤ 7 hari) → baru sakit (≤ 14 hari) →
-  pengajian nanti/besok. Tidak ada yang khusus → hanya salam.
+  pengajian nanti/besok (`topik: "berikut"`; tidak ditampilkan di panel
+  Beranda karena kartu kegiatan terdekat sudah memuatnya). Tidak ada yang
+  khusus → hanya salam.
 - **Rapor bulanan generus** (`/saya/rapor?bulan=YYYY-MM`, `raporBulan()` di
   `src/lib/generus/kehadiran.ts`, murni): persen hadir, hadir/izin-sakit/
   terlewat, selisih dengan bulan sebelumnya, rentetan terpanjang, lencana

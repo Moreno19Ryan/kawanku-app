@@ -153,7 +153,8 @@ async function BerandaGenerus() {
         <p className="mt-1 text-sm text-white/80">
           {[generus.jamaah.kelompok, `@${generus.username}`].filter(Boolean).join(" · ")}
         </p>
-        {sapa.pesan && (
+        {/* Kalimat tentang kegiatan terdekat tidak diulang: sudah ada di kartu di bawahnya. */}
+        {sapa.pesan && sapa.topik !== "berikut" && (
           <p className="mt-4 rounded-card bg-white/15 px-4 py-3 text-sm font-medium">{sapa.pesan}</p>
         )}
       </PanelSambutan>
