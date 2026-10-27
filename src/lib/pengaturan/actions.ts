@@ -15,8 +15,8 @@ export type StateAksi = {
   email?: string;
 };
 
-const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
-const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
+const TIDAK_BERHAK: StateAksi = { galat: "Mohon maaf, tindakan ini di luar wewenang akun ini." };
+const GAGAL: StateAksi = { galat: "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
 
 /**
  * Client Supabase + admin yang login, bila memegang izin global `izin`.
@@ -65,12 +65,12 @@ async function bolehBeriPeran(
   return punyaIzin(ctx.admin, "akses.kelola") && !(await terlindungSistem(ctx, { peranId }));
 }
 
-const TIDAK_DIKELOLA: StateAksi = { galat: "Akun ini tidak bisa kamu kelola." };
+const TIDAK_DIKELOLA: StateAksi = { galat: "Mohon maaf, akun ini di luar wewenang pengelolaan." };
 
 /** Pesan pengaman pengembang dari database (jaga_penugasan_sistem / jaga_admin_sistem). */
 function pesanJagaPengembang(error: { hint?: string | null } | null): StateAksi | null {
   if (error?.hint === "pengembang_sendiri") {
-    return { galat: "Peran pengembang milikmu sendiri tidak bisa kamu cabut. Minta pengembang lain bila perlu." };
+    return { galat: "Peran pengembang milik sendiri tidak bisa dicabut. Bila perlu, silakan minta bantuan pengembang lain." };
   }
   if (error?.hint === "pengembang_terakhir") {
     return { galat: "Ini pengembang terakhir. Tambahkan pengembang lain dulu supaya sistem tetap ada yang mengelola." };
@@ -209,7 +209,7 @@ export async function gantiKataSandi(_prev: StateAksi, formData: FormData): Prom
   if (galatLama) {
     return galatLama.status === 429
       ? { galat: "Terlalu banyak percobaan. Coba lagi beberapa menit lagi." }
-      : { galat: "Kata sandi lama salah." };
+      : { galat: "Mohon maaf, kata sandi lama belum cocok." };
   }
 
   const { error } = await ctx.supabase.auth.updateUser({ password: baru });
@@ -235,7 +235,7 @@ export async function ubahStatusAdmin(
 
   if (!aktif) {
     if (userId === ctx.admin.userId) {
-      return { galat: "Kamu tidak bisa menonaktifkan akunmu sendiri." };
+      return { galat: "Akun sendiri tidak bisa dinonaktifkan." };
     }
     // Hanya pemegang akses.kelola yang bisa menyentuh pengelola akses lain.
     const sisa = punyaIzin(ctx.admin, "akses.kelola")
@@ -294,7 +294,7 @@ export async function tambahPenugasan(
   const tujuan = await bacaPeranWilayah(ctx.supabase, formData);
   if ("galat" in tujuan) return tujuan;
   if (!(await bolehBeriPeran(ctx, tujuan.peran_id, tujuan.kelompok_id))) {
-    return { galat: "Kamu tidak bisa memberi peran ini di wilayah itu." };
+    return { galat: "Mohon maaf, peran ini tidak bisa diberikan di wilayah tersebut." };
   }
 
   const { error } = await ctx.supabase
@@ -402,7 +402,7 @@ export async function buatAdmin(_prev: StateAksi, formData: FormData): Promise<S
   const tujuan = await bacaPeranWilayah(ctx.supabase, formData);
   if ("galat" in tujuan) return tujuan;
   if (!(await bolehBeriPeran(ctx, tujuan.peran_id, tujuan.kelompok_id))) {
-    return { galat: "Kamu tidak bisa memberi peran ini di wilayah itu." };
+    return { galat: "Mohon maaf, peran ini tidak bisa diberikan di wilayah tersebut." };
   }
 
   const sandiSementara = buatSandiSementara();
@@ -438,7 +438,7 @@ export async function aturUlangKataSandi(userId: string): Promise<StateAksi> {
   const ctx = await konteksKelolaAkun();
   if (!ctx) return TIDAK_BERHAK;
   if (userId === ctx.admin.userId) {
-    return { galat: "Untuk akunmu sendiri, pakai Pengaturan → Akun saya." };
+    return { galat: "Untuk akun sendiri, silakan gunakan Pengaturan → Akun saya." };
   }
   const adminAuth = createAdminClient();
   if (!adminAuth) return TANPA_SECRET;

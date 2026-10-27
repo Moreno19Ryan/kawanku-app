@@ -9,7 +9,7 @@ import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
+const TIDAK_BERHAK: StateAksi = { galat: "Mohon maaf, tindakan ini di luar wewenang akun ini." };
 const TANPA_KEY: StateAksi = {
   galat: "Fitur akun belum dikonfigurasi di server (SUPABASE_SECRET_KEY). Hubungi pengembang.",
 };
@@ -43,7 +43,7 @@ function bacaUsername(nilai: FormDataEntryValue | null): string | { galat: strin
 
 function bacaPin(j: Jamaah, nilai: FormDataEntryValue | null): string | { galat: string } {
   const isian = String(nilai ?? "").trim();
-  if (isian) return /^\d{6}$/.test(isian) ? isian : { galat: "PIN harus 6 angka." };
+  if (isian) return /^\d{6}$/.test(isian) ? isian : { galat: "Mohon isi PIN 6 angka." };
   return (
     pinDariTanggalLahir(j.tanggal_lahir) ?? {
       galat: "Tanggal lahir belum lengkap, jadi PIN awal tidak bisa dibuat otomatis. Isi PIN 6 angka.",
@@ -79,7 +79,7 @@ async function buat(
         ? "Akun login untuk jamaah ini sudah ada. Muat ulang halaman."
         : galatAuth?.code === "weak_password"
           ? "PIN ditolak aturan kata sandi server. Hubungi pengembang."
-          : "Gagal membuat akun. Coba lagi.",
+          : "Mohon maaf, akun belum berhasil dibuat. Silakan coba lagi.",
     };
   }
 
@@ -92,7 +92,7 @@ async function buat(
       const { error: galatPin } = await supabase.rpc("atur_pin_generus", { p_user_id: dibuat.user.id, p_pin: pin });
       if (galatPin) {
         await adminAuth.auth.admin.deleteUser(dibuat.user.id);
-        return { galat: "Gagal menyimpan PIN. Coba lagi." };
+        return { galat: "Mohon maaf, PIN belum berhasil disimpan. Silakan coba lagi." };
       }
       return { pesan: `Akun dibuat: @${coba}`, username: coba };
     }
@@ -104,7 +104,7 @@ async function buat(
             ? `Username @${coba} sudah dipakai. Pilih yang lain.`
             : error.code === "23505"
               ? "Jamaah ini sudah punya akun."
-              : "Gagal menyimpan akun. Coba lagi.",
+              : "Mohon maaf, akun belum berhasil disimpan. Silakan coba lagi.",
       };
     }
   }
@@ -191,7 +191,7 @@ export async function kembalikanPinAwal(jamaahId: string, _prev: StateAksi, form
       tanpa_akun: "Akun tidak ditemukan.",
       tanpa_tanggal_lahir: "Isi tanggal lahir jamaah dulu; PIN awal = tanggal lahir (DDMMYY).",
     };
-    return { galat: pesan[error.hint ?? ""] ?? "Gagal mengembalikan PIN. Coba lagi." };
+    return { galat: pesan[error.hint ?? ""] ?? "Mohon maaf, PIN belum berhasil dikembalikan. Silakan coba lagi." };
   }
   refresh();
   return { pesan: "PIN kembali ke PIN awal (tanggal lahir DDMMYY). Ia wajib menggantinya saat masuk." };
@@ -203,7 +203,7 @@ export async function ubahUsername(jamaahId: string, _prev: StateAksi, formData:
   const username = bacaUsername(formData.get("username"));
   if (typeof username !== "string") return username;
   const { error } = await ctx.supabase.from("akun_generus").update({ username }).eq("jamaah_id", jamaahId);
-  if (error) return { galat: error.code === "23505" ? `Username @${username} sudah dipakai.` : "Gagal menyimpan." };
+  if (error) return { galat: error.code === "23505" ? `Username @${username} sudah dipakai.` : "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
   refresh();
   return { pesan: "Tersimpan." };
 }
@@ -212,7 +212,7 @@ export async function aturAkunAktif(jamaahId: string, aktif: boolean): Promise<S
   const ctx = await konteks(jamaahId);
   if (!ctx) return TIDAK_BERHAK;
   const { error } = await ctx.supabase.from("akun_generus").update({ aktif }).eq("jamaah_id", jamaahId);
-  if (error) return { galat: "Gagal menyimpan." };
+  if (error) return { galat: "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
   refresh();
   return {};
 }
@@ -226,7 +226,7 @@ export async function hapusAkunGenerus(jamaahId: string): Promise<StateAksi> {
   if (!adminAuth) return TANPA_KEY;
   // Menghapus user Auth ikut menghapus baris akun_generus (on delete cascade).
   const { error } = await adminAuth.auth.admin.deleteUser(akun.user_id);
-  if (error) return { galat: "Gagal menghapus akun. Coba lagi." };
+  if (error) return { galat: "Mohon maaf, akun belum berhasil dihapus. Silakan coba lagi." };
   refresh();
   return {};
 }

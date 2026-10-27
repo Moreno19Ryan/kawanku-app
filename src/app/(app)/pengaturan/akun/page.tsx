@@ -30,7 +30,7 @@ export default function AkunPage() {
         <Card>
           <h2 className="text-lg font-semibold">Ganti kata sandi</h2>
           <p className="mt-1 mb-5 text-sm text-muted">
-            Masukkan kata sandi lama untuk memastikan ini memang kamu.
+            Mohon masukkan kata sandi lama sebagai pengaman.
           </p>
           <FormKataSandi />
         </Card>
@@ -38,8 +38,8 @@ export default function AkunPage() {
         <Card>
           <h2 className="text-lg font-semibold">Keamanan sesi</h2>
           <p className="mt-1 mb-5 text-sm text-muted">
-            Pernah login di perangkat orang lain, atau HP hilang? Keluarkan akunmu dari semua
-            perangkat sekaligus, lalu login lagi di perangkat ini.
+            Pernah login di perangkat orang lain, atau HP hilang? Keluarkan akun ini dari semua
+            perangkat sekaligus, lalu masuk kembali di perangkat ini.
           </p>
           <TombolKeluarSemua />
         </Card>

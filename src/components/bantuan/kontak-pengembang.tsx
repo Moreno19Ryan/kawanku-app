@@ -26,7 +26,7 @@ export function KartuKontakPengembang() {
       <h2 className="text-lg font-semibold">Ada kendala dengan aplikasi?</h2>
       <p className="mt-1 mb-5 text-sm text-muted">
         Aplikasi error, tidak bisa dibuka, atau ada fitur yang tidak berjalan semestinya? Hubungi
-        pengembang. Sertakan nama akunmu, halaman yang dibuka, dan tangkapan layar bila ada.
+        pengembang. Mohon sertakan nama akun, halaman yang dibuka, dan tangkapan layar bila ada.
       </p>
       <TombolKontakPengembang />
     </Card>

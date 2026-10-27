@@ -56,7 +56,7 @@ export default function AdminPage() {
       <KembaliKePengaturan />
       <PageHeader
         title="Admin & akses"
-        description="Buat akun admin, aktifkan atau nonaktifkan, dan atur peran serta wilayahnya. Yang tampil hanya akun yang menjadi wewenangmu."
+        description="Buat akun admin, aktifkan atau nonaktifkan, dan atur peran serta wilayahnya. Yang tampil hanya akun dalam wewenang akun ini."
       />
       <Suspense fallback={<Memuat className="h-96" />}>
         <DaftarAdmin />
@@ -87,7 +87,7 @@ async function DaftarAdmin() {
   ]);
 
   if (!admin || !peran || !kelompok) {
-    return <Card className="text-sm text-danger">Gagal memuat daftar admin. Muat ulang halaman.</Card>;
+    return <Card className="text-sm text-danger">Mohon maaf, daftar admin belum berhasil dimuat. Silakan muat ulang halaman.</Card>;
   }
 
   // Peran + wilayah yang boleh diberikan, cerminan private.boleh_beri_peran:
@@ -141,8 +141,8 @@ async function DaftarAdmin() {
     <div className="flex flex-col gap-4">
       {!sayaAkses && (
         <Card className="bg-primary-soft text-sm text-primary shadow-none">
-          Kamu bisa membuat dan mengelola akun <b>admin generus</b> untuk kelompokmu. Akun admin
-          lain dikelola admin desa.
+          Akun ini bisa membuat dan mengelola akun <b>admin generus</b> untuk kelompok yang dikelola.
+          Akun admin lain dikelola admin desa.
         </Card>
       )}
       {adminAuth && pilihanPeran.length > 0 ? (
@@ -176,7 +176,7 @@ async function DaftarAdmin() {
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold">
                       {a.nama}
-                      {diriSendiri && <span className="text-sm font-normal text-muted">(kamu)</span>}
+                      {diriSendiri && <span className="text-sm font-normal text-muted">(akun ini)</span>}
                       <Badge nada={a.aktif ? "sukses" : "bahaya"}>
                         {a.aktif ? "Aktif" : "Nonaktif"}
                       </Badge>
@@ -188,7 +188,7 @@ async function DaftarAdmin() {
                       <p className="mt-1 text-xs text-muted">
                         {akunSistem
                           ? "Akun pengembang: hanya bisa diubah oleh pengembang."
-                          : "Bukan wewenangmu: dikelola admin wilayahnya."}
+                          : "Di luar wewenang: dikelola admin wilayahnya."}
                       </p>
                     )}
                   </div>

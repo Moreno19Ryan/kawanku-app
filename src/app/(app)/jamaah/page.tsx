@@ -150,7 +150,7 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
         title="Jamaah"
         description={
           akses.generusSaja
-            ? "Jamaah berkategori generus di wilayah tugasmu."
+            ? "Jamaah berkategori generus di wilayah tugas."
             : `Data jamaah ${akses.kelompokLihat.map((k) => k.nama).join(", ")}.`
         }
         actions={
@@ -260,14 +260,14 @@ async function DaftarJamaah({ cari }: { cari: Promise<Cari> }) {
       </div>
 
       {!jamaah ? (
-        <Card className="text-sm text-danger">Gagal memuat data jamaah. Muat ulang halaman.</Card>
+        <Card className="text-sm text-danger">Mohon maaf, data jamaah belum berhasil dimuat. Silakan muat ulang halaman.</Card>
       ) : jamaah.length === 0 ? (
         <Card className="text-center text-sm text-muted">
           {adaFilter
             ? "Tidak ada jamaah yang cocok dengan pencarian ini."
             : akses.kelompokTambah.length > 0
               ? "Belum ada data jamaah. Mulai dengan tombol Tambah jamaah."
-              : "Belum ada data jamaah yang bisa kamu lihat."}
+              : "Belum ada data jamaah yang bisa ditampilkan."}
         </Card>
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-card bg-surface">

@@ -19,7 +19,7 @@ export async function terapkanKenaikanKelas(
 ): Promise<StateAksi> {
   const akses = await getAksesJamaah();
   if (!akses?.kelompokUbah.some((k) => k.id === kelompokId)) {
-    return { galat: "Kamu tidak punya izin mengubah data jamaah kelompok ini." };
+    return { galat: "Mohon maaf, akun ini belum memiliki izin mengubah data jamaah kelompok ini." };
   }
 
   const calon = await getCalonKenaikan(kelompokId);
@@ -40,8 +40,8 @@ export async function terapkanKenaikanKelas(
     return {
       galat:
         error.code === "42501"
-          ? "Tidak bisa disimpan: sebagian hasilnya di luar wewenangmu (mis. admin generus membuat jamaah tidak lagi berkategori generus). Tidak ada yang diubah."
-          : "Gagal menyimpan. Tidak ada yang diubah; coba lagi.",
+          ? "Tidak bisa disimpan: sebagian hasilnya di luar wewenang akun ini (mis. admin generus membuat jamaah tidak lagi berkategori generus). Tidak ada yang diubah."
+          : "Mohon maaf, belum berhasil disimpan, dan tidak ada data yang berubah. Silakan coba lagi.",
     };
   }
 
@@ -51,6 +51,6 @@ export async function terapkanKenaikanKelas(
     pesan:
       n === perubahan.length
         ? `Alhamdulillah, ${n} jamaah diperbarui. Kategori ikut menyesuaikan otomatis.`
-        : `${n} dari ${perubahan.length} jamaah diperbarui; sisanya sudah diperbarui orang lain atau di luar wewenangmu.`,
+        : `${n} dari ${perubahan.length} jamaah diperbarui; sisanya sudah diperbarui orang lain atau di luar wewenang akun ini.`,
   };
 }

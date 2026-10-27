@@ -28,7 +28,7 @@ export async function simpanJadwalCadangan(_prev: StateAksi, fd: FormData): Prom
       .from("cadangan_jadwal")
       .update({ aktif: fd.get(`aktif_${jenis}`) === "on", simpan })
       .eq("jenis", jenis);
-    if (error) return { galat: "Gagal menyimpan jadwal." };
+    if (error) return { galat: "Mohon maaf, jadwal belum berhasil disimpan. Silakan coba lagi." };
   }
   refresh();
   return { pesan: "Jadwal cadangan tersimpan." };
@@ -38,7 +38,7 @@ export async function cadangkanSekarang(): Promise<StateAksi> {
   const supabase = await konteks();
   if (!supabase) return TIDAK_BERHAK;
   const { data: id, error } = await supabase.rpc("cadangkan_sekarang");
-  if (error) return { galat: "Gagal membuat cadangan." };
+  if (error) return { galat: "Mohon maaf, cadangan belum berhasil dibuat. Silakan coba lagi." };
   const { data } = await supabase.from("cadangan").select("status, pesan").eq("id", id).maybeSingle();
   refresh();
   if (data?.status !== "berhasil") return { galat: `Cadangan gagal: ${data?.pesan ?? "tanpa keterangan"}` };
@@ -49,7 +49,7 @@ export async function periksaCadangan(id: string): Promise<StateAksi> {
   const supabase = await konteks();
   if (!supabase) return TIDAK_BERHAK;
   const { data, error } = await supabase.rpc("periksa_cadangan", { p_id: id });
-  if (error) return { galat: "Gagal memeriksa cadangan." };
+  if (error) return { galat: "Mohon maaf, cadangan belum berhasil diperiksa. Silakan coba lagi." };
   refresh();
   return data === "cocok" ? { pesan: "Cadangan utuh dan bisa dibuka." } : { galat: "Cadangan RUSAK. Buat cadangan baru." };
 }
@@ -59,7 +59,7 @@ export async function pulihkanBaris(id: string, tabel: string, baris: string): P
   const supabase = await konteks();
   if (!supabase) return TIDAK_BERHAK;
   const { error } = await supabase.rpc("pulihkan_dari_cadangan", { p_id: id, p_tabel: tabel, p_baris: baris });
-  if (error) return { galat: `Gagal memulihkan: ${error.message}` };
+  if (error) return { galat: `Mohon maaf, baris belum berhasil dipulihkan: ${error.message}` };
   refresh();
   return { pesan: "Baris dipulihkan dan tercatat di riwayat." };
 }

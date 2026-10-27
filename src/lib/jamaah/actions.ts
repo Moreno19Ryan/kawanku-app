@@ -15,11 +15,11 @@ import {
 import type { StateAksi } from "@/lib/pengaturan/actions";
 import { createClient } from "@/lib/supabase/server";
 
-const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
-const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
+const TIDAK_BERHAK: StateAksi = { galat: "Mohon maaf, tindakan ini di luar wewenang akun ini." };
+const GAGAL: StateAksi = { galat: "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
 const DI_LUAR_WEWENANG: StateAksi = {
   galat:
-    "Tidak bisa disimpan: jamaah ini (atau isian barunya) di luar wewenangmu. Admin generus hanya bisa menyimpan jamaah yang tetap berkategori generus.",
+    "Tidak bisa disimpan: jamaah ini (atau isian barunya) di luar wewenang akun ini. Admin generus hanya bisa menyimpan jamaah yang tetap berkategori generus.",
 };
 
 type IsiJamaah = {
@@ -132,7 +132,7 @@ export async function tambahJamaah(_prev: StateAksi, formData: FormData): Promis
   const isi = bacaIsian(formData);
   if (typeof isi === "string") return { galat: isi };
   if (!akses.kelompokTambah.some((k) => k.id === isi.kelompok_id)) {
-    return { galat: "Kamu tidak bisa menambah jamaah di kelompok itu." };
+    return { galat: "Mohon maaf, jamaah tidak bisa ditambahkan di kelompok tersebut karena di luar wewenang." };
   }
 
   const supabase = await createClient();
@@ -154,7 +154,7 @@ export async function ubahJamaah(
   const isi = bacaIsian(formData);
   if (typeof isi === "string") return { galat: isi };
   if (!akses.kelompokUbah.some((k) => k.id === isi.kelompok_id)) {
-    return { galat: "Kamu tidak bisa memindahkan jamaah ke kelompok itu." };
+    return { galat: "Mohon maaf, jamaah tidak bisa dipindahkan ke kelompok tersebut karena di luar wewenang." };
   }
 
   const supabase = await createClient();
@@ -239,7 +239,7 @@ export async function tanganiUsulanKoreksi(id: string, _prev: StateAksi, formDat
       return {
         galat:
           error.code === "42501"
-            ? "Tidak bisa diterapkan: hasilnya di luar wewenangmu (mis. admin generus tidak bisa membuat jamaah keluar dari generus). Minta admin kelompok menanganinya."
+            ? "Tidak bisa diterapkan: hasilnya di luar wewenang akun ini (mis. admin generus tidak bisa membuat jamaah keluar dari generus). Minta admin kelompok menanganinya."
             : error.hint === "tidak_ada"
               ? "Laporan ini sudah ditangani."
               : "Tidak bisa diterapkan otomatis. Betulkan lewat Ubah data, lalu tandai “Sudah dibetulkan”.",
@@ -254,7 +254,7 @@ export async function tanganiUsulanKoreksi(id: string, _prev: StateAksi, formDat
     .eq("id", id)
     .eq("status", "menunggu")
     .select("id");
-  if (error || !data?.length) return { galat: "Laporan ini sudah ditangani atau di luar wewenangmu." };
+  if (error || !data?.length) return { galat: "Laporan ini sudah ditangani atau di luar wewenang akun ini." };
   refresh();
   return { pesan: status === "selesai" ? "Ditandai sudah dibetulkan." : "Laporan ditolak." };
 }
@@ -270,7 +270,7 @@ export async function tandaiPerubahanDicek(jamaahId: string): Promise<StateAksi>
     .eq("jamaah_id", jamaahId)
     .is("diperiksa_at", null)
     .select("id");
-  if (error || !data?.length) return { galat: "Sudah dicek atau di luar wewenangmu." };
+  if (error || !data?.length) return { galat: "Sudah dicek atau di luar wewenang akun ini." };
   refresh();
   return { pesan: "Ditandai sudah dicek." };
 }
@@ -345,11 +345,11 @@ export async function simpanKontak(
   const noHp = bacaNoHp(formData.get("no_hp"));
   const noHpWali = bacaNoHp(formData.get("no_hp_wali"));
   if (noHp === undefined || noHpWali === undefined) {
-    return { galat: "No. HP harus nomor Indonesia yang valid, mis. 0812-3456-7890." };
+    return { galat: "Mohon isi No. HP Indonesia yang benar, mis. 0812-3456-7890." };
   }
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (email && (email.length > 120 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))) {
-    return { galat: "Format email tidak valid." };
+    return { galat: "Mohon periksa kembali penulisan email." };
   }
   return simpanBaris("jamaah_kontak", id, { no_hp: noHp, no_hp_wali: noHpWali, email: email || null });
 }
@@ -448,6 +448,6 @@ export async function lihatIdentitasLengkap(
     .rpc("lihat_identitas", { p_jamaah_id: id })
     .maybeSingle<{ nik: string | null; no_kk: string | null; berlaku_sampai: string }>();
   if (error?.hint === "perlu_izin") return { galat: "Izin melihat sudah berakhir. Ajukan lagi bila perlu." };
-  if (error) return { galat: "Gagal memuat. Coba lagi." };
+  if (error) return { galat: "Mohon maaf, belum berhasil dimuat. Silakan coba lagi." };
   return data ?? { nik: null, no_kk: null };
 }

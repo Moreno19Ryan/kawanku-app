@@ -7,8 +7,8 @@ import type { StateAksi } from "@/lib/pengaturan/actions";
 import { dariInputWib } from "@/lib/waktu";
 import { catatGalatSesi } from "./galat";
 
-const TIDAK_BERHAK: StateAksi = { galat: "Kamu tidak punya izin untuk tindakan ini." };
-const GAGAL: StateAksi = { galat: "Gagal menyimpan. Coba lagi." };
+const TIDAK_BERHAK: StateAksi = { galat: "Mohon maaf, tindakan ini di luar wewenang akun ini." };
+const GAGAL: StateAksi = { galat: "Mohon maaf, belum berhasil disimpan. Silakan coba lagi." };
 
 /** Client + admin bila memegang izin global `izin` (RLS tetap pembatasnya). */
 async function konteks(izin: string) {
@@ -152,9 +152,9 @@ export async function tanganiPermintaanIdentitas(id: string, setuju: boolean): P
   const ctx = await konteks("sistem.kelola");
   if (!ctx) return TIDAK_BERHAK;
   const { error } = await ctx.supabase.rpc("tangani_permintaan_identitas", { p_id: id, p_setuju: setuju });
-  if (error?.hint === "sendiri") return { galat: "Tidak bisa menyetujui permintaanmu sendiri." };
+  if (error?.hint === "sendiri") return { galat: "Permintaan milik sendiri tidak bisa disetujui sendiri; silakan minta pengembang lain." };
   if (error?.hint === "sudah") return { galat: "Permintaan ini sudah ditangani." };
-  if (error) return { galat: "Gagal. Pastikan kamu pengembang." };
+  if (error) return { galat: "Mohon maaf, belum berhasil. Fitur ini khusus pengembang." };
   refresh();
   return { pesan: setuju ? "Disetujui (berlaku 1 jam)." : "Ditolak." };
 }

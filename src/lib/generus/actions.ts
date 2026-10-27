@@ -21,24 +21,24 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function gantiPin(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
   const generus = await getGenerusSaatIni();
-  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
+  if (!generus) return { galat: "Sesi sudah berakhir. Silakan masuk kembali." };
   const pin = String(formData.get("pin") ?? "").trim();
   const ulang = String(formData.get("ulang") ?? "").trim();
-  if (!/^\d{6}$/.test(pin)) return { galat: "PIN harus 6 angka." };
-  if (pin !== ulang) return { galat: "Ulangi PIN tidak sama." };
+  if (!/^\d{6}$/.test(pin)) return { galat: "Mohon isi PIN 6 angka." };
+  if (pin !== ulang) return { galat: "Ulangan PIN belum sama. Silakan diketik ulang." };
 
   const supabase = await createClient();
   const { data: j } = await supabase.from("jamaah").select("tanggal_lahir").eq("id", generus.jamaah.id).maybeSingle();
   if (pin === pinDariTanggalLahir(j?.tanggal_lahir ?? null)) {
-    return { galat: "Jangan pakai tanggal lahir; mudah ditebak orang lain." };
+    return { galat: "Sebaiknya jangan memakai tanggal lahir, karena mudah ditebak orang lain." };
   }
   if (/^(\d)\1{5}$/.test(pin) || "0123456789".includes(pin) || "9876543210".includes(pin)) {
-    return { galat: "PIN terlalu mudah ditebak (mis. 111111 atau 123456)." };
+    return { galat: "PIN ini terlalu mudah ditebak (mis. 111111 atau 123456). Silakan pilih yang lain." };
   }
 
   const { error } = await supabase.rpc("ganti_pin_saya", { p_pin: pin });
   if (error) {
-    return { galat: error.hint === "sama" ? "PIN baru harus berbeda dari PIN lama." : "Gagal mengganti PIN. Coba lagi." };
+    return { galat: error.hint === "sama" ? "PIN baru harus berbeda dari PIN lama." : "Mohon maaf, PIN belum berhasil diganti. Silakan coba lagi." };
   }
   redirect(tujuanGenerus(formData.get("tujuan")));
 }
@@ -46,8 +46,8 @@ export async function gantiPin(_prev: StateAksi, formData: FormData): Promise<St
 /** Generus mengubah alamatnya sendiri (KTP/KIA + domisili); nama orang tua tetap lewat admin. */
 export async function simpanAlamatSaya(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
   const generus = await getGenerusSaatIni();
-  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
-  if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu sebelum mengubah alamat." };
+  if (!generus) return { galat: "Sesi sudah berakhir. Silakan masuk kembali." };
+  if (generus.pinAwal) return { galat: "Mohon ganti PIN awal terlebih dahulu." };
 
   const ktp = bacaAlamat(formData, "ktp");
   if (typeof ktp === "string") return { galat: ktp };
@@ -71,7 +71,7 @@ export async function simpanAlamatSaya(_prev: StateAksi, formData: FormData): Pr
     p_dom_rw: dom?.rw ?? null,
     p_dom_kode_pos: dom?.kode_pos ?? null,
   });
-  if (error) return { galat: "Gagal menyimpan alamat. Coba lagi." };
+  if (error) return { galat: "Mohon maaf, alamat belum berhasil disimpan. Silakan coba lagi." };
   refresh();
   return { pesan: `Alamat tersimpan. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
@@ -89,8 +89,8 @@ function teks(formData: FormData, nama: string, maks: number, label: string): st
  */
 export async function simpanDataDiri(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
   const generus = await getGenerusSaatIni();
-  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
-  if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu." };
+  if (!generus) return { galat: "Sesi sudah berakhir. Silakan masuk kembali." };
+  if (generus.pinAwal) return { galat: "Mohon ganti PIN awal terlebih dahulu." };
 
   const panggilan = teks(formData, "nama_panggilan", 40, "Nama panggilan");
   const tempat = teks(formData, "tempat_lahir", 80, "Tempat lahir");
@@ -101,10 +101,10 @@ export async function simpanDataDiri(_prev: StateAksi, formData: FormData): Prom
 
   const tanggal = String(formData.get("tanggal_lahir") ?? "");
   if (tanggal && (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal) || tanggal <= "1900-01-01" || tanggal > hariIniWib())) {
-    return { galat: "Isi tanggal lahir yang benar." };
+    return { galat: "Mohon isi tanggal lahir dengan benar." };
   }
   const sekolah = String(formData.get("status_sekolah") ?? "");
-  if (sekolah && !(sekolah in LABEL_STATUS_SEKOLAH)) return { galat: "Pilih status sekolah yang benar." };
+  if (sekolah && !(sekolah in LABEL_STATUS_SEKOLAH)) return { galat: "Mohon pilih status sekolah." };
   const rentang = RENTANG_KELAS[sekolah];
   const kelasTeks = String(formData.get("kelas") ?? "");
   const kelas = rentang && kelasTeks ? Number(kelasTeks) : null;
@@ -112,15 +112,15 @@ export async function simpanDataDiri(_prev: StateAksi, formData: FormData): Prom
     return { galat: `Kelas ${LABEL_STATUS_SEKOLAH[sekolah]} antara ${rentang[0]} dan ${rentang[1]}.` };
   }
   const pendidikan = String(formData.get("pendidikan_terakhir") ?? "");
-  if (pendidikan && !(pendidikan in LABEL_PENDIDIKAN)) return { galat: "Pilih pendidikan terakhir yang benar." };
+  if (pendidikan && !(pendidikan in LABEL_PENDIDIKAN)) return { galat: "Mohon pilih pendidikan terakhir." };
 
   const noHp = bacaNoHp(formData.get("no_hp"));
-  if (noHp === undefined) return { galat: "No. HP harus nomor Indonesia yang valid, mis. 0812-3456-7890." };
+  if (noHp === undefined) return { galat: "Mohon isi No. HP Indonesia yang benar, mis. 0812-3456-7890." };
   const noHpWali = bacaNoHp(formData.get("no_hp_wali"));
-  if (noHpWali === undefined) return { galat: "No. HP wali harus nomor Indonesia yang valid." };
+  if (noHpWali === undefined) return { galat: "Mohon isi No. HP wali Indonesia yang benar." };
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (email && (email.length > 120 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))) {
-    return { galat: "Format email tidak valid." };
+    return { galat: "Mohon periksa kembali penulisan email." };
   }
 
   const supabase = await createClient();
@@ -144,7 +144,7 @@ export async function simpanDataDiri(_prev: StateAksi, formData: FormData): Prom
         "Perubahan ini membuatmu tidak lagi termasuk generus, jadi tidak bisa disimpan sendiri. Bila datanya memang begitu, laporkan ke admin di bagian bawah.",
     };
   }
-  if (error) return { galat: "Gagal menyimpan. Periksa isianmu lalu coba lagi." };
+  if (error) return { galat: "Mohon maaf, belum berhasil disimpan. Silakan periksa isian, lalu coba lagi." };
   refresh();
   return { pesan: `Data diri tersimpan. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
@@ -152,11 +152,11 @@ export async function simpanDataDiri(_prev: StateAksi, formData: FormData): Prom
 /** Generus melaporkan data yang salah; admin yang membetulkan. */
 export async function kirimUsulanKoreksi(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
   const generus = await getGenerusSaatIni();
-  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
-  if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu." };
+  if (!generus) return { galat: "Sesi sudah berakhir. Silakan masuk kembali." };
+  if (generus.pinAwal) return { galat: "Mohon ganti PIN awal terlebih dahulu." };
 
   const bagian = String(formData.get("bagian") ?? "");
-  if (!(BAGIAN_LAPOR_GENERUS as readonly string[]).includes(bagian)) return { galat: "Pilih data yang salah." };
+  if (!(BAGIAN_LAPOR_GENERUS as readonly string[]).includes(bagian)) return { galat: "Mohon pilih data yang perlu dibetulkan." };
   const nilai = bacaNilaiUsulan(
     bagian,
     String(formData.get("nilai") ?? ""),
@@ -168,8 +168,8 @@ export async function kirimUsulanKoreksi(_prev: StateAksi, formData: FormData): 
   const isi =
     String(formData.get("isi") ?? "").trim().replace(/\s+/g, " ") ||
     (nilai.nilai ? labelNilaiUsulan(bagian, nilai.nilai, nilai.nilai_kelas) : "");
-  if (!isi) return { galat: "Tulis data yang benar." };
-  if (isi.length > 300) return { galat: "Maksimal 300 karakter." };
+  if (!isi) return { galat: "Mohon tuliskan data yang benar." };
+  if (isi.length > 300) return { galat: "Mohon tulis paling banyak 300 karakter." };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -178,18 +178,18 @@ export async function kirimUsulanKoreksi(_prev: StateAksi, formData: FormData): 
   if (error?.code === "23505") {
     return { galat: `Laporan "${LABEL_BAGIAN_USULAN[bagian]}" sebelumnya masih menunggu dicek admin.` };
   }
-  if (error) return { galat: "Gagal mengirim. Coba lagi." };
+  if (error) return { galat: "Mohon maaf, belum berhasil terkirim. Silakan coba lagi." };
   refresh();
-  return { pesan: `Terkirim, admin kelompokmu akan mengeceknya. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
+  return { pesan: `Terkirim. InsyaAllah admin kelompok akan mengeceknya. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
 
 /** Batalkan laporan yang masih menunggu. */
 export async function batalkanUsulanKoreksi(id: string): Promise<StateAksi> {
   const generus = await getGenerusSaatIni();
-  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
+  if (!generus) return { galat: "Sesi sudah berakhir. Silakan masuk kembali." };
   const supabase = await createClient();
   const { data, error } = await supabase.from("usulan_koreksi").delete().eq("id", id).select("id");
-  if (error || !data?.length) return { galat: "Laporan tidak bisa dibatalkan (mungkin sudah dicek admin)." };
+  if (error || !data?.length) return { galat: "Mohon maaf, laporan tidak bisa dibatalkan karena kemungkinan sudah dicek admin." };
   refresh();
   return { pesan: "Laporan dibatalkan." };
 }
@@ -205,17 +205,17 @@ const PESAN_IZIN: Record<string, string> = {
 /** Generus mengajukan izin/sakit untuk satu pertemuan; admin yang menyetujui. */
 export async function ajukanIzin(_prev: StateAksi, formData: FormData): Promise<StateAksi> {
   const generus = await getGenerusSaatIni();
-  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
-  if (generus.pinAwal) return { galat: "Ganti PIN awalmu dulu." };
+  if (!generus) return { galat: "Sesi sudah berakhir. Silakan masuk kembali." };
+  if (generus.pinAwal) return { galat: "Mohon ganti PIN awal terlebih dahulu." };
 
   const [kegiatanId, tanggal] = String(formData.get("kejadian") ?? "").split("|");
   if (!/^[0-9a-f-]{36}$/.test(kegiatanId ?? "") || !/^\d{4}-\d{2}-\d{2}$/.test(tanggal ?? "")) {
-    return { galat: "Pilih pertemuan yang mau diizinkan." };
+    return { galat: "Mohon pilih pertemuannya." };
   }
   const jenis = formData.get("jenis");
-  if (jenis !== "izin" && jenis !== "sakit") return { galat: "Pilih izin atau sakit." };
+  if (jenis !== "izin" && jenis !== "sakit") return { galat: "Mohon pilih izin atau sakit." };
   const alasan = String(formData.get("alasan_izin") ?? "");
-  if (jenis === "izin" && !(alasan in LABEL_ALASAN_IZIN)) return { galat: "Pilih alasan izin." };
+  if (jenis === "izin" && !(alasan in LABEL_ALASAN_IZIN)) return { galat: "Mohon pilih alasan izin." };
   const keterangan = String(formData.get("keterangan") ?? "").trim().replace(/\s+/g, " ");
   if (keterangan.length > 150) return { galat: "Keterangan maksimal 150 karakter." };
 
@@ -228,19 +228,19 @@ export async function ajukanIzin(_prev: StateAksi, formData: FormData): Promise<
     alasan_izin: jenis === "izin" ? alasan : null,
     keterangan: jenis === "izin" && keterangan ? keterangan : null,
   });
-  if (error?.code === "23505") return { galat: "Kamu sudah mengajukan izin untuk pertemuan ini." };
-  if (error) return { galat: PESAN_IZIN[error.hint ?? ""] ?? "Gagal mengirim. Coba lagi." };
+  if (error?.code === "23505") return { galat: "Izin untuk pertemuan ini sudah kamu ajukan sebelumnya." };
+  if (error) return { galat: PESAN_IZIN[error.hint ?? ""] ?? "Mohon maaf, belum berhasil terkirim. Silakan coba lagi." };
   refresh();
-  return { pesan: `Terkirim, tunggu persetujuan admin ya. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
+  return { pesan: `Terkirim. Mohon ditunggu persetujuan dari admin. ${ucapanSyukur(generus.jamaah.jenisKelamin)}.` };
 }
 
 /** Batalkan pengajuan izin yang masih menunggu. */
 export async function batalkanIzin(id: string): Promise<StateAksi> {
   const generus = await getGenerusSaatIni();
-  if (!generus) return { galat: "Sesimu sudah berakhir. Silakan masuk lagi." };
+  if (!generus) return { galat: "Sesi sudah berakhir. Silakan masuk kembali." };
   const supabase = await createClient();
   const { data, error } = await supabase.from("pengajuan_izin").delete().eq("id", id).select("id");
-  if (error || !data?.length) return { galat: "Tidak bisa dibatalkan (mungkin sudah ditanggapi admin)." };
+  if (error || !data?.length) return { galat: "Mohon maaf, pengajuan tidak bisa dibatalkan karena kemungkinan sudah ditanggapi admin." };
   refresh();
   return { pesan: "Pengajuan dibatalkan." };
 }

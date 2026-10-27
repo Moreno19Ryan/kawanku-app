@@ -55,7 +55,7 @@ async function MatriksIzin() {
   ]);
 
   if (!peran || !izin) {
-    return <Card className="text-sm text-danger">Gagal memuat peran. Muat ulang halaman.</Card>;
+    return <Card className="text-sm text-danger">Mohon maaf, data peran belum berhasil dimuat. Silakan muat ulang halaman.</Card>;
   }
 
   const punya = new Map(peran.map((p) => [p.id, new Set(p.peran_izin.map((i) => i.izin_kode))]));

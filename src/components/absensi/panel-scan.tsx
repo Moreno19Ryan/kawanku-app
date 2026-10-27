@@ -13,8 +13,8 @@ import { jam } from "@/lib/waktu";
 
 /** Teks besar di layar setelah scan. */
 const PESAN: Record<HasilScan["hasil"], string> = {
-  tercatat: "Kamu sudah tercatat hadir",
-  sudah: "Alhamdulillah, kamu sudah absen sebelumnya",
+  tercatat: "Sudah tercatat hadir",
+  sudah: "Alhamdulillah, sudah tercatat hadir sebelumnya",
   tidak_dikenal: "Kode tidak dikenal",
   kartu_dicabut: "Kartu ini sudah dicabut (diganti kartu baru)",
   pakai_akun: "Kartu tidak berlaku: generus absen lewat akunnya (scan QR layar)",
@@ -23,8 +23,8 @@ const PESAN: Record<HasilScan["hasil"], string> = {
   lewat_waktu: "Absensi sudah lewat waktunya",
   bukan_peserta: "Bukan peserta sesi ini",
   jamaah_nonaktif: "Jamaah tidak aktif",
-  tidak_berhak: "Di luar wewenangmu",
-  galat: "Gagal mencatat. Coba lagi.",
+  tidak_berhak: "Di luar wewenang akun ini",
+  galat: "Mohon maaf, belum tercatat. Silakan scan ulang.",
 };
 
 /** Label singkat untuk riwayat scan. */
@@ -166,7 +166,7 @@ export function PanelScan({
             <span className="min-w-0">
               <span className="block text-lg font-semibold">
                 {terakhir.hasil === "tercatat"
-                  ? `${ucapanSyukur(terakhir.jenisKelamin)}, kamu sudah tercatat hadir`
+                  ? `${ucapanSyukur(terakhir.jenisKelamin)}, sudah tercatat hadir`
                   : PESAN[terakhir.hasil]}
               </span>
               <span className="block text-sm">

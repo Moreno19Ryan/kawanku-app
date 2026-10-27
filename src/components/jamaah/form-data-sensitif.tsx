@@ -247,13 +247,13 @@ export function TampilkanIdentitas({ lihat, sampai }: { lihat: () => Promise<Has
   }
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm text-muted">Permintaanmu disetujui, berlaku sampai {sampai}. Setiap kali dibuka, tercatat.</p>
+      <p className="text-sm text-muted">Permintaan disetujui, berlaku sampai {sampai}. Setiap kali dibuka, tercatat.</p>
       <button
         type="button"
         disabled={pending}
         onClick={async () => {
           setPending(true);
-          setHasil(await lihat().catch(() => ({ galat: "Gagal memuat. Coba lagi." })));
+          setHasil(await lihat().catch(() => ({ galat: "Mohon maaf, belum berhasil dimuat. Silakan coba lagi." })));
           setPending(false);
         }}
         className={`${buttonClass("kedua", "h-10 px-5")} self-start`}

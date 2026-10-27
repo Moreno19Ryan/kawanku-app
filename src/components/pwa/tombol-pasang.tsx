@@ -64,7 +64,7 @@ const PETUNJUK: Record<Exclude<Browser, "desktop">, string[]> = {
     "Bila tidak ada, salin alamat di bawah dan buka di Chrome atau Samsung Internet, lalu pasang dari sana.",
   ],
   "dalam-aplikasi": [
-    "Kamu membuka KawanKu dari dalam aplikasi lain (mis. WhatsApp), yang tidak bisa memasang aplikasi.",
+    "KawanKu sedang dibuka dari dalam aplikasi lain (mis. WhatsApp), yang tidak bisa memasang aplikasi.",
     "Ketuk menu ⋮ / ··· lalu pilih Buka di browser (Chrome, Samsung Internet, atau Safari).",
     "Atau salin alamat di bawah dan tempel di browser, lalu pasang dari sana.",
   ],

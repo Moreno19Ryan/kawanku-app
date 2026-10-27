@@ -187,8 +187,8 @@ async function Ringkasan() {
           <div>
             <p className="font-medium">Ringkasan jamaah belum tersedia</p>
             <p className="mt-1 text-sm text-muted">
-              Modul Jamaah belum dinyalakan untuk wilayahmu, atau peranmu tidak mencakup data
-              jamaah. Buka Pengaturan untuk akun dan wewenangmu.
+              Modul Jamaah belum dinyalakan untuk wilayah ini, atau peran akun ini belum mencakup
+              data jamaah. Rinciannya ada di Pengaturan → Wewenang saya.
             </p>
           </div>
         </Card>
@@ -212,7 +212,7 @@ async function Ringkasan() {
     return (
       <>
         {header}
-        <Card className="text-sm text-danger">Gagal memuat ringkasan. Muat ulang halaman.</Card>
+        <Card className="text-sm text-danger">Mohon maaf, ringkasan belum berhasil dimuat. Silakan muat ulang halaman.</Card>
       </>
     );
   }

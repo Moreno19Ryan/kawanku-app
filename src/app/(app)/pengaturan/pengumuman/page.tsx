@@ -53,7 +53,7 @@ async function IsiPengumuman() {
     .returns<Pengumuman[]>();
 
   if (error || !daftar) {
-    return <Card className="text-sm text-danger">Gagal memuat pengumuman. Muat ulang halaman.</Card>;
+    return <Card className="text-sm text-danger">Mohon maaf, data pengumuman belum berhasil dimuat. Silakan muat ulang halaman.</Card>;
   }
   return (
     <div className="flex flex-col gap-4 sm:gap-6">

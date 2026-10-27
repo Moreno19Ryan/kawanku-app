@@ -40,7 +40,7 @@ export default function CetakKartuPage({ searchParams }: PageProps<"/cetak/kartu
 async function LembarKartu({ cari }: { cari: Promise<Cari> }) {
   const [akses, param] = await Promise.all([getAksesAbsensi(), cari]);
   if (!akses || akses.kelompokKartu.length === 0) {
-    return <p className="text-sm">Kamu tidak punya izin mencetak kartu absensi.</p>;
+    return <p className="text-sm">Mohon maaf, akun ini belum memiliki izin mencetak kartu absensi.</p>;
   }
 
   const kelompok = satu(param.kelompok);

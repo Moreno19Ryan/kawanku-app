@@ -40,7 +40,7 @@ async function Lembar({ cari }: { cari: Promise<Record<string, string | string[]
   const pilihan = daftarBulan(12);
   const bulan = typeof q.bulan === "string" && pilihan.includes(q.bulan) ? q.bulan : bulanWib(new Date().toISOString());
   const hasil = await getLaporan(bacaParamLaporan(q), { bulan });
-  if (!hasil) return <p className="text-sm">Kamu tidak punya izin melihat laporan kehadiran.</p>;
+  if (!hasil) return <p className="text-sm">Mohon maaf, akun ini belum memiliki izin melihat laporan kehadiran.</p>;
   const { laporan: l, namaWilayah, param } = hasil;
 
   const perlu = l.jamaah.filter((b) => b.status === "perlu_disapa");

@@ -11,7 +11,7 @@ export async function kembalikanSampah(id: string): Promise<StateAksi> {
   const supabase = await createClient();
   const { data: entri } = await supabase.from("tempat_sampah").select("jenis, label").eq("id", id).maybeSingle();
   const { data, error } = await supabase.rpc("kembalikan_dari_sampah", { p_id: id });
-  if (error?.code === "42501") return { galat: "Di luar wewenangmu atau sudah tidak ada." };
+  if (error?.code === "42501") return { galat: "Di luar wewenang akun ini atau sudah tidak ada." };
   if (error) return { galat: error.message.replace(/^Tidak bisa dikembalikan: /, "Tidak bisa dikembalikan: ") };
   refresh();
   const dilewati = (data as { dilewati?: string[] } | null)?.dilewati ?? [];
@@ -24,7 +24,7 @@ export async function kembalikanSampah(id: string): Promise<StateAksi> {
 export async function hapusPermanenSampah(id: string): Promise<StateAksi> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("hapus_permanen_sampah", { p_id: id });
-  if (error) return { galat: "Di luar wewenangmu atau sudah tidak ada." };
+  if (error) return { galat: "Di luar wewenang akun ini atau sudah tidak ada." };
   refresh();
   return { pesan: "Dihapus permanen." };
 }

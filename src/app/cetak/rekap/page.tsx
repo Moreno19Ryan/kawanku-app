@@ -27,7 +27,7 @@ async function Lembar({ cari }: { cari: Promise<Record<string, string | string[]
   await connection();
   const param = bacaParamRekap(await cari);
   const rekap = await getRekap(param, { ekspor: true });
-  if (!rekap) return <p className="text-sm">Kamu tidak punya izin mencetak rekap absensi.</p>;
+  if (!rekap) return <p className="text-sm">Mohon maaf, akun ini belum memiliki izin mencetak rekap absensi.</p>;
   if ("galat" in rekap) return <p className="text-sm">{rekap.galat}</p>;
 
   return (
