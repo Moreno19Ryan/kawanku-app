@@ -119,6 +119,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
 - Bantuan akun (`/pengaturan/bantuan-akun`, hanya `sistem.kelola`): RPC
   `cari_akun` / `buka_kunci_akun` / `keluarkan_akun` (hapus `auth.sessions`),
   tercatat di `bantuan_akun_log`.
+- Jejak aktivitas (`/pengaturan/jejak`, hanya `sistem.kelola`): trigger
+  `catat_jejak` → `jejak_aktivitas` (nama kolom saja, tanpa isi; 180 hari).
+  Tabel penting baru → pasang trigger `catat_jejak` & tambahkan ke
+  `KELOMPOK_TABEL` (`src/lib/sistem/jejak.ts`).
 - Verifikasi dua langkah (`docs/mfa.md`, TOTP): wajib untuk pemegang
   `sistem.kelola` (`wajibAdmin()` → `/mfa/daftar`; masuk → `/mfa`,
   `keadaanMfa()` di `src/lib/auth/mfa.ts`). Database: kebijakan RESTRICTIVE

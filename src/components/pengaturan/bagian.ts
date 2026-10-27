@@ -3,6 +3,7 @@ import {
   Building2,
   CircleHelp,
   DatabaseBackup,
+  History,
   KeyRound,
   LifeBuoy,
   Megaphone,
@@ -94,6 +95,13 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     judul: "Bantuan akun",
     keterangan: "Cari akun, buka kunci PIN, keluarkan dari semua perangkat",
     icon: LifeBuoy,
+    izin: "sistem.kelola",
+  },
+  {
+    href: "/pengaturan/jejak",
+    judul: "Jejak aktivitas",
+    keterangan: "Siapa mengubah data apa dan kapan",
+    icon: History,
     izin: "sistem.kelola",
   },
   {

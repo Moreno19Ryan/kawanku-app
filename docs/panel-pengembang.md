@@ -68,6 +68,15 @@ aktif). Setiap tindakan tercatat di `bantuan_akun_log`. Lupa PIN / kata sandi
 tetap lewat halaman yang sudah ada (Kembalikan ke PIN awal, atur ulang kata
 sandi), ditautkan dari panduan singkat di halaman ini.
 
+### Jejak aktivitas (Pengaturan → Jejak aktivitas, migrasi `20261101120000_jejak_aktivitas`)
+Trigger `catat_jejak` di tabel penting (jamaah & data pribadinya, keluarga,
+kartu, akun, peran, kegiatan, pertemuan, izin, pengumuman, pengaturan;
+absensi hanya ubah/hapus) menulis ke `jejak_aktivitas`: tabel, aksi, nama
+objek, **nama kolom** yang berubah (tanpa isi), pelaku, waktu. Disaring per
+bagian, nama, dan rentang (24 jam–180 hari); dari detail jamaah ada tautan
+"Lihat jejak perubahan". Disimpan 180 hari (`kawanku-bersihkan`). Hanya
+pengembang.
+
 ### Info sistem
 Lingkungan, region fungsi, commit dan pesannya, waktu build, latensi
 database, jumlah admin aktif, dan kapan pengaturan sistem terakhir diubah.

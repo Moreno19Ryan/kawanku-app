@@ -263,6 +263,13 @@ async function Detail({
         title={j.nama_lengkap}
         description={j.nama_panggilan ? `Dipanggil ${j.nama_panggilan}` : undefined}
       />
+      {akses.admin.izinGlobal.includes("sistem.kelola") && (
+        <p className="-mt-2 mb-4 text-sm sm:mb-6">
+          <Link href={`/pengaturan/jejak?jamaah=${j.id}&hari=180`} className="text-primary">
+            Lihat jejak perubahan data jamaah ini
+          </Link>
+        </p>
+      )}
 
       {perluDicek.length > 0 && (
         <Card className="mb-4 flex items-start gap-3 bg-warning/10 sm:mb-6">
