@@ -43,6 +43,16 @@ diberikan ke peran lain (mis. admin desa) lewat data, tanpa migrasi.
   dinyalakan. Saklar mulai berpengaruh saat modulnya selesai (mis. halaman
   Jamaah untuk trial Kelompok 1).
 
+### Bantuan akun (Pengaturan → Bantuan akun, migrasi `20261101100000_bantuan_akun`)
+Cari akun admin & generus (nama, email, username, kode jamaah) lewat RPC
+`cari_akun`: aktif/nonaktif, peran & kelompok, terakhir masuk, PIN terkunci
+(5x salah), masih PIN awal, dan jumlah perangkat yang sedang masuk
+(`auth.sessions`). Tindakan: **Buka kunci** (`buka_kunci_akun`) dan
+**Keluarkan dari semua perangkat** (`keluarkan_akun`: hapus sesi; akun tetap
+aktif). Setiap tindakan tercatat di `bantuan_akun_log`. Lupa PIN / kata sandi
+tetap lewat halaman yang sudah ada (Kembalikan ke PIN awal, atur ulang kata
+sandi), ditautkan dari panduan singkat di halaman ini.
+
 ### Info sistem
 Lingkungan, region fungsi, commit dan pesannya, waktu build, latensi
 database, jumlah admin aktif, dan kapan pengaturan sistem terakhir diubah.

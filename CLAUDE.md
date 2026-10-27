@@ -113,6 +113,9 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   (`pengaturan_sistem` atau env `MODE_PERAWATAN=1`); `BannerPengumuman`
   menampilkan pengumuman. Pembacaan tabel sistem bersifat fail-open
   (tabel/galat → aplikasi tetap jalan normal).
+- Bantuan akun (`/pengaturan/bantuan-akun`, hanya `sistem.kelola`): RPC
+  `cari_akun` / `buka_kunci_akun` / `keluarkan_akun` (hapus `auth.sessions`),
+  tercatat di `bantuan_akun_log`.
 - Form pengaturan dikirim lewat `useFormAksi()` (onSubmit), bukan prop
   `action`, supaya React tidak mereset isian setelah validasi server gagal.
 - Setiap admin aktif wajib punya minimal satu peran (dijaga database,
