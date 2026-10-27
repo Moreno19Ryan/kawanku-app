@@ -1,5 +1,6 @@
 import {
   BadgeCheck,
+  BookOpenCheck,
   Building2,
   CircleHelp,
   DatabaseBackup,
@@ -95,6 +96,13 @@ export const BAGIAN_PENGATURAN: BagianPengaturan[] = [
     judul: "Bantuan akun",
     keterangan: "Cari akun, buka kunci PIN, keluarkan dari semua perangkat",
     icon: LifeBuoy,
+    izin: "sistem.kelola",
+  },
+  {
+    href: "/pengaturan/panduan-pengembang",
+    judul: "Panduan perbaikan",
+    keterangan: "Langkah singkat untuk masalah ringan yang sering terjadi",
+    icon: BookOpenCheck,
     izin: "sistem.kelola",
   },
   {

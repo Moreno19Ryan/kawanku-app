@@ -77,6 +77,18 @@ bagian, nama, dan rentang (24 jam–180 hari); dari detail jamaah ada tautan
 "Lihat jejak perubahan". Disimpan 180 hari (`kawanku-bersihkan`). Hanya
 pengembang.
 
+### Pemeriksaan data & galat (migrasi `20261101130000_galat_periksa_data`)
+- **Pemeriksaan data** (kartu di Panel pengembang, RPC `periksa_data`): akun
+  generus yang jamaahnya nonaktif / bukan generus lagi, pertemuan yang
+  absensinya tidak terbuka, permintaan NIK/KK > 2 hari, galat belum dicek
+  > 7 hari, admin tidak masuk > 90 hari, keluarga kosong, langganan
+  notifikasi mati. Yang aman bisa **Perbaiki** (`perbaiki_data`).
+- **Galat lebih jelas**: Pemantau galat menampilkan "Artinya" & "Saran"
+  (`src/lib/sistem/galat-jelas.ts`). Jenis galat **baru** dikirim ke HP
+  pengembang (maks. 3 per jam).
+- **Panduan perbaikan** (Pengaturan → Panduan perbaikan): langkah singkat
+  untuk masalah ringan, menautkan alat-alat di atas.
+
 ### Info sistem
 Lingkungan, region fungsi, commit dan pesannya, waktu build, latensi
 database, jumlah admin aktif, dan kapan pengaturan sistem terakhir diubah.
