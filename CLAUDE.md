@@ -209,7 +209,7 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   terlewat; dihitung di `src/lib/generus/kehadiran.ts`, murni), pengumuman
   bersasaran (`pengumuman.sasaran` admin/generus/semua + `kelompok_id`;
   pengurus kegiatan menulis di `/kegiatan/pengumuman`), jadwal 30 hari di
-  `/saya/jadwal`, menu bawah `NavGenerus`. QR layar jalur 2 di
+  `/saya/jadwal`, menu bawah `NavGenerus` (HP) / menu samping `MenuSampingGenerus` + `AkunGenerus` (laptop). QR layar jalur 2 di
   `/layar/[id]` (RPC `token_layar` / `absen_layar`).
 - Kegiatan (`/kegiatan`, `docs/kegiatan.md`): saklar fitur `kegiatan`, izin
   `kegiatan.lihat`/`kegiatan.kelola` (`getAksesKegiatan`). Kalender rutin

@@ -50,7 +50,8 @@ dengan teliti sebelum dipakai banyak orang:
 | Langkah | Isi | Hasil |
 | --- | --- | --- |
 | A1 ✓ | **Beranda pengembang** (selesai, PR #86) | Panel sambutan berisi keadaan sistem ("Alhamdulillah, semua sistem normal" / "Ada 2 galat baru"); pintasan khusus pengembang (Panel pengembang, Bantuan akun, Jejak aktivitas, Salin laporan masalah); Perlu perhatian: galat baru, tugas otomatis bermasalah, cadangan terlambat. |
-| A1b | **Area jamaah versi laptop** | Kerangka area jamaah (generus) untuk laptop/PC: menu samping seperti admin, Beranda dua kolom; halaman jamaah lain ikut melebar dengan rapi. Mockup dulu. |
+| A1b ✓ | **Area jamaah versi laptop** | Kerangka area jamaah (generus) untuk laptop/PC: menu samping seperti admin, Beranda dua kolom; halaman jamaah lain ikut melebar dengan rapi. Mockup dulu. |
+| A1c | **Jam & tanggal realtime (WIB, mengikuti jam server)** (usul Reno) | Di Beranda admin & jamaah, QR layar (besar), halaman sesi absensi, pemindai QR; hasil absen menyebut "Tercatat pukul … WIB" dari waktu database. Jam HP tidak dipakai supaya tidak bisa disalahgunakan. |
 | A2 | **Pengaturan & Panel pengembang** | Halaman kerja pertama dengan pola baru: judul besar, kartu per bagian, aksi utama satu per layar, nyaman di HP. |
 | A3 | **Jamaah** (daftar, detail, tambah/ubah, keluarga, Perlu dicek, kenaikan kelas) | Pola halaman kerja yang sama. |
 | A4 | **Absensi** (sesi, scan, rekap, laporan, izin, kartu, akun) | Pola halaman kerja yang sama. |
@@ -77,7 +78,7 @@ kode → uji di HP & laptop → PR → "OK, jalankan" → gabung.
 
 Urutan yang diusulkan:
 
-1. A1 → A1b → A2.
+1. A1 → A1b → A1c → A2.
 2. B1 (dokumen) sambil menunggu jawaban pengurus.
 3. B2 → B3 → B4 (fondasi akun & pemilih peran).
 4. A3 → A4 → A5 (halaman kerja pengurus, sudah memakai pemilih peran).

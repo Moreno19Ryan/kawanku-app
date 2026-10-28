@@ -28,7 +28,7 @@ const tanggalPendek = (t: string) =>
 
 export default function IzinPage({ searchParams }: PageProps<"/saya/izin">) {
   return (
-    <>
+    <div className="lg:max-w-2xl">
       <Link href="/saya" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
         <ArrowLeft className="size-4" aria-hidden />
         Beranda
@@ -36,7 +36,7 @@ export default function IzinPage({ searchParams }: PageProps<"/saya/izin">) {
       <Suspense fallback={<Memuat className="mt-4 h-96" />}>
         <AjukanIzin cari={searchParams} />
       </Suspense>
-    </>
+    </div>
   );
 }
 

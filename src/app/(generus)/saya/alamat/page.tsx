@@ -20,7 +20,7 @@ const KOLOM_ALAMAT =
 
 export default function AlamatSayaPage() {
   return (
-    <>
+    <div className="lg:max-w-2xl">
       <Link href="/saya/profil" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
         <ArrowLeft className="size-4" aria-hidden />
         Profil saya
@@ -28,7 +28,7 @@ export default function AlamatSayaPage() {
       <Suspense fallback={<Memuat className="mt-4 h-96" />}>
         <AlamatSaya />
       </Suspense>
-    </>
+    </div>
   );
 }
 

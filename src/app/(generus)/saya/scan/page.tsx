@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function ScanPage() {
   return (
-    <div className="flex flex-col gap-4 pt-6">
+    <div className="flex flex-col gap-4 pt-6 lg:max-w-2xl">
       <Link href="/saya" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
         <ArrowLeft className="size-4" aria-hidden />
         Kembali
