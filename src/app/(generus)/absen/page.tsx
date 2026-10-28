@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 /** Tujuan QR layar (/absen?t=...). Bisa dibuka dari aplikasi kamera HP. */
 export default function AbsenPage({ searchParams }: PageProps<"/absen">) {
   return (
-    <div className="flex flex-col gap-4 pt-6">
+    <div className="flex flex-col gap-4 pt-6 lg:max-w-2xl">
       <h1 className="text-2xl font-semibold tracking-tight">Absen</h1>
       <Suspense fallback={<Memuat className="h-64" />}>
         <Absen cari={searchParams} />

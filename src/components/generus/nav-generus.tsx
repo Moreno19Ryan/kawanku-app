@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, ChartNoAxesColumn, House, ScanLine, UserRound } from "lucide-react";
 
-const MENU = [
+export const MENU_GENERUS = [
   { href: "/saya", label: "Beranda", icon: House },
   { href: "/saya/jadwal", label: "Jadwal", icon: CalendarDays },
   { href: "/saya/scan", label: "Scan", icon: ScanLine, utama: true },
@@ -13,11 +13,12 @@ const MENU = [
   { href: "/saya/profil", label: "Profil", icon: UserRound },
 ] as const;
 
-const aktif = (pathname: string, href: string) =>
+export const aktifGenerus = (pathname: string, href: string) =>
   href === "/saya" ? pathname === "/saya" : pathname === href || pathname.startsWith(`${href}/`);
 
 /**
- * Navigasi bawah area generus (HP), dengan tombol Scan menonjol di tengah.
+ * Navigasi bawah area generus (HP/tablet; laptop memakai MenuSampingGenerus),
+ * dengan tombol Scan menonjol di tengah.
  * Tidak tampil di halaman Ganti PIN: saat PIN awal belum diganti, menu lain
  * memang belum bisa dibuka (wajibGenerus mengarahkan kembali ke sana).
  */
@@ -40,7 +41,7 @@ function Bilah({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Menu generus"
-      className="fixed inset-x-0 bottom-0 z-20 rounded-t-[1.75rem] bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_24px_rgb(0_0_0/0.07)] backdrop-blur-lg"
+      className="fixed inset-x-0 bottom-0 z-20 rounded-t-[1.75rem] lg:hidden bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_24px_rgb(0_0_0/0.07)] backdrop-blur-lg"
     >
       <Menu pathname={pathname} />
     </nav>
@@ -50,9 +51,9 @@ function Bilah({ pathname }: { pathname: string }) {
 function Menu({ pathname }: { pathname: string }) {
   return (
     <ul className="mx-auto flex h-bottomnav max-w-lg items-stretch justify-around px-2">
-      {MENU.map((m) => {
+      {MENU_GENERUS.map((m) => {
         const Icon = m.icon;
-        const nyala = aktif(pathname, m.href);
+        const nyala = aktifGenerus(pathname, m.href);
         return (
           <li key={m.href} className="flex flex-1">
             <Link

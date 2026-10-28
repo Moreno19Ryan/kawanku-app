@@ -24,7 +24,7 @@ async function GantiPin({ cari }: { cari: Promise<Record<string, string | string
   const [generus, param] = await Promise.all([wajibGenerus({ bolehPinAwal: true }), cari]);
   const next = Array.isArray(param.next) ? param.next[0] : param.next;
   return (
-    <div className="flex flex-col gap-4 pt-6">
+    <div data-tanpa-menu className="flex flex-col gap-4 pt-6">
       {!generus.pinAwal && (
         <Link href="/saya/profil" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
           <ArrowLeft className="size-4" aria-hidden />

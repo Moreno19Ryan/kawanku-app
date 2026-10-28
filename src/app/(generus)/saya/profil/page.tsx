@@ -45,7 +45,7 @@ type Usulan = {
 
 export default function ProfilSayaPage() {
   return (
-    <>
+    <div className="lg:max-w-2xl">
       <Link href="/saya" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
         <ArrowLeft className="size-4" aria-hidden />
         Beranda
@@ -53,7 +53,7 @@ export default function ProfilSayaPage() {
       <Suspense fallback={<Memuat className="mt-4 h-96" />}>
         <ProfilSaya />
       </Suspense>
-    </>
+    </div>
   );
 }
 

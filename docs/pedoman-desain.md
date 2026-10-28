@@ -86,6 +86,19 @@ Mulai dari halaman masuk (`/masuk` & `/login`).
   yang hanya tampil di satu ukuran layar disembunyikan lewat pembungkus
   (`<div className="hidden lg:block">`), bukan `hidden` pada tombolnya.
 
+## Area jamaah versi laptop (A1b)
+
+- Laptop/PC (≥ lg): menu samping `MenuSampingGenerus` (gaya sama dengan
+  admin; info akun & keluar di `AkunGenerus`), menu bawah `NavGenerus`
+  hanya di HP. Halaman Ganti PIN (`data-tanpa-menu`) tetap tanpa menu.
+- Beranda dua kolom: kiri sambutan + kartu mengambang, kehadiran bulan
+  ini, jadwal 7 hari (bertumpuk, lebar penuh); kanan pintasan,
+  pengumuman, kehadiran terakhir, rapor, asisten, notifikasi. Di HP urutan
+  diatur `order-*` dengan pembungkus `contents`.
+- Jadwal: daftar + kartu samping ringkasan 30 hari & saklar notifikasi.
+  Formulir (profil, alamat, izin, scan, hasil absen) dibatasi
+  `lg:max-w-2xl` supaya tidak terlalu lebar.
+
 **Aturan sejak 28 Okt 2026 (Reno): setiap halaman dibuat dua versi, HP dan
 laptop/PC**; area jamaah tidak lagi dibatasi selebar HP di laptop.
 
