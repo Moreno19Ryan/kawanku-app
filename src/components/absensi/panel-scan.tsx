@@ -9,7 +9,7 @@ import { KameraQr } from "@/components/ui/kamera-qr";
 import type { HasilScan } from "@/lib/absensi/actions";
 import { bunyi, type JenisBunyi } from "@/lib/absensi/bunyi";
 import { ucapanSyukur } from "@/lib/label";
-import { jam } from "@/lib/waktu";
+import { jamDetik } from "@/lib/waktu";
 
 /** Teks besar di layar setelah scan. */
 const PESAN: Record<HasilScan["hasil"], string> = {
@@ -173,7 +173,7 @@ export function PanelScan({
                 {[
                   terakhir.nama ?? terakhir.kodeAsal,
                   terakhir.kelompok,
-                  terakhir.dicatatAt ? `tercatat pukul ${jam(terakhir.dicatatAt)}` : null,
+                  terakhir.dicatatAt ? `tercatat pukul ${jamDetik(terakhir.dicatatAt)} WIB` : null,
                   bolehLihatKeringanan && terakhir.keringanan ? "Keringanan (tanpa HP)" : null,
                 ]
                   .filter(Boolean)

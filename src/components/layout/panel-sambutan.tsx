@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { LogoPutih, PolaK } from "@/components/brand/hiasan-sambutan";
+import { JamPanel } from "@/components/waktu/jam-server";
 
 /**
  * Panel biru halaman sambutan (Beranda admin & generus, docs/pedoman-desain.md):
@@ -7,16 +8,20 @@ import { LogoPutih, PolaK } from "@/components/brand/hiasan-sambutan";
  * sendiri (logo + `kanan`); laptop (`lg`, admin): kartu membulat, kepala
  * disembunyikan karena logo & akun sudah ada di menu samping. Halaman yang
  * memakainya ditandai `data-sambutan` supaya kepala biasa di layout hilang.
+ * `jam`: jam server realtime (HP: pil di bawah salam; laptop: besar di kanan).
  */
 export function PanelSambutan({
   kanan,
   kepalaLaptop = true,
+  jam = false,
   children,
 }: {
   /** Tombol di kanan atas (tema, akun/keluar), berwarna putih. */
   kanan?: ReactNode;
   /** false: kepala (logo + kanan) disembunyikan di laptop. */
   kepalaLaptop?: boolean;
+  /** Tampilkan jam server realtime. */
+  jam?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -32,7 +37,25 @@ export function PanelSambutan({
         </div>
         {kanan && <div className="flex items-center gap-1">{kanan}</div>}
       </div>
-      {children && <div className={`kk-muncul relative mt-6 ${kepalaLaptop ? "" : "lg:mt-0"}`}>{children}</div>}
+      {children && (
+        <div
+          className={`kk-muncul relative mt-6 ${kepalaLaptop ? "" : "lg:mt-0"} ${jam ? "lg:flex lg:items-start lg:justify-between lg:gap-6" : ""}`}
+        >
+          <div className="min-w-0">
+            {children}
+            {jam && (
+              <div className="mt-4 lg:hidden">
+                <JamPanel tata="pil" />
+              </div>
+            )}
+          </div>
+          {jam && (
+            <div className="hidden shrink-0 lg:block">
+              <JamPanel tata="besar" />
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

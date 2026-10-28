@@ -77,7 +77,8 @@ export async function updateSession(request: NextRequest) {
 
 /** Rute yang boleh dibuka tanpa sesi. */
 // /api/notifikasi/kirim dipanggil database (pg_net) dan dijaga rahasia bersama sendiri.
-const RUTE_PUBLIK = ["/login", "/masuk", "/keluar", "/api/notifikasi/kirim"];
+// /api/waktu hanya berisi jam server (untuk jam realtime).
+const RUTE_PUBLIK = ["/login", "/masuk", "/keluar", "/api/notifikasi/kirim", "/api/waktu"];
 
 /** Rute khusus akun generus (tanpa sesi → /masuk, bukan /login). */
 const AREA_GENERUS = ["/saya", "/absen"];

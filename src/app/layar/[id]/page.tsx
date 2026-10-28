@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { LayarQr } from "@/components/absensi/layar-qr";
 import { BrandMark } from "@/components/layout/brand-mark";
+import { JamLayar } from "@/components/waktu/jam-server";
+import { jamAbsensi } from "@/lib/absensi/jendela";
 import { bolehCatatSesi, getAksesAbsensi, KOLOM_SESI, type Sesi } from "@/lib/absensi/akses";
 import { hadirLayar, tokenLayar } from "@/lib/absensi/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -35,7 +37,7 @@ async function Layar({ params }: { params: Promise<{ id: string }> }) {
   if (!bolehCatatSesi(akses, sesi)) return <p className="text-center">Mohon maaf, akun ini tidak berwenang mencatat di sesi ini.</p>;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <Link href={`/absensi/${sesi.id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
           <ArrowLeft className="size-4" aria-hidden />
@@ -43,11 +45,18 @@ async function Layar({ params }: { params: Promise<{ id: string }> }) {
         </Link>
         <BrandMark height={28} />
       </div>
-      <div className="text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">{sesi.nama}</h1>
-        <p className="text-muted">{tanggalJam(sesi.mulai)}</p>
-      </div>
-      <LayarQr sesiId={sesi.id} ambil={tokenLayar.bind(null, sesi.id)} hitung={hadirLayar.bind(null, sesi.id)} />
+      <LayarQr
+        sesiId={sesi.id}
+        ambil={tokenLayar.bind(null, sesi.id)}
+        hitung={hadirLayar.bind(null, sesi.id)}
+        judul={
+          <>
+            <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">{sesi.nama}</h1>
+            <p className="mt-1 text-muted lg:text-lg">{tanggalJam(sesi.mulai)}</p>
+          </>
+        }
+        jam={<JamLayar {...jamAbsensi(sesi)} />}
+      />
     </div>
   );
 }
