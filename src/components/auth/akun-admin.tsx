@@ -1,6 +1,6 @@
 import { LogOut } from "lucide-react";
 import { keluar } from "@/lib/auth/actions";
-import { labelPenugasan, wajibAdmin } from "@/lib/auth/admin";
+import { ringkasPeran, wajibAdmin } from "@/lib/auth/admin";
 
 /**
  * Info admin yang login + tombol keluar. Sekaligus penjaga area admin:
@@ -9,7 +9,7 @@ import { labelPenugasan, wajibAdmin } from "@/lib/auth/admin";
  */
 export async function AkunAdmin({ ringkas = false, terang = false }: { ringkas?: boolean; terang?: boolean }) {
   const admin = await wajibAdmin();
-  const peran = admin.penugasan.map(labelPenugasan).join(", ");
+  const peran = ringkasPeran(admin.penugasan);
   const inisial = admin.nama.trim().charAt(0).toUpperCase();
 
   const tombolKeluar = (

@@ -209,3 +209,21 @@ export function pengelolaAkun(admin: AdminSaatIni): string {
 export function labelPenugasan(p: PenugasanAdmin): string {
   return p.kelompok ? `${p.peranNama} · ${p.kelompok.nama}` : p.peranNama;
 }
+
+/**
+ * Ringkasan semua peran untuk sambutan & menu akun: peran yang sama di
+ * beberapa kelompok digabung ("Admin Desa, Admin Kelompok · 4 kelompok").
+ * Rincian lengkap tetap di Pengaturan → Akun.
+ */
+export function ringkasPeran(penugasan: PenugasanAdmin[]): string {
+  const kelompok = new Map<string, (string | null)[]>();
+  for (const p of penugasan) {
+    kelompok.set(p.peranNama, [...(kelompok.get(p.peranNama) ?? []), p.kelompok?.nama ?? null]);
+  }
+  return [...kelompok]
+    .map(([nama, daftar]) => {
+      if (daftar.includes(null)) return nama;
+      return daftar.length === 1 ? `${nama} · ${daftar[0]}` : `${nama} · ${daftar.length} kelompok`;
+    })
+    .join(", ");
+}

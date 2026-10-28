@@ -15,7 +15,7 @@ import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSaranAdmin } from "@/lib/asisten/data";
-import { labelPenugasan, type AdminSaatIni } from "@/lib/auth/admin";
+import { ringkasPeran, type AdminSaatIni } from "@/lib/auth/admin";
 import { hariIniWib } from "@/lib/kegiatan/jadwal";
 import {
   nilaiKesehatan,
@@ -105,7 +105,7 @@ export async function BerandaPengembang({ admin }: { admin: AdminSaatIni }) {
 
   return (
     <TataBeranda
-      panel={<PanelAdmin nama={admin.nama} peran={admin.penugasan.map(labelPenugasan).join(" · ")} kalimat={kalimat} />}
+      panel={<PanelAdmin nama={admin.nama} peran={ringkasPeran(admin.penugasan)} kalimat={kalimat} />}
       mengambang={
         <Card className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-3">
