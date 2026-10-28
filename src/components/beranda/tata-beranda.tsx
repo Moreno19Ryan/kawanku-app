@@ -55,6 +55,7 @@ export function PanelAdmin({ nama, peran, kalimat }: { nama: string; peran: stri
   return (
     <PanelSambutan
       kepalaLaptop={false}
+      jam
       kanan={
         <>
           <TombolTema className="text-white! hover:bg-white/15!" />

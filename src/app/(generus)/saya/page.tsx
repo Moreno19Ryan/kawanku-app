@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CalendarClock, CalendarX, ChevronRight, FileText, LogOut, MapPin, ScanLine, UserRound } from "lucide-react";
 import { PanelSambutan } from "@/components/layout/panel-sambutan";
+import { AksiJadwal, LabelJadwal } from "@/components/waktu/jam-server";
+import { jamAbsensi } from "@/lib/absensi/jendela";
 import { TombolTema } from "@/components/tema/tombol-tema";
 import { keluarGenerus } from "@/lib/generus/actions";
 import { KartuKehadiran } from "@/components/generus/kartu-kehadiran";
@@ -85,6 +87,7 @@ async function BerandaGenerus() {
   const sekarang = new Date().toISOString();
   const berikut = jadwal.find((k) => k.status === "terjadwal" && k.selesai > sekarang);
   const berlangsung = berikut && berikut.mulai <= sekarang;
+  const waktuBerikut = berikut && jamAbsensi(berikut);
   const namaKelompok = new Map([[generus.jamaah.kelompokId, generus.jamaah.kelompok ?? "Kelompok"]]);
   const sapa = sambutan({
     catatan: kehadiran,
@@ -93,12 +96,15 @@ async function BerandaGenerus() {
   // Pekan pertama tiap bulan: ajakan membuka rapor bulan lalu.
   const rapor = Number(hariIni.slice(8, 10)) <= 7 ? raporBulan(kehadiran, bulanLalu()) : null;
 
-  const kartuBerikut = berikut && (
+  const kartuBerikut = berikut && waktuBerikut && (
     <Card className={`flex flex-col gap-3 ${berlangsung ? "ring-2 ring-primary" : ""}`}>
-      <p className="flex items-center gap-2 text-sm font-medium text-primary">
-        <CalendarClock className="size-4" aria-hidden />
-        {berlangsung ? "Sedang berlangsung" : `Berikutnya · ${waktuRelatif(berikut.mulai)}`}
-      </p>
+      <LabelJadwal
+        mulai={berikut.mulai}
+        buka={waktuBerikut.buka}
+        tutup={waktuBerikut.tutup}
+        label={berlangsung ? "Sedang berlangsung" : `Berikutnya · ${waktuRelatif(berikut.mulai)}`}
+        ikon={<CalendarClock className="size-4" aria-hidden />}
+      />
       <div>
         <p className="text-lg font-semibold">{berikut.kegiatan.nama}</p>
         <p className="text-sm text-muted">{tanggalJam(berikut.mulai)}</p>
@@ -116,20 +122,26 @@ async function BerandaGenerus() {
           </span>
         )}
       </div>
-      {berlangsung ? (
-        <Link href="/saya/scan" className={buttonClass("utama", "h-14 text-base")}>
-          <ScanLine className="size-5" aria-hidden />
-          Scan QR absen
-        </Link>
-      ) : (
-        <Link
-          href={`/saya/izin?k=${berikut.kegiatan.id}&t=${berikut.tanggal}`}
-          className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-medium text-primary"
-        >
-          <CalendarX className="size-4" aria-hidden />
-          Berhalangan? Ajukan izin
-        </Link>
-      )}
+      <AksiJadwal
+        buka={waktuBerikut.buka}
+        tutup={waktuBerikut.tutup}
+        awalTerbuka={sekarang >= waktuBerikut.buka && sekarang <= waktuBerikut.tutup}
+        terbuka={
+          <Link href="/saya/scan" className={buttonClass("utama", "h-14 text-base")}>
+            <ScanLine className="size-5" aria-hidden />
+            Scan QR absen
+          </Link>
+        }
+        tertutup={
+          <Link
+            href={`/saya/izin?k=${berikut.kegiatan.id}&t=${berikut.tanggal}`}
+            className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-medium text-primary"
+          >
+            <CalendarX className="size-4" aria-hidden />
+            Berhalangan? Ajukan izin
+          </Link>
+        }
+      />
     </Card>
   );
   const kehadiranBulanIni = <KartuKehadiran ringkasan={ringkasan} />;
@@ -142,7 +154,7 @@ async function BerandaGenerus() {
     <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6">
       <div className="contents lg:flex lg:flex-col lg:gap-6">
         <div className="order-1 flex flex-col lg:order-none">
-          <PanelSambutan kanan={<KananPanel />} kepalaLaptop={false}>
+          <PanelSambutan kanan={<KananPanel />} kepalaLaptop={false} jam>
             <p className="text-sm text-white/80 lg:text-base">Assalamu&apos;alaikum · {sapa.salam}</p>
             <h1 className="mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight lg:text-[2rem]">
               {generus.jamaah.panggilan ?? generus.jamaah.nama}

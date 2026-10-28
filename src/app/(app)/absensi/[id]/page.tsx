@@ -7,6 +7,7 @@ import { AbsensiBelumMenyala } from "@/components/absensi/belum-menyala";
 import { PanelScan } from "@/components/absensi/panel-scan";
 import { PilihStatus } from "@/components/absensi/pilih-status";
 import { PageHeader } from "@/components/layout/page-header";
+import { JamSesi } from "@/components/waktu/jam-server";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -158,9 +159,7 @@ async function DetailSesi({ params, cari }: { params: Promise<{ id: string }>; c
               Rekap
             </Link>
             {sesi.hanya_generus && <Badge nada="utama">Generus saja</Badge>}
-            <Badge nada={waktuScan ? "netral" : "sukses"}>
-              {waktuScan === "belum_waktunya" ? "Belum terbuka" : waktuScan ? "Tertutup" : "Terbuka"}
-            </Badge>
+            <JamSesi buka={waktuAbsensi.buka} tutup={waktuAbsensi.tutup} ditutup={sesi.ditutup} />
           </div>
         }
       />

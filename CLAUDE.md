@@ -268,6 +268,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   untuk perilaku: "Klik" (laptop/PC) vs "Ketuk" (HP/tablet), sebelum hidrasi
   "Pilih"; laptop/PC: isian pertama langsung difokuskan, kamera depan
   seperti cermin; HP/tablet: tanpa fokus otomatis.
+- Jam realtime (Reno, 28 Okt 2026, `docs/pedoman-desain.md` A1c): jam &
+  tanggal "sekarang" di Beranda, QR layar, sesi absensi, pemindai, dan hasil
+  absen selalu jam server WIB (`useJamServer()` & komponen di
+  `src/components/waktu/jam-server.tsx`, `/api/waktu`), bukan jam perangkat.
 - `usePathname()` di komponen klien yang dirender di luar halaman (sidebar,
   bottom nav) harus di dalam `<Suspense>`, karena di rute dinamis path baru
   diketahui saat runtime.

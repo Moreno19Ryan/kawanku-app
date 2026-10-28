@@ -61,3 +61,25 @@ export function tanggalPanjang(iso: string): string {
     new Date(`${iso}T00:00:00Z`),
   );
 }
+
+/** "19.24.08" — jam, menit, detik WIB. */
+export function jamDetik(waktu: string | number): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+    timeZone: ZONA,
+  }).format(new Date(waktu));
+}
+
+/** "Rabu, 28 Oktober 2026" (WIB). */
+export function hariTanggal(waktu: string | number): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: ZONA,
+  }).format(new Date(waktu));
+}

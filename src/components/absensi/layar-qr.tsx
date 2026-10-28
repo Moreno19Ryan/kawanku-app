@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import QRCode from "qrcode";
 import { Maximize } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
@@ -19,8 +19,14 @@ export function LayarQr({
   sesiId,
   ambil,
   hitung,
+  judul,
+  jam,
 }: {
   sesiId: string;
+  /** Nama & waktu pertemuan (HP: di atas QR; laptop: kolom kanan). */
+  judul: ReactNode;
+  /** Jam server + jendela absensi (JamLayar). */
+  jam: ReactNode;
   ambil: () => ReturnType<typeof tokenLayar>;
   hitung: () => ReturnType<typeof hadirLayar>;
 }) {
@@ -86,8 +92,9 @@ export function LayarQr({
   }, [sesiId, hitung]);
 
   return (
-    <div className="flex flex-col items-center gap-5">
-      <div className="flex aspect-square w-[min(80vw,62vh)] items-center justify-center rounded-card bg-paper p-4 text-paper-fg">
+    <div className="flex flex-col items-center gap-5 lg:flex-row lg:gap-12">
+      <div className="text-center lg:hidden">{judul}</div>
+      <div className="flex aspect-square w-[min(80vw,62vh)] shrink-0 lg:w-[min(46vw,74vh)] items-center justify-center rounded-card bg-paper p-4 text-paper-fg">
         {status === "ok" && svg ? (
           // SVG dibuat di browser dari token server (bukan input pengguna).
           <span className="block size-full [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: svg }} />
@@ -101,26 +108,30 @@ export function LayarQr({
           </p>
         )}
       </div>
-      <p className="text-center text-lg">
-        Buka <span className="font-semibold">KawanKu</span> di HP → <span className="font-semibold">Scan QR absen</span>
-      </p>
-      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-muted">
-        <span>QR berganti dalam {sisa} detik</span>
-        <span className="font-semibold text-success" aria-live="polite">
-          {/* key: animasi "naik" setiap angka berubah */}
-          <span key={hadir} className="kk-angka-naik inline-block tabular-nums">
-            {hadir}
-          </span>{" "}
-          hadir
-        </span>
-        <button
-          type="button"
-          onClick={() => void document.documentElement.requestFullscreen?.()}
-          className={buttonClass("netral", "h-9 px-4")}
-        >
-          <Maximize className="size-4" aria-hidden />
-          Layar penuh
-        </button>
+      <div className="flex w-full max-w-xl flex-col items-center gap-5 lg:items-start">
+        <div className="hidden lg:block">{judul}</div>
+        <div className="w-full">{jam}</div>
+        <p className="text-center text-lg lg:text-left lg:text-xl">
+          Buka <span className="font-semibold">KawanKu</span> di HP → <span className="font-semibold">Scan QR absen</span>
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-muted lg:justify-start">
+          <span>QR berganti dalam {sisa} detik</span>
+          <span className="font-semibold text-success" aria-live="polite">
+            {/* key: animasi "naik" setiap angka berubah */}
+            <span key={hadir} className="kk-angka-naik inline-block tabular-nums">
+              {hadir}
+            </span>{" "}
+            hadir
+          </span>
+          <button
+            type="button"
+            onClick={() => void document.documentElement.requestFullscreen?.()}
+            className={buttonClass("netral", "h-9 px-4")}
+          >
+            <Maximize className="size-4" aria-hidden />
+            Layar penuh
+          </button>
+        </div>
       </div>
     </div>
   );

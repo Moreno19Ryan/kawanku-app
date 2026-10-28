@@ -7,7 +7,7 @@ import { buttonClass } from "@/components/ui/button";
 import { bunyi } from "@/lib/absensi/bunyi";
 import { absen, type HasilAbsen } from "@/lib/generus/actions";
 import { ucapanSyukur } from "@/lib/label";
-import { jam } from "@/lib/waktu";
+import { hariTanggal, jamDetik } from "@/lib/waktu";
 
 const PESAN: Record<HasilAbsen["hasil"], string> = {
   tercatat: "Sudah tercatat hadir",
@@ -63,12 +63,19 @@ export function HasilAbsen({ token }: { token: string }) {
         <p className="text-xl font-semibold">
           {hasil.hasil === "tercatat" ? `${ucapanSyukur(hasil.jenisKelamin)}, sudah tercatat hadir` : PESAN[hasil.hasil]}
         </p>
-        {(hasil.sesi || hasil.dicatat_at) && (
-          <p className="text-sm">
-            {[hasil.sesi, hasil.dicatat_at && ok ? `tercatat pukul ${jam(hasil.dicatat_at)}` : null]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
+        {ok && hasil.dicatat_at ? (
+          // Jam dari catatan absensi di database (bukan jam perangkat), sama dengan rekap admin.
+          <>
+            <p className="mt-1 text-sm">Tercatat pukul</p>
+            <p className="text-[2.75rem] leading-none font-semibold tracking-tight tabular-nums">
+              {jamDetik(hasil.dicatat_at)} <span className="text-lg">WIB</span>
+            </p>
+            <p className="text-sm">
+              {[hariTanggal(hasil.dicatat_at), hasil.sesi].filter(Boolean).join(" · ")}
+            </p>
+          </>
+        ) : (
+          hasil.sesi && <p className="text-sm">{hasil.sesi}</p>
         )}
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">

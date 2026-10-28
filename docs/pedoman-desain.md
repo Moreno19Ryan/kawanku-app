@@ -99,6 +99,20 @@ Mulai dari halaman masuk (`/masuk` & `/login`).
   Formulir (profil, alamat, izin, scan, hasil absen) dibatasi
   `lg:max-w-2xl` supaya tidak terlalu lebar.
 
+## Jam server realtime (A1c)
+
+- Semua jam & tanggal "sekarang" mengikuti **jam server (WIB)**, bukan jam
+  perangkat: `src/components/waktu/jam-server.tsx` mengukur selisih lewat
+  `/api/waktu`, lalu jam berjalan tiap detik (sinkron ulang tiap 10 menit &
+  saat tab dibuka lagi). Sebelum tersinkron tampil "--.--".
+- Tempat: panel sambutan Beranda (`PanelSambutan jam`; HP pil, laptop jam
+  besar di kanan), kartu "Berikutnya" generus (`LabelJadwal`/`AksiJadwal`:
+  tombol Scan muncul sendiri saat absensi terbuka), QR layar (`JamLayar`,
+  dua kolom di laptop), kepala sesi absensi (`JamSesi`), pemindai
+  (`JamRingkas` + `PeringatanSelisihJam` bila jam perangkat beda > 1 menit),
+  hasil absen & hasil scan kartu ("Tercatat pukul 19.24.08 WIB", dari catatan
+  database).
+
 **Aturan sejak 28 Okt 2026 (Reno): setiap halaman dibuat dua versi, HP dan
 laptop/PC**; area jamaah tidak lagi dibatasi selebar HP di laptop.
 
