@@ -73,6 +73,22 @@ Mulai dari halaman masuk (`/masuk` & `/login`).
 - Pengumuman di Beranda tampil di bawah kartu Hari ini (sama dengan generus);
   di halaman admin lain tetap di atas isi halaman.
 
+## Beranda pengembang (A1)
+
+- Kerangka sama dengan Beranda admin (`TataBeranda`, `PanelAdmin`,
+  `DaftarPintasan`, `DaftarPerhatian` di `src/components/beranda/`).
+- Panel: kalimat keadaan sistem; kartu mengambang **Kesehatan sistem**
+  (`ringkasKesehatan()`), pintasan Panel pengembang (+ angka galat), Bantuan
+  akun, Jejak aktivitas, Salin laporan; Perlu perhatian: galat, tugas,
+  cadangan, notifikasi, ruang database, permintaan NIK/KK, perangkat
+  cadangan verifikasi dua langkah; angka sistem di bawahnya.
+- **Catatan teknis**: `buttonClass()` memakai `inline-flex`, jadi tombol
+  yang hanya tampil di satu ukuran layar disembunyikan lewat pembungkus
+  (`<div className="hidden lg:block">`), bukan `hidden` pada tombolnya.
+
+**Aturan sejak 28 Okt 2026 (Reno): setiap halaman dibuat dua versi, HP dan
+laptop/PC**; area jamaah tidak lagi dibatasi selebar HP di laptop.
+
 **Aturan sejak tahap 3 (Reno, 27 Okt 2026): setiap tahap redesign
 mencakup area admin dan area jamaah sekaligus**, supaya tampilan tidak
 berbeda antarakun.
@@ -81,5 +97,6 @@ berbeda antarakun.
 
 1. Halaman masuk (generus & admin). Selesai.
 2. Beranda generus & menu bawah. Selesai.
-3. Beranda admin & menu admin. ← tahap ini
+3. Beranda admin & menu admin. Selesai.
+3b. Beranda pengembang (A1, `docs/peta-jalan.md`). ← tahap ini
 4. Halaman kerja (Jamaah, Absensi, Kegiatan, Pengaturan), satu per satu.

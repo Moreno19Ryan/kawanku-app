@@ -21,6 +21,11 @@ menunggu **"OK, jalankan"**. Status diperbarui di sini setiap kali selesai.
 5. Setiap tahap redesign mencakup **area admin dan area jamaah sekaligus**.
 6. **Akun caberawit dibuat otomatis** saat pembagian rapor / pergantian
    semester, bila anak sudah selesai dari caberawit (lihat Tahap D).
+7. **Semua tampilan wajib dua versi: HP dan laptop/PC.** Tidak ada lagi
+   halaman yang di laptop hanya tampil seukuran HP (area generus saat ini).
+   Setiap mockup & PR menyertakan keduanya.
+8. **Orang tua tetap memantau anaknya yang generus** (setelah caberawit:
+   pra remaja dan seterusnya), walaupun anak sudah punya akun sendiri.
 
 ## Prinsip kerja (Reno, 28 Okt 2026)
 
@@ -41,6 +46,7 @@ dengan teliti sebelum dipakai banyak orang:
 | Langkah | Isi | Hasil |
 | --- | --- | --- |
 | A1 | **Beranda pengembang** | Panel sambutan berisi keadaan sistem ("Alhamdulillah, semua sistem normal" / "Ada 2 galat baru"); pintasan khusus pengembang (Panel pengembang, Bantuan akun, Jejak aktivitas, Salin laporan masalah); Perlu perhatian: galat baru, tugas otomatis bermasalah, cadangan terlambat. |
+| A1b | **Area jamaah versi laptop** | Kerangka area jamaah (generus) untuk laptop/PC: menu samping seperti admin, Beranda dua kolom; halaman jamaah lain ikut melebar dengan rapi. Mockup dulu. |
 | A2 | **Pengaturan & Panel pengembang** | Halaman kerja pertama dengan pola baru: judul besar, kartu per bagian, aksi utama satu per layar, nyaman di HP. |
 | A3 | **Jamaah** (daftar, detail, tambah/ubah, keluarga, Perlu dicek, kenaikan kelas) | Pola halaman kerja yang sama. |
 | A4 | **Absensi** (sesi, scan, rekap, laporan, izin, kartu, akun) | Pola halaman kerja yang sama. |
@@ -60,14 +66,14 @@ kode → uji di HP & laptop → PR → "OK, jalankan" → gabung.
 | B4 | **Pemilih peran ("Masuk sebagai")** | Muncul setelah masuk bila punya lebih dari satu: Jamaah · Admin Kelompok 1 · Admin Desa · dst. Bisa berganti kapan saja dari menu akun; pilihan terakhir diingat di perangkat ini. Tampilan & data mengikuti peran yang dipilih. |
 | B5 | **Sasaran kegiatan per kategori (kenaan)** | Sekarang hanya "khusus generus / semua". Diperluas: kegiatan menyebut kategori yang wajib ikut (mis. remaja, dewasa, lansia). Dipakai untuk jadwal, absen, pertemuan terlewat, dan laporan. |
 | B6 | **Absen untuk semua jamaah, termasuk pengurus** | QR layar & kartu QR untuk semua kategori yang kenaan. Pengurus yang sedang memegang absensi tetap bisa mencatat dirinya sendiri hadir. |
-| B7 | **Akun orang tua untuk caberawit** | Dari data keluarga (hubungan orang tua – anak): orang tua melihat jadwal, kehadiran, dan rapor tiap anak caberawit; mengabsenkan anak lewat QR layar ("Absen untuk: Ahmad, Fatimah"); mengajukan izin/sakit anak. Kartu QR anak tetap bisa dipakai. |
+| B7 | **Akun orang tua untuk caberawit (dan pemantauan anak generus)** | Dari data keluarga (hubungan orang tua – anak): orang tua melihat jadwal, kehadiran, dan rapor tiap anak caberawit; mengabsenkan anak lewat QR layar ("Absen untuk: Ahmad, Fatimah"); mengajukan izin/sakit anak. Kartu QR anak tetap bisa dipakai. Anak yang sudah generus (punya akun sendiri) tetap terpantau orang tuanya: jadwal, kehadiran, rapor. |
 | B8 | **Tampilan per kategori** | Beranda jamaah menyesuaikan kategori. Lansia: pilihan tampilan sederhana (huruf lebih besar, tombol lebih sedikit). Sapaan sesuai keputusan 4. |
 | B9 | **Pembuatan akun massal & bahan pengurus** | Buat akun per kelompok sekaligus, cetak slip info masuk, bantuan lupa PIN, panduan singkat untuk jamaah dan pengurus. |
 | B10 | **Uji coba bertahap** | Kelompok 1 dulu per kategori (mis. remaja → dewasa → lansia & orang tua caberawit), dievaluasi, baru seluruh desa. |
 
 Urutan yang diusulkan:
 
-1. A1 → A2 (cepat, langsung terasa untuk pengembang).
+1. A1 → A1b → A2.
 2. B1 (dokumen) sambil menunggu jawaban pengurus.
 3. B2 → B3 → B4 (fondasi akun & pemilih peran).
 4. A3 → A4 → A5 (halaman kerja pengurus, sudah memakai pemilih peran).
@@ -112,7 +118,7 @@ Dirancang setelah Tahap B berjalan; rinciannya dibahas bersama pengurus.
    bersama sulit ditelusuri (siapa mengubah apa) dan berisiko bila kata
    sandinya tersebar.
 4. ~~Batas caberawit~~ (dijawab Reno: akun dibuat otomatis saat pembagian
-   rapor / pergantian semester, Tahap D5). Sisa pertanyaan: setelah anak
-   punya akun sendiri, apakah orang tua masih bisa memantaunya?
+   rapor / pergantian semester, Tahap D5; orang tua tetap bisa memantau
+   anaknya yang generus, keputusan 8).
 5. **Anak tanpa orang tua di data keluarga** (mis. tinggal dengan wali).
    Usul: wali yang tercatat di keluarga memegang perannya.

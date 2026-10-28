@@ -2,16 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CalendarDays, CalendarX, ChartColumn, ChevronRight, Plus, QrCode, UserPlus, Users } from "lucide-react";
+import {
+  Angka,
+  DaftarPerhatian,
+  DaftarPintasan,
+  PanelAdmin,
+  TataBeranda,
+  type Perhatian,
+  type Pintasan,
+} from "@/components/beranda/tata-beranda";
 import { KartuHariIni } from "@/components/absensi/kartu-hari-ini";
-import { AkunAdmin } from "@/components/auth/akun-admin";
 import { PanelSambutan } from "@/components/layout/panel-sambutan";
-import { BannerPengumuman } from "@/components/sistem/banner-pengumuman";
-import { TombolTema } from "@/components/tema/tombol-tema";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { labelPenugasan } from "@/lib/auth/admin";
+import { labelPenugasan, punyaIzin } from "@/lib/auth/admin";
+import { BerandaPengembang } from "./beranda-pengembang";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
 import { getAksesKegiatan } from "@/lib/kegiatan/akses";
@@ -68,49 +75,6 @@ export default function DashboardPage() {
   );
 }
 
-function sapaan(): string {
-  const jam = Number(
-    new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Asia/Jakarta" }).format(
-      new Date(),
-    ),
-  );
-  if (jam < 11) return "Selamat pagi";
-  if (jam < 15) return "Selamat siang";
-  if (jam < 18) return "Selamat sore";
-  return "Selamat malam";
-}
-
-/** Angka utama (stat tile). */
-function Angka({
-  label,
-  nilai,
-  keterangan,
-  href,
-}: {
-  label: string;
-  nilai: number;
-  keterangan?: string;
-  href?: string;
-}) {
-  const isi = (
-    <>
-      <p className="text-sm text-muted">{label}</p>
-      <p className="text-3xl font-semibold tracking-tight tabular-nums">{nilai.toLocaleString("id-ID")}</p>
-      {keterangan && <p className="text-xs text-muted">{keterangan}</p>}
-    </>
-  );
-  return href ? (
-    <Link
-      href={href}
-      className="flex flex-col gap-1.5 rounded-card bg-surface p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-colors duration-200 ease-oneui hover:bg-surface-muted sm:p-6"
-    >
-      {isi}
-    </Link>
-  ) : (
-    <Card className="flex flex-col gap-1.5">{isi}</Card>
-  );
-}
-
 /**
  * Daftar batang horizontal satu warna (satu seri → tanpa legenda; judul kartu
  * menamainya). Setiap baris tautan ke daftar jamaah terfilter, dengan label &
@@ -157,15 +121,6 @@ function DaftarBatang({
   );
 }
 
-/** HP: semua pintasan dalam satu baris (jumlahnya sesuai wewenang). */
-const KOLOM_PINTASAN: Record<number, string> = {
-  1: "grid-cols-2",
-  2: "grid-cols-2",
-  3: "grid-cols-3",
-  4: "grid-cols-4",
-  5: "grid-cols-5",
-};
-
 type RingkasanHari = { pertemuan: number; tanpa_pemateri: number; izin: number };
 
 async function Ringkasan() {
@@ -178,6 +133,8 @@ async function Ringkasan() {
   ]);
   if (!akses) return null;
   const { admin } = akses;
+  // Pengembang (sistem.kelola): Beranda tentang keadaan aplikasi.
+  if (punyaIzin(admin, "sistem.kelola")) return <BerandaPengembang admin={admin} />;
   const jamaahTerbuka = akses.kelompokLihat.length > 0;
 
   const [{ data: hari }, { data }, periksa, usulan, perubahan, belumNaik] = await Promise.all([
@@ -211,29 +168,8 @@ async function Ringkasan() {
         .join(", ") + "."
     : null;
 
-  const panel = (
-    <PanelSambutan
-      kepalaLaptop={false}
-      kanan={
-        <>
-          <TombolTema className="text-white! hover:bg-white/15!" />
-          <Suspense fallback={<div className="size-8" />}>
-            <AkunAdmin ringkas terang />
-          </Suspense>
-        </>
-      }
-    >
-      <p className="text-sm text-white/80 lg:text-base">Assalamu&apos;alaikum · {sapaan()}</p>
-      <h1 className="mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight lg:text-[2rem]">
-        {admin.nama.split(" ")[0]}
-      </h1>
-      <p className="mt-1 text-sm text-white/80 lg:text-base">{admin.penugasan.map(labelPenugasan).join(" · ")}</p>
-      {kalimat && <p className="mt-4 rounded-card bg-white/15 px-4 py-3 text-sm font-medium lg:inline-block">{kalimat}</p>}
-    </PanelSambutan>
-  );
-
   // Pintasan hanya untuk yang memang berwenang.
-  const pintasan = [
+  const pintasan: Pintasan[] = [
     akses.kelompokTambah.length > 0 && { href: "/jamaah/baru", label: "Tambah jamaah", ikon: UserPlus },
     aksesAbsensi && aksesAbsensi.kelompokKelola.length > 0 && {
       href: "/absensi/izin",
@@ -247,7 +183,7 @@ async function Ringkasan() {
   ].filter((p) => !!p);
 
   const jumlahPerluDicek = periksa?.perJamaah.size ?? 0;
-  const perhatian = [
+  const perhatian: Perhatian[] = [
     jumlahPerluDicek > 0 && { href: "/jamaah/periksa", teks: `${jumlahPerluDicek} data jamaah perlu dicek`, penting: true },
     usulan.length > 0 && { href: "/jamaah/periksa", teks: `${usulan.length} laporan data salah dari jamaah`, penting: true },
     perubahan.length > 0 && { href: "/jamaah/periksa", teks: `${perubahan.length} generus memperbarui datanya` },
@@ -262,86 +198,25 @@ async function Ringkasan() {
   ].filter((p) => !!p);
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_1fr] lg:items-start">
-      <div className="flex flex-col">
-        {panel}
-        {/* Kartu yang mengambang di tepi bawah panel. */}
-        <div className="kk-muncul-2 relative -mt-16 sm:mx-4 lg:-mt-20 lg:mx-6 [&>*]:shadow-[0_8px_28px_rgb(0_0_0/0.10)]">
-          <Suspense fallback={<Skeleton className="h-40" />}>
-            <KartuHariIni />
-          </Suspense>
-        </div>
-        {/* Pengumuman di bawah kartu, sama dengan Beranda generus. */}
-        <div className="mt-4 empty:hidden [&>div]:mt-0">
-          <Suspense fallback={null}>
-            <BannerPengumuman />
-          </Suspense>
-        </div>
-      </div>
-
-      <aside className="flex flex-col gap-4 sm:gap-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-6">
-        {pintasan.length > 0 && (
-          <nav
-            aria-label="Pintasan"
-            className={`grid gap-2 lg:grid-cols-2 lg:gap-3 lg:rounded-card lg:bg-surface lg:p-4 ${KOLOM_PINTASAN[pintasan.length] ?? "grid-cols-4"}`}
-          >
-            {pintasan.map(({ href, label, ikon: Ikon, ...p }) => (
-              <Link
-                key={href}
-                href={href}
-                className="relative flex flex-col items-center gap-1.5 rounded-card bg-surface px-1 py-3 text-center text-xs font-medium transition-colors duration-200 ease-oneui hover:bg-surface-muted lg:items-start lg:bg-bg lg:p-3.5 lg:text-left lg:text-sm"
-              >
-                {"angka" in p && (p.angka ?? 0) > 0 && (
-                  <span className="absolute top-1.5 right-2 flex h-5 min-w-5 items-center justify-center rounded-pill bg-warning px-1.5 text-[0.7rem] font-bold text-white">
-                    {p.angka}
-                  </span>
-                )}
-                <span className="flex size-10 items-center justify-center rounded-pill bg-primary-soft text-primary">
-                  <Ikon className="size-[1.125rem]" aria-hidden />
-                </span>
-                {label}
-              </Link>
-            ))}
-          </nav>
-        )}
-
-        <section className="flex flex-col gap-2 lg:rounded-card lg:bg-surface lg:p-5">
-          <h2 className="px-1 text-sm font-semibold text-muted lg:px-0 lg:text-lg lg:text-fg">Perlu perhatian</h2>
-          {perhatian.length === 0 ? (
-            <p className="rounded-card bg-surface px-5 py-4 text-sm text-muted lg:p-0">
-              Alhamdulillah, tidak ada yang perlu ditindaklanjuti.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border overflow-hidden rounded-card bg-surface lg:rounded-none">
-              {perhatian.map((p) => (
-                <li key={p.teks}>
-                  <Link
-                    href={p.href}
-                    className="flex min-h-13 items-center gap-3 px-5 py-3 text-sm transition-colors duration-200 ease-oneui hover:bg-surface-muted lg:px-0 lg:hover:bg-transparent lg:hover:text-primary"
-                  >
-                    <span
-                      className={`size-2 shrink-0 rounded-pill ${"penting" in p && p.penting ? "bg-warning" : "bg-primary"}`}
-                      aria-hidden
-                    />
-                    <span className="min-w-0 flex-1">{p.teks}</span>
-                    <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <Suspense fallback={<Skeleton className="h-28" />}>
-          <AsistenAdmin />
+    <TataBeranda
+      panel={<PanelAdmin nama={admin.nama} peran={admin.penugasan.map(labelPenugasan).join(" · ")} kalimat={kalimat} />}
+      mengambang={
+        <Suspense fallback={<Skeleton className="h-40" />}>
+          <KartuHariIni />
         </Suspense>
-        <SaklarNotifikasi ringkas untuk="admin" />
-      </aside>
-
-      <div className="flex flex-col gap-4 sm:gap-6">
-        <BadanRingkasan akses={akses} aturan={aturan} data={data} />
-      </div>
-    </div>
+      }
+      samping={
+        <>
+          <DaftarPintasan pintasan={pintasan} />
+          <DaftarPerhatian perhatian={perhatian} />
+          <Suspense fallback={<Skeleton className="h-28" />}>
+            <AsistenAdmin />
+          </Suspense>
+          <SaklarNotifikasi ringkas untuk="admin" />
+        </>
+      }
+      badan={<BadanRingkasan akses={akses} aturan={aturan} data={data} />}
+    />
   );
 }
 
