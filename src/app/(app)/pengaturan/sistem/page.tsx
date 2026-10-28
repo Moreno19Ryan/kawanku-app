@@ -67,7 +67,7 @@ async function IsiPanel() {
       <Suspense fallback={<Skeleton className="h-64" />}>
         <Kesehatan />
       </Suspense>
-      <Card>
+      <Card id="laporan-masalah" className="scroll-mt-20">
         <h2 className="text-lg font-semibold">Salin laporan masalah</h2>
         <p className="mt-1 mb-5 text-sm text-muted">
           Untuk masalah yang belum selesai lewat Panduan perbaikan. Kesehatan sistem, galat, pemeriksaan data, dan

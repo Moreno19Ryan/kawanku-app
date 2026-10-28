@@ -4,6 +4,8 @@
  * yang bisa langsung ditindaklanjuti. Murni (tanpa I/O).
  */
 
+import { waktuRelatif } from "@/lib/waktu";
+
 export type Tingkat = "baik" | "perhatian" | "masalah";
 
 export type DataTugas = {
@@ -169,4 +171,43 @@ export function tingkatKeseluruhan(butir: Butir[]): Tingkat {
   if (butir.some((b) => b.tingkat === "masalah")) return "masalah";
   if (butir.some((b) => b.tingkat === "perhatian")) return "perhatian";
   return "baik";
+}
+
+export type KotakKesehatan = { judul: string; nilai: string; tingkat: Tingkat };
+
+/**
+ * Ringkasan pendek per bagian untuk kartu Kesehatan di Beranda pengembang
+ * (nilai singkat; kalimat lengkapnya tetap di Panel pengembang).
+ */
+export function ringkasKesehatan(d: DataKesehatan, sekarang = Date.now()): KotakKesehatan[] {
+  const tingkat = new Map(nilaiKesehatan(d, sekarang).map((b) => [b.judul, b.tingkat]));
+  const normal = d.tugas.filter((t) => nilaiTugas(t, sekarang).tingkat === "baik").length;
+  const persen = Math.round((d.database_byte / BATAS_DB) * 100);
+  return [
+    {
+      judul: "Tugas otomatis",
+      nilai: normal === d.tugas.length ? `${normal} normal` : `${d.tugas.length - normal} bermasalah`,
+      tingkat: tingkat.get("Tugas otomatis") ?? "baik",
+    },
+    {
+      judul: "Galat",
+      nilai: d.galat.baru > 0 ? `${d.galat.baru} belum dicek` : "tidak ada",
+      tingkat: tingkat.get("Galat aplikasi") ?? "baik",
+    },
+    {
+      judul: "Cadangan",
+      nilai: d.cadangan.terakhir_berhasil ? waktuRelatif(d.cadangan.terakhir_berhasil, sekarang) : "belum ada",
+      tingkat: tingkat.get("Cadangan data") ?? "baik",
+    },
+    {
+      judul: "Notifikasi HP",
+      nilai: d.notifikasi.gagal_kirim ? `${d.notifikasi.gagal_kirim} gagal kirim` : "normal",
+      tingkat: tingkat.get("Notifikasi HP") ?? "baik",
+    },
+    {
+      judul: "Database",
+      nilai: `${ukuranMb(d.database_byte)} · ${persen}%`,
+      tingkat: tingkat.get("Ruang database") ?? "baik",
+    },
+  ];
 }

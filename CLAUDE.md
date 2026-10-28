@@ -114,7 +114,10 @@ Catatan Next.js 16: file `middleware.ts` sudah diganti namanya menjadi
   menampilkan pengumuman. Pembacaan tabel sistem bersifat fail-open
   (tabel/galat → aplikasi tetap jalan normal). Kartu Kesehatan sistem
   (RPC `kesehatan_sistem`, penilaian di `src/lib/sistem/kesehatan.ts`) &
-  Tugas otomatis (`jalankan_tugas`/`atur_tugas`, hanya `kawanku-*`). Tugas
+  Tugas otomatis (`jalankan_tugas`/`atur_tugas`, hanya `kawanku-*`).
+  Beranda pemegang `sistem.kelola` = Beranda pengembang
+  (`dashboard/beranda-pengembang.tsx`: keadaan sistem, pintasan &
+  Perlu perhatian khusus pengembang). Tugas
   pg_cron baru → tambahkan ke `INFO_TUGAS` & `jalankan_tugas`.
 - Bantuan akun (`/pengaturan/bantuan-akun`, hanya `sistem.kelola`): RPC
   `cari_akun` / `buka_kunci_akun` / `keluarkan_akun` (hapus `auth.sessions`),

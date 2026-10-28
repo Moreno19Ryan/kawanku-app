@@ -113,9 +113,12 @@ export async function KartuHariIni({ className = "" }: { className?: string }) {
               {jendela === "lewat_waktu" ? "Lihat absensi" : "Buka absensi"}
             </Link>
             {jendela !== "lewat_waktu" && (
-              <Link href={`/layar/${utama.sesiId}`} target="_blank" className={buttonClass("kedua", "hidden lg:flex")}>
-                Tampilkan QR layar
-              </Link>
+              // buttonClass memakai inline-flex, jadi sembunyikan lewat pembungkus.
+              <div className="hidden lg:block">
+                <Link href={`/layar/${utama.sesiId}`} target="_blank" className={buttonClass("kedua", "w-full")}>
+                  Tampilkan QR layar
+                </Link>
+              </div>
             )}
           </div>
         )}
