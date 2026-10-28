@@ -19,6 +19,22 @@ menunggu **"OK, jalankan"**. Status diperbarui di sini setiap kali selesai.
 4. **Kata sapaan tetap** sesuai Pedoman Bahasa: santun; generus "kamu";
    jamaah dewasa, lansia, dan pengurus tanpa kata ganti.
 5. Setiap tahap redesign mencakup **area admin dan area jamaah sekaligus**.
+6. **Akun caberawit dibuat otomatis** saat pembagian rapor / pergantian
+   semester, bila anak sudah selesai dari caberawit (lihat Tahap D).
+
+## Prinsip kerja (Reno, 28 Okt 2026)
+
+Proyek ini mengelola data banyak jamaah, jadi setiap detail diperiksa
+dengan teliti sebelum dipakai banyak orang:
+
+- **Berurutan**: langkah dikerjakan sesuai urutan di dokumen ini, tidak
+  melompat; bila urutan perlu berubah, dokumen ini diperbarui dulu.
+- **Rancang → mockup/dokumen → setuju → kode → uji → PR → "OK, jalankan"**.
+- Setiap perubahan database diuji dulu di database lokal + tes pgTAP,
+  dengan cadangan sebelum diterapkan ke produksi.
+- Dibuka **bertahap**: Kelompok 1 dulu, dievaluasi, baru seluruh desa.
+- Kesalahan yang ditemukan dicatat dan diperbaiki di akarnya, bukan
+  ditambal.
 
 ## Tahap A · Redesign lanjutan (tanpa perubahan database)
 
@@ -58,6 +74,18 @@ Urutan yang diusulkan:
 5. B5 → B6 → B7 → B8 bersama A6 (area jamaah untuk semua kategori).
 6. B9 → B10 (pembuatan akun & uji coba).
 
+## Tahap D · TPA (Taman Pendidikan Al-Qur'an) untuk caberawit (rencana)
+
+Dirancang setelah Tahap B berjalan; rinciannya dibahas bersama pengurus.
+
+| Langkah | Isi |
+| --- | --- |
+| D1 | **Dokumen rancangan TPA**: kelas/jenjang, semester, rapor, siapa saja yang terlibat. |
+| D2 | **Peran baru sebagai data**: guru TPA, tim kurikulum, pembina, dsb. (memakai sistem peran yang ada; wewenangnya diatur per peran). |
+| D3 | **Kegiatan TPA** khusus caberawit: jadwal, absensi, izin lewat akun orang tua. |
+| D4 | **Wadah kurikulum & rapor semester**: Claude hanya membuat wadahnya; isi materi, target, dan penilaian ditentukan tim kurikulum/pengurus. |
+| D5 | **Pembagian rapor / pergantian semester**: anak yang selesai dari caberawit otomatis naik kategori dan **dibuatkan akun sendiri**; orang tua mendapat kabar beserta slip info masuk. |
+
 ## Tahap C · Hal lain yang masih tertunda
 
 - **Cadangan lapis 2**: Reno mengisi rahasia GitHub `SUPABASE_DB_URL` dan
@@ -83,8 +111,8 @@ Urutan yang diusulkan:
    masing-masing; akun bersama dinonaktifkan setelah semua pindah. Akun
    bersama sulit ditelusuri (siapa mengubah apa) dan berisiko bila kata
    sandinya tersebar.
-4. **Batas caberawit.** Saat anak keluar dari kategori caberawit, apakah
-   akunnya otomatis dibuatkan (dan orang tua masih bisa memantau), atau
-   menunggu admin?
+4. ~~Batas caberawit~~ (dijawab Reno: akun dibuat otomatis saat pembagian
+   rapor / pergantian semester, Tahap D5). Sisa pertanyaan: setelah anak
+   punya akun sendiri, apakah orang tua masih bisa memantaunya?
 5. **Anak tanpa orang tua di data keluarga** (mis. tinggal dengan wali).
    Usul: wali yang tercatat di keluarga memegang perannya.
