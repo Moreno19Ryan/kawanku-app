@@ -531,6 +531,18 @@ Sudah diputuskan Reno (21 Okt 2026):
 - **Alasan izin**: sekolah, kuliah, kerja, lainnya.
 - **Tunda**: target hafalan/capaian materi (Fase 3c) dan keterangan telat.
 
+Diputuskan Reno (28 Okt 2026), rencana lengkap di `docs/peta-jalan.md`:
+
+- **Akun untuk seluruh jamaah** (bertahap, Tahap B peta jalan). **Caberawit
+  tanpa akun sendiri**: dipantau & diabsenkan lewat akun orang tuanya.
+- **Satu orang, satu akun**: pengurus juga jamaah; setelah masuk memilih
+  "Masuk sebagai" (jamaah atau salah satu dapukannya, di kelompok maupun
+  desa) dan tetap bisa absen pada kegiatan yang kenaan.
+- **Redesign**: setiap tahap mencakup area admin & area jamaah sekaligus,
+  selalu diawali mockup.
+
 Masih dirangkai bersama (lalu dicocokkan dengan pengurus):
 
 1. **Detail hak akses** tiap peran: draf di `docs/hak-akses.md`.
+2. **Akun seluruh jamaah**: pertanyaan di `docs/peta-jalan.md` (cara masuk
+   pengurus, data per dapukan, akun admin bersama, batas caberawit, wali).
