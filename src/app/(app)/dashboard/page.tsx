@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { labelPenugasan, punyaIzin } from "@/lib/auth/admin";
+import { punyaIzin, ringkasPeran } from "@/lib/auth/admin";
 import { BerandaPengembang } from "./beranda-pengembang";
 import { getAksesAbsensi } from "@/lib/absensi/akses";
 import { getAksesJamaah, getAturanKategori } from "@/lib/jamaah/akses";
@@ -199,7 +199,7 @@ async function Ringkasan() {
 
   return (
     <TataBeranda
-      panel={<PanelAdmin nama={admin.nama} peran={admin.penugasan.map(labelPenugasan).join(" · ")} kalimat={kalimat} />}
+      panel={<PanelAdmin nama={admin.nama} peran={ringkasPeran(admin.penugasan)} kalimat={kalimat} />}
       mengambang={
         <Suspense fallback={<Skeleton className="h-40" />}>
           <KartuHariIni />
