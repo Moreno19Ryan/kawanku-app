@@ -26,6 +26,10 @@ menunggu **"OK, jalankan"**. Status diperbarui di sini setiap kali selesai.
    Setiap mockup & PR menyertakan keduanya.
 8. **Orang tua tetap memantau anaknya yang generus** (setelah caberawit:
    pra remaja dan seterusnya), walaupun anak sudah punya akun sendiri.
+9. **Kategori Balita** (28 Okt 2026): anak **belum sekolah** = Balita;
+   Caberawit mulai **PAUD/TK dan SD**. Diatur sebagai data di Pengaturan →
+   Kategori jamaah (tanpa migrasi). Balita dipantau lewat akun orang tua
+   (B7), tidak termasuk TPA.
 
 ## Prinsip kerja (Reno, 28 Okt 2026)
 
@@ -45,7 +49,7 @@ dengan teliti sebelum dipakai banyak orang:
 
 | Langkah | Isi | Hasil |
 | --- | --- | --- |
-| A1 | **Beranda pengembang** | Panel sambutan berisi keadaan sistem ("Alhamdulillah, semua sistem normal" / "Ada 2 galat baru"); pintasan khusus pengembang (Panel pengembang, Bantuan akun, Jejak aktivitas, Salin laporan masalah); Perlu perhatian: galat baru, tugas otomatis bermasalah, cadangan terlambat. |
+| A1 ✓ | **Beranda pengembang** (selesai, PR #86) | Panel sambutan berisi keadaan sistem ("Alhamdulillah, semua sistem normal" / "Ada 2 galat baru"); pintasan khusus pengembang (Panel pengembang, Bantuan akun, Jejak aktivitas, Salin laporan masalah); Perlu perhatian: galat baru, tugas otomatis bermasalah, cadangan terlambat. |
 | A1b | **Area jamaah versi laptop** | Kerangka area jamaah (generus) untuk laptop/PC: menu samping seperti admin, Beranda dua kolom; halaman jamaah lain ikut melebar dengan rapi. Mockup dulu. |
 | A2 | **Pengaturan & Panel pengembang** | Halaman kerja pertama dengan pola baru: judul besar, kartu per bagian, aksi utama satu per layar, nyaman di HP. |
 | A3 | **Jamaah** (daftar, detail, tambah/ubah, keluarga, Perlu dicek, kenaikan kelas) | Pola halaman kerja yang sama. |
